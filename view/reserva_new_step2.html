@@ -1,0 +1,132 @@
+{include="header"}
+<link href="plugins/reservas/view/css/custom.css" rel="stylesheet" />
+<script type="text/javascript" src="plugins/reservas/view/js/nueva_reserva.js"></script>
+
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="btn-group hidden-xs">
+
+            </div>
+            <div class="btn-group">
+                <a class="btn" href="{$fsc->new_url()}">
+                    <span class="glyphicon glyphicon-plus"></span>
+                    Nueva Reserva
+                </a>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="container">
+    <form id="habitaciones" action="{$fsc->new_url(3)}" method="post">
+        <input type="hidden" name="idreserva" id="idreserva" value="{$fsc->getReserva()->getId()}">
+        <input type="hidden" name="codcliente" id="codcliente" value="{$fsc->getReserva()->getCodCliente()}" />
+        <input type="hidden" name="codgrupo" id="codgrupo" value="{$fsc->getReserva()->getCodGrupoCliente()}" />
+        <input type="hidden" name="idcategoriahab" id="idcategoriahab" value="" />
+        <input type="hidden" name="idsHabitaciones" id="idsHabitaciones" value="" />
+        <div class="row">
+            <div class="col-md-2">
+                <label><span>Fecha de Ingreso</span>
+                    <input type="date" name="fecha_in" id="fecha_in" value="{$fsc->getReserva()->getFechaIn()}" />
+                </label>
+            </div>
+            <div class="col-md-2">
+                <label><span>Fecha de Egreso</span>
+                    <input type="date" name="fecha_out" id="fecha_out" value="{$fsc->getReserva()->getFechaOut()}" />
+                </label>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-2">
+                <label for="nombre_reserva">Nombre de la Reserva</label>
+            </div>
+            <div class="col-md-4">
+                <input id="nombre_reserva" class="form-control" name="nombre_reserva" type="text" value="{$fsc->getReserva()->getCliente()->nombre}" />
+                <span id="cliente_loading" class="glyphicon glyphicon-refresh glyphicon-refresh-animate hidden"></span>
+                <script type="text/javascript">
+                    $(document).ready(function() {
+                        $("#nombre_reserva").autocomplete({
+                            serviceUrl: 'index.php?page=nueva_venta&tipo=factura',
+                            paramName: 'buscar_cliente',
+                            minChars: 3,
+                            onSearchStart: function(query) {
+                                $('#cliente_loading').removeClass('hidden');
+                            },
+                            onSearchComplete: autocomplete_response,
+                            onSelect: autcomplete_select
+                        });
+                    });
+                </script>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-offset-3 col-md-1">
+                <label>Adultos</label>
+            </div>
+            <div class="col-md-1">
+                <input id="cantidad_adultos" class="form-control" name="cantidad_adultos" value="{$fsc->getReserva()->getCantidadAdultos()}" />
+            </div>
+            <div class="col-md-1">
+                <label>Menores de 5</label>
+            </div>
+            <div class="col-md-1">
+                <input id="cantidad_menores" class="form-control" name="cantidad_menores" value="{$fsc->getReserva()->getCantidadMenores()}" />
+            </div>
+            <div class="col-md-2">
+                <label><span>Cantidad de Huespedes por Habitacion</span>
+                    <input type="number" min="2" max="6" name="cantidad_por_habitacion" id="cantidad_por_habitacion" value="2" />
+                </label>
+            </div>
+        </div>
+        <div class="row">
+            <h2>Habitaciones Disponibles:</h2>
+            <div id="habitacionesResult" class="has-spinner">
+
+            </div>
+        </div>
+        <div class="row">
+            <div class="container">
+                <h2>Totales</h2>
+                <div class="row">
+                    <div class="col-md-2">
+                        <label for="total">Total</label>
+                    </div>
+                    <div class="col-md-2">
+                        <input id="total" class="form-control" name="total" type="text" value="{$fsc->getReserva()->getTotal()}"><br>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="submit" value="Grabar Reserva" id="guardar" class="form-control btn-primary">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-2">
+                        <label for="descuento">Dto/Int</label>
+                    </div>
+                    <div class="col-md-2">
+                        <input id="descuento" class="form-control" name="descuento" type="text" value="0">
+                    </div>
+                    <div class="col-md-2">
+                        <input type="button" value="Generar Pago" id="pago" class="form-control"><br>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-2">
+                        <label for="total_final">Total Reserva</label>
+                    </div>
+                    <div class="col-md-2">
+                        <input id="total_final" class="form-control" name="total_final" type="text" value="{$fsc->getReserva()->getTotal()}">
+                    </div>
+                    <div class="col-md-2">
+                        <input type="button" value="Imprimir" id="imprimir" class="form-control"><br>
+                        <input type="reset" value="Cancelar" id="cancelar" class="form-control">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+{include="footer"}

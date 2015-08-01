@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Document   : tarifa.xml
+    Description:
+-->
+<tabla>
+    <columna>
+        <nombre>id</nombre>
+        <tipo>serial</tipo>
+        <nulo>NO</nulo>
+        <defecto>nextval('tarifa_id_seq'::regclass)</defecto>
+    </columna>
+    <columna>
+        <nombre>monto</nombre>
+        <tipo>double precision</tipo>
+        <nulo>NO</nulo>
+        <defecto>0</defecto>
+    </columna>
+    <columna>
+        <nombre>fecha_inicio</nombre>
+        <tipo>timestamp</tipo>
+        <nulo>NO</nulo>
+        <defecto>CURRENT_TIMESTAMP</defecto>
+    </columna>
+    <columna>
+        <nombre>fecha_fin</nombre>
+        <tipo>timestamp</tipo>
+        <nulo>YES</nulo>
+    </columna>
+    <columna>
+        <nombre>idcategoria</nombre>
+        <tipo>integer</tipo>
+        <nulo>NO</nulo>
+    </columna>
+    <columna>
+        <nombre>codgrupo</nombre>
+        <tipo>character varying(6)</tipo>
+        <nulo>NO</nulo>
+    </columna>
+    <restriccion>
+        <nombre>tarifa_pkey</nombre>
+        <consulta>PRIMARY KEY (id)</consulta>
+    </restriccion>
+    <restriccion>
+        <nombre>tarifas_unique</nombre>
+        <consulta>UNIQUE (fecha_inicio, idcategoria, codgrupo)</consulta>
+    </restriccion>
+    <restriccion>
+        <nombre>tarifa_idcategoria_fk</nombre>
+        <consulta>FOREIGN KEY (idcategoria)
+            REFERENCES categoria_habitacion (id)
+            ON DELETE RESTRICT ON UPDATE CASCADE</consulta>
+    </restriccion>
+    <restriccion>
+        <nombre>tarifa_codgrupo_fk</nombre>
+        <consulta>FOREIGN KEY (codgrupo)
+            REFERENCES gruposclientes (codgrupo)
+            ON DELETE RESTRICT ON UPDATE CASCADE</consulta>
+    </restriccion>
+</tabla>

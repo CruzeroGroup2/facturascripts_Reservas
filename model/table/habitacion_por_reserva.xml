@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Document   : habitacion_por_reserva.xml
+    Description:
+-->
+<tabla>
+    <columna>
+        <nombre>id</nombre>
+        <tipo>serial</tipo>
+        <nulo>NO</nulo>
+        <defecto>nextval('habitacion_por_reserva_id_seq'::regclass)</defecto>
+    </columna>
+    <columna>
+        <nombre>idhabitacion</nombre>
+        <tipo>integer</tipo>
+        <nulo>NO</nulo>
+    </columna>
+    <columna>
+        <nombre>idreserva</nombre>
+        <tipo>integer</tipo>
+        <nulo>NO</nulo>
+    </columna>
+    <restriccion>
+        <nombre>habitacion_por_reserva_pkey</nombre>
+        <consulta>PRIMARY KEY (id)</consulta>
+    </restriccion>
+    <restriccion>
+        <nombre>habitacion_por_reserva_idhabitacion_fk</nombre>
+        <consulta>FOREIGN KEY (idhabitacion)
+            REFERENCES habitacion (id)
+            ON DELETE RESTRICT ON UPDATE CASCADE</consulta>
+    </restriccion>
+    <restriccion>
+        <nombre>habitacion_por_reserva_idreserva_fk</nombre>
+        <consulta>FOREIGN KEY (idreserva)
+            REFERENCES reserva (id)
+            ON DELETE CASCADE ON UPDATE CASCADE</consulta>
+    </restriccion>
+</tabla>

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Document   : reserva.xml
+    Description:
+-->
+<tabla>
+   <columna>
+      <nombre>id</nombre>
+      <tipo>serial</tipo>
+      <nulo>NO</nulo>
+      <defecto>nextval('reserva_id_seq'::regclass)</defecto>
+   </columna>
+   <columna>
+      <nombre>codcliente</nombre>
+      <tipo>character varying(6)</tipo>
+      <nulo>NO</nulo>
+   </columna>
+   <columna>
+      <nombre>idtarifa</nombre>
+      <tipo>integer</tipo>
+      <nulo>NO</nulo>
+   </columna>
+   <columna>
+      <nombre>idestado</nombre>
+      <tipo>integer</tipo>
+      <nulo>NO</nulo>
+   </columna>
+   <columna>
+      <nombre>fecha_in</nombre>
+      <tipo>timestamp</tipo>
+      <nulo>NO</nulo>
+   </columna>
+   <columna>
+      <nombre>fecha_out</nombre>
+      <tipo>timestamp</tipo>
+      <nulo>NO</nulo>
+   </columna>
+   <columna>
+      <nombre>cantidad_adultos</nombre>
+      <tipo>integer</tipo>
+      <nulo>NO</nulo>
+   </columna>
+   <columna>
+      <nombre>cantidad_menores</nombre>
+      <tipo>integer</tipo>
+      <nulo>NO</nulo>
+   </columna>
+   <columna>
+      <nombre>descuento</nombre>
+      <tipo>double precision</tipo>
+      <nulo>NO</nulo>
+      <defecto>0</defecto>
+   </columna>
+   <columna>
+      <nombre>idpago</nombre>
+      <tipo>integer</tipo>
+      <nulo>NO</nulo>
+   </columna>
+   <columna>
+      <nombre>comentario</nombre>
+      <tipo>text</tipo>
+      <nulo>YES</nulo>
+   </columna>
+   <restriccion>
+      <nombre>reserva_pkey</nombre>
+      <consulta>PRIMARY KEY (id)</consulta>
+   </restriccion>
+   <restriccion>
+      <nombre>reserva_codcliente_fk</nombre>
+      <consulta>FOREIGN KEY (codcliente)
+         REFERENCES clientes (codcliente)
+         ON DELETE RESTRICT ON UPDATE CASCADE</consulta>
+   </restriccion>
+   <restriccion>
+      <nombre>reserva_idtarifa_fk</nombre>
+      <consulta>FOREIGN KEY (idtarifa)
+         REFERENCES tarifa (id)
+         ON DELETE RESTRICT ON UPDATE CASCADE</consulta>
+   </restriccion>
+   <restriccion>
+      <nombre>reserva_idestado_fk</nombre>
+      <consulta>FOREIGN KEY (idestado)
+         REFERENCES estado_reserva (id)
+         ON DELETE RESTRICT ON UPDATE CASCADE</consulta>
+   </restriccion>
+</tabla>

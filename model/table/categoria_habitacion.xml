@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Document   : categoria_habitacion.xml
+    Description:
+-->
+<tabla>
+    <columna>
+        <nombre>id</nombre>
+        <tipo>serial</tipo>
+        <nulo>NO</nulo>
+        <defecto>nextval('categoria_habitacion_id_seq'::regclass)</defecto>
+    </columna>
+    <columna>
+        <nombre>nombre</nombre>
+        <tipo>character varying(50)</tipo>
+        <nulo>no</nulo>
+    </columna>
+    <restriccion>
+        <nombre>categoria_habitacion_pkey</nombre>
+        <consulta>PRIMARY KEY (id)</consulta>
+    </restriccion>
+</tabla>

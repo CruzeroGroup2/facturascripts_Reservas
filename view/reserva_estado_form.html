@@ -1,0 +1,41 @@
+{include="header"}
+
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="btn-group hidden-xs">
+
+            </div>
+            <div class="btn-group">
+                <a class="btn" href="{$fsc->new_url()}">
+                    <span class="glyphicon glyphicon-plus"></span>
+                    Nuevo Estado
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <form action="{$fsc->url()}" method="post">
+        <input type="hidden" id="id" name="id" value="{$fsc->getEstado()->getId()}" />
+        <div class="row">
+            <div class="col-md-3">
+                <label for="descripcion">
+                    Nombre
+                </label>
+            </div>
+            <div class="col-md-3">
+                <input type="text" id="descripcion" class="form-control" name="descripcion" value="{$fsc->getEstado()->getDescripcion()}" />
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-offset-3 col-md-3">
+                <input type="submit" id="submit" name="submit" value="Guardar" />
+            </div>
+        </div>
+    </form>
+</div>
+
+{include="footer"}

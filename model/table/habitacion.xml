@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Document   : habitacion.xml
+    Description:
+-->
+<tabla>
+    <columna>
+        <nombre>id</nombre>
+        <tipo>serial</tipo>
+        <nulo>NO</nulo>
+    </columna>
+    <columna>
+        <nombre>numero</nombre>
+        <tipo>integer</tipo>
+        <nulo>NO</nulo>
+    </columna>
+    <columna>
+        <nombre>idpabellon</nombre>
+        <tipo>integer</tipo>
+        <nulo>NO</nulo>
+    </columna>
+    <columna>
+        <nombre>id_tipohabitacion</nombre>
+        <tipo>integer</tipo>
+        <nulo>NO</nulo>
+    </columna>
+    <columna>
+        <nombre>plaza_maxima</nombre>
+        <tipo>integer</tipo>
+        <nulo>NO</nulo>
+    </columna>
+    <columna>
+        <nombre>idcategoria</nombre>
+        <tipo>integer</tipo>
+        <nulo>NO</nulo>
+    </columna>
+    <columna>
+        <nombre>idestado</nombre>
+        <tipo>integer</tipo>
+        <nulo>NO</nulo>
+    </columna>
+    <restriccion>
+        <nombre>habitacion_pkey</nombre>
+        <consulta>PRIMARY KEY (id)</consulta>
+    </restriccion>
+    <restriccion>
+        <nombre>habitacion_pabellon_unique</nombre>
+        <consulta>UNIQUE (numero, idpabellon)</consulta>
+    </restriccion>
+    <restriccion>
+        <nombre>habitacion_idpabellon_fk</nombre>
+        <consulta>FOREIGN KEY (idpabellon)
+            REFERENCES pabellon (id)
+            ON DELETE RESTRICT ON UPDATE CASCADE</consulta>
+    </restriccion>
+    <restriccion>
+        <nombre>habitacion_idcategoria_fk</nombre>
+        <consulta>FOREIGN KEY (idcategoria)
+            REFERENCES categoria_habitacion (id)
+            ON DELETE RESTRICT ON UPDATE CASCADE</consulta>
+    </restriccion>
+    <restriccion>
+        <nombre>habitacion_idestado_fk</nombre>
+        <consulta>FOREIGN KEY (idestado)
+            REFERENCES estado_habitacion (id)
+            ON DELETE RESTRICT ON UPDATE CASCADE</consulta>
+    </restriccion>
+</tabla>

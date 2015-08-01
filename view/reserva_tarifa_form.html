@@ -1,0 +1,60 @@
+{include="header"}
+
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="btn-group hidden-xs">
+
+            </div>
+            <div class="btn-group">
+                <a class="btn" href="#">
+                    <span class="glyphicon glyphicon-plus"></span>
+                    Nueva Tarifa
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <form action="{$fsc->url()}" method="post">
+        <div class="row">
+            <div class="col-sm-1">
+                <label>Categoria:</label>
+            </div>
+            <div class="col-sm-2">
+                <select name="idcategoria" class="form-control">
+                    <option value="">Seleccione...</option>
+                    {loop="$fsc->getCategoriaHabitacion()->fetchAll()"}
+                    <option value="{$value->getId()}"{if="$fsc->getTarifa()->getIdCategoriaHabitacion() == $value->getId()"} selected="selected"{/if}>{$value->getNombre()}</option>
+                    {/loop}
+                </select>
+            </div>
+            <div class="col-sm-2">
+                <label>Tipo de Convenio:</label>
+            </div>
+            <div class="col-sm-2">
+                <select name="codgrupo" class="form-control">
+                    <option value="">Seleccione...</option>
+                    {loop="$fsc->getGruposCliente()->all()"}
+                    <option value="{$value->codgrupo}"{if="$fsc->getTarifa()->getCodGrupoCliente() == $value->codgrupo"} selected="selected"{/if}>{$value->nombre}</option>
+                    {/loop}
+                </select>
+            </div>
+            <div class="col-sm-1">
+                <label>Monto:</label>
+            </div>
+            <div class="col-sm-2">
+                <input name="monto" type="text" class="form-control" value="{$fsc->getTarifa()->getMonto()}">
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-offset-3 col-md-3">
+                <input type="submit" id="submit" name="submit" value="Guardar" />
+            </div>
+        </div>
+    </form>
+</div>
+
+{include="footer"}

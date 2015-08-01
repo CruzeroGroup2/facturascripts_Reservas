@@ -1,0 +1,40 @@
+{include="header"}
+
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="btn-group hidden-xs">
+
+            </div>
+            <div class="btn-group">
+                <a class="btn" href="#">
+                    <span class="glyphicon glyphicon-plus"></span>
+                    Nueva Categoria Habitacion
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <form action="{$fsc->url()}" method="post">
+        <div class="row">
+            <div class="col-md-3">
+                <label for="nombre">
+                    Nombre
+                </label>
+            </div>
+            <div class="col-md-3">
+                <input type="text" id="nombre" class="form-control" name="nombre" />
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-offset-3 col-md-3">
+                <input type="submit" id="submit" name="submit" value="Guardar" />
+            </div>
+        </div>
+    </form>
+</div>
+
+{include="footer"}

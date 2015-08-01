@@ -1,0 +1,67 @@
+{include="header"}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="btn-group hidden-xs">
+
+            </div>
+            <div class="btn-group">
+                <a class="btn" href="{$fsc->new_url()}">
+                    <span class="glyphicon glyphicon-plus"></span>
+                    Nuevo Estado
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid" id="div_estados">
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+            <tr>
+                <th class="text-left">Nombre</th>
+                <th class="text-right">Opciones</th>
+            </tr>
+            </thead>
+            {loop="$fsc->estados"}
+            <tr>
+                <td>{$value->getDescripcion()}</td>
+                <td>
+                    <a href="{$fsc->edit_url($value)}">
+                        <span class="glyphicon glyphicon-pencil"></span>
+                    </a>
+                    &nbsp;
+                    <a onclick="return confirm('Esta seguro que desea eliminar el estado {$value->getDescripcion()}?')"
+                       href="{$fsc->delete_url($value)}">
+                        <span class="glyphicon glyphicon-trash"></span>
+                    </a>
+                </td>
+            </tr>
+            {else}
+            <tr class="bg-warning">
+                <td colspan="3">Ningún estado_habitacion. Pulse el botón <b>Nuevo</b> para crear uno.</td>
+            </tr>
+            {/loop}
+        </table>
+    </div>
+
+    <ul class="pager" id="ul_paginador">
+        {if condition="$fsc->anterior_url()!=''"}
+        <li class="previous">
+            <a href="{$fsc->anterior_url()}">
+                <span class="glyphicon glyphicon-chevron-left"></span> &nbsp; Anteriores
+            </a>
+        </li>
+        {/if}
+
+        {if condition="$fsc->siguiente_url()!=''"}
+        <li class="next">
+            <a href="{$fsc->siguiente_url()}">
+                Siguientes &nbsp; <span class="glyphicon glyphicon-chevron-right"></span>
+            </a>
+        </li>
+        {/if}
+    </ul>
+</div>
+{include="footer"}

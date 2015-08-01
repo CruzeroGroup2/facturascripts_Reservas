@@ -1,0 +1,72 @@
+{include="header"}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="btn-group hidden-xs">
+
+            </div>
+            <div class="btn-group">
+                <a class="btn" href="{$fsc->new_url()}">
+                    <span class="glyphicon glyphicon-plus"></span>
+                    Nueva Reserva
+                </a>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-hover table-bordered table-condensed">
+        <thead>
+            <tr>
+                <th>Cliente</th>
+                <th>Habitacion</th>
+                <th>Tafira</th>
+                <th>Estado</th>
+                <th>Tipo Huesped</th>
+                <th>Fecha Ingreso</th>
+                <th>Fecha Egreso</th>
+                <th>Cantidad Adultos</th>
+                <th>Cantidad Menores</th>
+                <th>Pago</th>
+                <th class="text-right">Opciones</th>
+            </tr>
+        </thead>
+        <tbody>
+        {if="$fsc->reservas"}
+            {loop="$fsc->reservas"}
+            <tr>
+                <td>{$value->getCliente()->nombre}</td>
+                <td>{function="implode(', ',$value->getHabitaciones(true))"}</td>
+                <td>{$value->getTarifa()->getMonto()}</td>
+                <td>{$value->getEstado()->getDescripcion()}</td>
+                <td>{$value->getGrupoCliente()->nombre}</td>
+                <td>{$value->getFechaIn()}</td>
+                <td>{$value->getFechaOut()}</td>
+                <td>{$value->getCantidadAdultos()}</td>
+                <td>{$value->getCantidadMenores()}</td>
+                <td>{$value->getPago()}</td>
+                <td>
+                    <a href="{$fsc->edit_url($value)}">
+                        <span class="glyphicon glyphicon-pencil"></span>
+                    </a>
+                    &nbsp;
+                    <a onclick="return confirm('Esta seguro que desea eliminar la Reserva?')"
+                       href="{$fsc->delete_url($value)}">
+                        <span class="glyphicon glyphicon-trash"></span>
+                    </a>
+                </td>
+            </tr>
+            {/loop}
+        {else}
+            <tr>
+                <td colspan="11">No hay reservas disponibles</td>
+            </tr>
+        {/if}
+        </tbody>
+    </table>
+</div>
+
+{include="footer"}

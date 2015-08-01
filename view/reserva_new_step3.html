@@ -1,0 +1,250 @@
+{include="header"}
+<link href="plugins/reservas/view/css/custom.css" rel="stylesheet" />
+<script type="text/javascript" src="plugins/reservas/view/js/nueva_reserva.js"></script>
+
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="btn-group hidden-xs">
+
+            </div>
+            <div class="btn-group">
+                <a class="btn" href="{$fsc->new_url()}">
+                    <span class="glyphicon glyphicon-plus"></span>
+                    Nueva Reserva
+                </a>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="container">
+    <form id="habitaciones" class="" action="{$fsc->new_url(4)}" method="post">
+        <input type="hidden" name="idreserva" id="idreserva" value="{$fsc->getReserva()->getId()}">
+        <input type="hidden" name="codcliente" id="codcliente" value="{$fsc->getReserva()->getCodCliente()}" />
+        <div class="row form-group">
+            <h2>Habitaciones:</h2>
+            <ul class="list-group">
+                <li class="habitacionItem list-group-item">
+                    {loop="$fsc->getReserva()->getHabitaciones()"}
+                    <span style="color:black;"
+                          class="btn disponible"
+                          title="{$value->getHabitacion()->getNumero()}">
+                        {$value->getHabitacion()->getNumero()}: {$value->getHabitacion()->getPlazaMaxima()}
+                    </span>
+                    {/loop}
+                </li>
+            </ul>
+        </div>
+        <div class="row form-group">
+            <div class="col-md-2">
+                <label for="fecha_in"><span>Fecha de Ingreso</span></label>
+            </div>
+            <div class="col-md-2">
+                <input type="date" readonly="readonly" name="fecha_in" id="fecha_in" class="form-control input-sm" value="{$fsc->getReserva()->getFechaIn()}" />
+            </div>
+            <div class="col-md-2">
+                <label for="fecha_out"><span>Fecha de Egreso</span></label>
+            </div>
+            <div class="col-md-2">
+                <input type="date" readonly="readonly" name="fecha_out" id="fecha_out" class="form-control input-sm" value="{$fsc->getReserva()->getFechaOut()}" />
+            </div>
+        </div>
+        <div class="container">
+            <h2>Datos de la Reserva:</h2>
+            <div class="row form-group">
+                <div class="col-md-2">
+                    <label for="nombre_reserva">Nombre de la Reserva</label>
+                </div>
+                <div class="col-md-4">
+                    <input id="nombre_reserva" class="form-control input-sm" name="nombre_reserva" type="text" value="{$fsc->getReserva()->getCliente()->nombre}" />
+                    <span id="cliente_loading" class="glyphicon glyphicon-refresh glyphicon-refresh-animate hidden"></span>
+                    <script type="text/javascript">
+                        $(document).ready(function() {
+                            $("#nombre_reserva").autocomplete({
+                                serviceUrl: 'index.php?page=nueva_venta&tipo=factura',
+                                paramName: 'buscar_cliente',
+                                minChars: 3,
+                                onSearchStart: function(query) {
+                                    $('#cliente_loading').removeClass('hidden');
+                                },
+                                onSearchComplete: autocomplete_response,
+                                onSelect: autcomplete_select
+                            });
+                        });
+                    </script>
+                </div>
+                <div class="col-md-2">
+                    <label for="idestado">Estado Reserva</label>
+                </div>
+                <div class="col-md-2">
+                    <select id="idestado" class="form-control input-sm" name="idestado">
+                        <option value="">Seleccione</option>
+                        {loop="$fsc->getEstadoReserva()->fetchAll()"}
+                        <option value="{$value->getId()}"{if="$fsc->getReserva()->getIdEstado() == $value->getId()"} selected="selected"{/if}>{$value->getDescripcion()}</option>
+                        {/loop}
+                    </select>
+                </div>
+            </div>
+            <div class="row form-group">
+                <div class="col-md-2">
+                    <label for="telefono">Telefono</label>
+                </div>
+                <div class="col-md-2">
+                    <input id="telefono" class="form-control input-sm" name="telefono" value="{$fsc->getReserva()->getCliente()->telefono1}" />
+                </div>
+                <div class="col-md-2">
+                    <label for="email">E-Mail</label>
+                </div>
+                <div class="col-md-6">
+                    <input id="email" class="form-control input-sm" name="email" value="{$fsc->getReserva()->getCliente()->email}" />
+                </div>
+            </div>
+            <div class="row form-group">
+                <div class="col-md-2">
+                    <label for="idtipocliente">Tipo de Convenio</label>
+                </div>
+                <div class="col-md-2">
+                    <select id="idtipocliente" name="idtipocliente" class="form-control input-sm">
+                        <option value="">Seleccione...</option>
+                        {loop="$fsc->getGruposCliente()->all()"}
+                        <option value="{$value->codgrupo}"{if="$fsc->getReserva()->getCliente()->codgrupo == $value->codgrupo"} selected="selected"{/if}>{$value->nombre}</option>
+                        {/loop}
+                    </select>
+                </div>
+                <div class="col-md-offset-2 col-md-2">
+                    <input id="media_pension" type="checkbox" name="media_pension">
+                    <label for="media_pension">Media Pension</label>
+                </div>
+            </div>
+            <div class="row form-group">
+                <div class="col-md-offset-3 col-md-1">
+                    <label>Adultos</label>
+                </div>
+                <div class="col-md-1">
+                    <input id="cantidad_adultos" class="form-control input-sm" name="cantidad_adultos" value="{$fsc->getReserva()->getCantidadAdultos()}" />
+                </div>
+                <div class="col-md-1">
+                    <label>Menores de 5</label>
+                </div>
+                <div class="col-md-1">
+                    <input id="cantidad_menores" class="form-control input-sm" name="cantidad_menores" value="{$fsc->getReserva()->getCantidadMenores()}" />
+                </div>
+            </div>
+            <h2>Lista de Pasajeros:</h2>
+            <div class="row">
+                <table id="lista_pasajeros" class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Documento</th>
+                            <th>Fecha de Nacimiento</th>
+                            <th>Opciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {if="$fsc->getReserva()->getPasajeros()"}
+                    {loop="$fsc->getReserva()->getPasajeros()"}
+                        <tr>
+                            <td>{$value->getNombreCompleto()}</td>
+                            <td>{$value->getDocumento()}</td>
+                            <td>{$value->getFechaNacimiento()}</td>
+                            <td>
+                                <input type="hidden" name="pasajeros[]" value="{$value->__toString()}">
+                                <button class="text-right" onclick="return remove_huesped(this)"><span class="glyphicon glyphicon-trash"></span></button>
+                            </td>
+                        </tr>
+                    {/loop}
+                    {/if}
+                    </tbody>
+                </table>
+            </div>
+            <div class="row form-group">
+                <div class="col-md-3">
+                    <label for="nombre_pasajero">Nombre</label>
+                    <input type="text" id="nombre_pasajero" class="form-control input-sm" name="nombre_pasajero" />
+                </div>
+                <div class="col-md-5">
+                    <div class="col-md-7">
+                        <label for="documento_pasajero">Documento</label>
+                        <input type="text" id="documento_pasajero" class="form-control input-sm" name="documento_pasajero" />
+                    </div>
+                    <div class="col-md-5">
+                        <br>
+                        <input type="radio" id="documento_pasajero_tipo_dni" name="documento_pasajero_tipo" value="DNI" />
+                        <label for="documento_pasajero_tipo_dni">DNI</label>
+                        <br>
+                        <input type="radio" id="documento_pasajero_tipo_afiliado" name="documento_pasajero_tipo" value="AFILIADO" />
+                        <label for="documento_pasajero_tipo_afiliado">Numero afiliado</label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="col-md-7">
+                        <label for="fechanac_pasajero">Fecha Nacimiento</label>
+                        <input type="date" id="fechanac_pasajero" class="form-control input-sm" name="fechanac_pasajero">
+                    </div>
+                    <div class="col-md-5">
+                        <br>
+                        <input type="checkbox" id="menor_2" name="menor_2">
+                        <label for="menor_2">Menor 2 años</label>
+                        <br>
+                        <input type="checkbox" id="menor_5" name="menor_5">
+                        <label for="menor_5">Menor 5 años</label>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-offset-11 col-md-1">
+                <button id="agregar_pasajero" class="btn btn-sm btn-primary" type="button">
+                    <span class="glyphicon glyphicon-plus"></span> &nbsp; Agregar
+                </button>
+            </div>
+        </div>
+        <div class="row form-group">
+            <div class="col-md-6">
+                <h2><label for="comentario">Comentarios</label></h2>
+                <textarea id="comentario" class="form-control" name="comentario" rows="5"></textarea>
+            </div>
+            <div class="col-md-6">
+                <h2>Totales</h2>
+                <div class="row form-group">
+                    <div class="col-md-3">
+                        <label for="total">Total</label>
+                    </div>
+                    <div class="col-md-5">
+                        <input id="total" class="form-control" name="total" type="text" value="{$fsc->getReserva()->getTotal()}"><br>
+                    </div>
+                    <div class="col-md-4">
+                        <input type="submit" value="Grabar Reserva" id="guardar" class="form-control btn-primary">
+                    </div>
+                </div>
+                <div class="row form-group">
+                    <div class="col-md-3">
+                        <label for="descuento">Dto/Int</label>
+                    </div>
+                    <div class="col-md-5">
+                        <input id="descuento" class="form-control" name="descuento" type="text" value="{$fsc->getReserva()->getDescuento()}">
+                    </div>
+                    <div class="col-md-4">
+                        <input type="button" value="Generar Pago" id="pago" class="form-control"><br>
+                    </div>
+                </div>
+                <div class="row" form-group>
+                    <div class="col-md-3">
+                        <label for="total_final">Total Reserva</label>
+                    </div>
+                    <div class="col-md-5">
+                        <input id="total_final" class="form-control" name="total_final" type="text" value="{$fsc->getReserva()->getTotalFinal()}">
+                    </div>
+                    <div class="col-md-4">
+                        <input type="button" value="Imprimir" id="imprimir" class="form-control"><br>
+                        <input type="reset" value="Cancelar" id="cancelar" class="form-control">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+{include="footer"}

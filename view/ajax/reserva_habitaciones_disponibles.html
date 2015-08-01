@@ -1,0 +1,25 @@
+{if="$fsc->result"}
+<ul class="list-group">
+    {loop="$fsc->result"}
+        <li id="solucion_{$counter}" class="habitacionItem list-group-item"
+            data-habitaciones="{$value.ids}"
+            data-categorias="{$value.categorias}">Opción {$counter+1}: ({$fsc->getCategoriaName($value.categorias)})
+        {loop="$value.habitaciones"}
+            {$habitaciones=$fsc->explode(',', $value.idsHabitacion)}
+            {loop="$habitaciones"}
+                :
+            {$habitacion=$fsc->getHabitacion()->get($value)}
+        <span style="color:black;"
+              class="btn disponible"
+              title="{$habitacion->getNumero()}">
+            {$habitacion->getNumero()}: {$habitacion->getPlazaMaxima()}
+        </span>
+            {/loop}
+        {/loop}
+        </li>
+    {/loop}
+    </ul>
+</ul>
+{else}
+<p class="alert alert-danger">No hay habitaciones disponibles</p>
+{/if}
