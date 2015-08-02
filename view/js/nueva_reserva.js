@@ -26,7 +26,8 @@ function calculate_amount() {
         {idcategoria: catHab, codgrupo: codgrupo}
     ).done(function(data) {
         total = dias*cantPasajeros*parseFloat(data.monto);
-        total_final = total - (total*(1/descuento));
+        montoDescuento = descuento > 0 ? total*(1/descuento) : 0;
+        total_final = total - montoDescuento;
         $('#total').val(total);
         $('#total_final').val(total_final);
     });

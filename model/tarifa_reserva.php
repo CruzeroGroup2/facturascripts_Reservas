@@ -335,7 +335,7 @@ class tarifa_reserva extends fs_model {
             $this->new_error_msg("Monto de tarifa no válido!");
         }
 
-        if(empty($this->get_errors())) {
+        if(!$this->get_errors()) {
             $status = true;
         }
 

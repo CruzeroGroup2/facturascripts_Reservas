@@ -238,7 +238,9 @@ class habitacion_por_reserva extends fs_model {
     }
 
     private function get_habitacion($idhabitacion) {
-        return habitacion::get($idhabitacion);
+        if($idhabitacion) {
+            return habitacion::get($idhabitacion);
+        }
     }
 
 }

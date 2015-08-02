@@ -590,6 +590,7 @@ class reserva extends fs_model {
         $habitacion = new habitacion();
         $tarifa = new tarifa_reserva();
         $estado = new estado_reserva();
+        $habporres = new habitacion_por_reserva();
         $pago = new pago();
 
         return '';
@@ -664,7 +665,7 @@ class reserva extends fs_model {
             $this->new_error_msg( "Fecha de reserva no válida." );
         }
 
-        if ( empty( $this->get_errors() ) ) {
+        if (!$this->get_errors()) {
             $status = true;
         }
 
@@ -680,7 +681,6 @@ class reserva extends fs_model {
             $sql .= 'idtarifa = ' . $this->intval( $this->getIdTarifa() ) . ',';
         }
         $sql .= 'idestado = ' . $this->intval( $this->getEstado()->getId() ) . ',' .
-                'codgrupo = ' . $this->var2str( $this->getCodGrupoCliente() ) . ',' .
                 'fecha_in = ' . $this->var2str( $this->getFechaIn() ) . ',' .
                 'fecha_out = ' . $this->var2str( $this->getFechaOut() ) . ',' .
                 'cantidad_adultos = ' . $this->intval( $this->getCantidadAdultos() ) . ',' .
@@ -707,7 +707,6 @@ class reserva extends fs_model {
             $sql .= 'idtarifa = ' . $this->intval( $this->getIdTarifa() ) . ',';
         }
         $sql .= 'idestado = ' . $this->intval( $this->getEstado()->getId() ) . ',' .
-                'codgrupo = ' . $this->var2str( $this->getCodGrupoCliente() ) . ',' .
                 'fecha_in = ' . $this->var2str( $this->getFechaIn() ) . ',' .
                 'fecha_out = ' . $this->var2str( $this->getFechaOut() ) . ',' .
                 'cantidad_adultos = ' . $this->intval( $this->getCantidadAdultos() ) . ',' .

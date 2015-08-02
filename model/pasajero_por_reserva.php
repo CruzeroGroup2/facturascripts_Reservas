@@ -277,7 +277,7 @@ class pasajero_por_reserva extends fs_model {
             $this->new_error_msg("Fecha de nacimiento no válida");
         }
 
-        if ( empty( $this->get_errors() ) ) {
+        if (!$this->get_errors()) {
             $status = true;
         }
 

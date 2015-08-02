@@ -275,6 +275,7 @@ class habitacion extends fs_model {
         $pabellon = new pabellon();
         $categoria_habitacion = new categoria_habitacion();
         $estado = new estado_habitacion();
+        $habporres = new habitacion_por_reserva();
         return '';
     }
 
@@ -373,7 +374,7 @@ ORDER BY plaza_maxima DESC;';
             $this->new_error_msg("Categoría habitacion no válida.");
         }
 
-        if(empty($this->get_errors())) {
+        if(!$this->get_errors()) {
             $status = true;
         }
 
