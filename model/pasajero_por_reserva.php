@@ -40,6 +40,13 @@ class pasajero_por_reserva extends fs_model {
      */
     protected $idreserva = null;
 
+    const EDAD_MAX_MENOR = 5;
+
+    const EDAD_MIN_MENOR = 2;
+
+    /**
+     * @param array $data
+     */
     function __construct($data = array()) {
         parent::__construct('pasajero_por_reserva','plugins/reservas/');
 
@@ -161,6 +168,30 @@ class pasajero_por_reserva extends fs_model {
         return $this;
     }
 
+
+    /**
+     * @return bool
+     */
+    public function esAdulto() {
+        return $this->getEdad() > self::EDAD_MAX_MENOR;
+    }
+
+    /**
+     * @return bool
+     */
+    public function esMenor() {
+        return (
+            $this->getEdad() >= self::EDAD_MIN_MENOR &&
+            $this->getEdad() <= self::EDAD_MAX_MENOR
+        );
+    }
+
+    /**
+     * @return int
+     */
+    public function getEdad() {
+        return date_diff(date_create($this->getFechaNacimiento()), date_create('today'))->y;
+    }
 
 
 

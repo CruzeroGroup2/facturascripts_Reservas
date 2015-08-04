@@ -185,7 +185,7 @@ class tarifa_reserva extends fs_model {
     }
 
     /**
-     * @return tipo_cliente
+     * @return grupo_clientes
      */
     public function getGrupoCliente() {
         if(is_null($this->grupo_clientes)) {
@@ -443,6 +443,11 @@ class tarifa_reserva extends fs_model {
         return categoria_habitacion::get($id);
     }
 
+    /**
+     * @param $codgrupo
+     *
+     * @return bool|grupo_clientes
+     */
     private function get_grupo_cliente($codgrupo) {
         $grupo_cliente = new grupo_clientes();
 

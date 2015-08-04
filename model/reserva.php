@@ -90,6 +90,11 @@ class reserva extends fs_model {
     protected $cantidad_menores;
 
     /**
+     * @var bool
+     */
+    protected $media_pension = false;
+
+    /**
      * @var float
      */
     protected $descuento;
@@ -416,10 +421,10 @@ class reserva extends fs_model {
      * @return int
      */
     public function getCantidadAdultos() {
-        if ( $this->cantidad_adultos === null && is_array( $this->huespedes ) ) {
+        if ( $this->cantidad_adultos === null && is_array( $this->pasajeros ) ) {
             $result = 0;
-            /* @var Huesped $huesped */
-            foreach ( $this->huespedes as $huesped ) {
+            /* @var pasajero_por_reserva $huesped */
+            foreach ( $this->pasajeros as $huesped ) {
                 if ( $huesped->esAdulto() ) {
                     $result ++;
                 }
@@ -445,10 +450,10 @@ class reserva extends fs_model {
      * @return int
      */
     public function getCantidadMenores() {
-        if ( $this->cantidad_menores === null && is_array( $this->huespedes ) ) {
+        if ( $this->cantidad_menores === null && is_array( $this->pasajeros ) ) {
             $result = 0;
-            /* @var Huesped $huesped */
-            foreach ( $this->huespedes as $huesped ) {
+            /* @var pasajero_por_reserva $huesped */
+            foreach ( $this->pasajeros as $huesped ) {
                 if ( $huesped->esMenor() ) {
                     $result ++;
                 }
@@ -559,10 +564,22 @@ class reserva extends fs_model {
         ( isset( $data['fecha_out'] ) ) ? $this->setFechaOut($data['fecha_out']) : null;
         $this->cantidad_adultos = ( isset( $data['cantidad_adultos'] ) ) ? $data['cantidad_adultos'] : null;
         $this->cantidad_menores = ( isset( $data['cantidad_menores'] ) ) ? $data['cantidad_menores'] : null;
+        $this->media_pension = ( isset( $data['media_pension'] ) ) ? true : false;
         $this->descuento = ( isset( $data['descuento'] ) ) ? $data['descuento'] : 0;
         $this->idtarifa = ( isset( $data['idtarifa'] ) ) ? $data['idtarifa'] : null;
         if ( $this->idtarifa ) {
             $this->tarifa = $this->get_tarifa( $this->idtarifa );
+            //Si el tipo de convenio es Invitado pero tiene media pensión
+            // usar tarifa de afiliado
+            if($this->getTarifa()->getGrupoCliente()->nombre == 'Invitado' &&
+               $this->media_pension) {
+                // OJO CON ESTO ES UNA NEGRADA PERO NO HAY OTRA
+                // LA CATEGORÍA ACTIVO SIMEPRE DEBE SER LA 1
+                $this->tarifa = $this->tarifa->fetchByCategoriaYTipoPasajero(
+                    $this->tarifa->getCategoriaHabitacion(),
+                    $this->grupo_clientes->get('1')
+                );
+            }
         }
 
         if ( isset( $data['idsHabitaciones'] ) ) {
@@ -857,17 +874,33 @@ class reserva extends fs_model {
     public function calcularTotales() {
         if($this->getTarifa()) {
             $monto = $this->getTarifa()->getMonto();
-            $cantPasajeros = $this->getCantidadAdultos() + $this->getCantidadMenores();
+            $cantAdultos = $this->getCantidadAdultos();
+            $cantMenores = $this->getCantidadMenores();
             $cantDias = $this->getCantidadDias();
-            $totalPorDia = $monto*$cantDias;
-            $total = $totalPorDia*$cantPasajeros;
+            $cantPasajeros = (int) ($cantAdultos+$cantMenores);
+
+            //Regla de negocio:
+            //Si la reserva es para una sola persona tarifa+60%
+            if($cantPasajeros === 1) {
+                $monto += $monto*0.6;
+            }
+
+            $totalPorDia = $monto*$cantAdultos;
+
+            // Si hay menores multiplica la cantidad de menores
+            // por el 60% del valor de la tarifa
+            if($cantMenores > 0) {
+                $totalPorDia += ($cantMenores*$monto*0.6);
+            }
+
+            $total = $totalPorDia*$cantDias;
             $descuento = (is_numeric($this->descuento) &&  $this->descuento > 0) ? $total*(1/$this->descuento) : 0;
             $this->totales = array(
                 'monto' => $monto,
                 'pordia' => $totalPorDia,
                 'total' => $total,
                 'decuento' => $this->descuento,
-                'final' => $total - $descuento
+                'final' => ($total - $descuento)
             );
         }
     }
