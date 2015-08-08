@@ -40,6 +40,8 @@ class pasajero_por_reserva extends fs_model {
      */
     protected $idreserva = null;
 
+    const DATE_FORMAT = 'Y-m-d';
+
     const EDAD_MAX_MENOR = 5;
 
     const EDAD_MIN_MENOR = 2;
@@ -61,7 +63,9 @@ class pasajero_por_reserva extends fs_model {
         $this->nombre_completo = (isset($data['nombre_completo'])) ? $data['nombre_completo'] : null;
         $this->tipo_documento = (isset($data['tipo_documento'])) ? $data['tipo_documento'] : null;
         $this->documento = (isset($data['documento'])) ? $data['documento'] : null;
-        $this->fecha_nacimiento = (isset($data['fecha_nacimiento'])) ? $data['fecha_nacimiento'] : null;
+        if(isset($data['fecha_nacimiento'])) {
+            $this->setFechaNacimiento($data['fecha_nacimiento']);
+        }
         $this->idreserva = (isset($data['idreserva'])) ? $data['idreserva'] : null;
     }
 
@@ -163,11 +167,29 @@ class pasajero_por_reserva extends fs_model {
      * @return pasajero_por_reserva
      */
     public function setFechaNacimiento( $fecha_nacimiento ) {
-        $this->fecha_nacimiento = $fecha_nacimiento;
+        $date = new DateTime($fecha_nacimiento);
+        $this->fecha_nacimiento = $date->format(self::DATE_FORMAT);
 
         return $this;
     }
 
+    /**
+     * @return int
+     */
+    public function getIdReserva() {
+        return $this->idreserva;
+    }
+
+    /**
+     * @param int $idreserva
+     *
+     * @return habitacion_por_reserva
+     */
+    public function setIdReserva($idreserva = 0) {
+        $this->idreserva = $idreserva;
+
+        return $this;
+    }
 
     /**
      * @return bool
@@ -207,13 +229,12 @@ class pasajero_por_reserva extends fs_model {
     /**
      * @param int $idreserva
      *
-     * @return array
+     * @return pasajero_por_reserva[]
      */
     public static function getByReserva($idreserva) {
         if(intval($idreserva) > 0) {
-            $habitacion_por_reserva = new self();
-
-            return $habitacion_por_reserva->fetchAllByReserva($idreserva);
+            $pasajero_por_reserva = new self();
+            return $pasajero_por_reserva->fetchAllByReserva($idreserva);
         } else {
             return array();
         }
@@ -222,10 +243,25 @@ class pasajero_por_reserva extends fs_model {
     /**
      * @param $id
      *
-     * @return bool|pabellon
+     * @return bool|pasajero_por_reserva
+     */
+    public static function get($id) {
+        $pasajero_por_reserva = new self();
+
+        return $pasajero_por_reserva->fetch($id);
+    }
+
+    /**
+     * @param $id
+     *
+     * @return bool|pasajero_por_reserva
      */
     public function fetch($id) {
-        $pasajero_por_reserva = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE id = " . (int)$id . ";");
+        $pasajero_por_reserva = $this->cache->get('reserva_pasajero_por_reserva_'.$id);
+        if($id && !$pasajero_por_reserva) {
+            $pasajero_por_reserva = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE id = " . (int)$id . ";");
+            $this->cache->set('reserva_pasajero_por_reserva_'.$id, $pasajero_por_reserva);
+        }
         if ($pasajero_por_reserva) {
             return new pasajero_por_reserva($pasajero_por_reserva[0]);
         } else {
@@ -338,6 +374,8 @@ class pasajero_por_reserva extends fs_model {
                        $this->var2str($this->documento) .",".
                        $this->var2str($this->fecha_nacimiento) .",".
                        $this->idreserva .");";
+                ////BUUUUUUUUUUG
+                //$this->setId( intval( $this->db->lastval() ) );
             }
 
             return $this->db->exec($sql);
@@ -360,10 +398,6 @@ class pasajero_por_reserva extends fs_model {
      */
     private function clean_cache() {
         $this->cache->delete('m_pasajeros_por_reserva_all');
-    }
-
-    private function get_habitacion($idhabitacion) {
-        return habitacion::get($idhabitacion);
     }
 
     public function __toString() {

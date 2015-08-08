@@ -12,3 +12,26 @@
     from { transform: scale(1) rotate(0deg);}
     to { transform: scale(1) rotate(360deg);}
 }
+
+.bottom-buffer {
+    margin-bottom: 15px;
+}
+
+.defecto {
+    background-color: #D8D8D8; }
+
+.disponible {
+    background-color: white; }
+
+.reservada {
+    background-color: yellow; }
+
+.reservada_senia {
+    background-color: orange; }
+
+.ocupada {
+    background-color: red; }
+
+.nodisponible {
+    background-color: brown;
+}

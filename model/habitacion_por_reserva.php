@@ -99,6 +99,24 @@ class habitacion_por_reserva extends fs_model {
     }
 
     /**
+     * @return int
+     */
+    public function getIdReserva() {
+        return $this->idreserva;
+    }
+
+    /**
+     * @param int $idreserva
+     *
+     * @return habitacion_por_reserva
+     */
+    public function setIdReserva($idreserva = 0) {
+        $this->idreserva = $idreserva;
+
+        return $this;
+    }
+
+    /**
      * @return string
      */
     protected function install() {
@@ -128,7 +146,11 @@ class habitacion_por_reserva extends fs_model {
      * @return bool|pabellon
      */
     public function fetch($id) {
-        $habitacion_por_reserva = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE id = " . (int)$id . ";");
+        $habitacion_por_reserva = $this->cache->get('reserva_habitacion_por_reserva_'.$id);
+        if($id && !$habitacion_por_reserva) {
+            $habitacion_por_reserva = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE id = " . (int)$id . ";");
+            $this->cache->set('reserva_habitacion_por_reserva_'.$id, $habitacion_por_reserva);
+        }
         if ($habitacion_por_reserva) {
             return new habitacion_por_reserva($habitacion_por_reserva[0]);
         } else {
@@ -160,13 +182,14 @@ class habitacion_por_reserva extends fs_model {
      * @return array
      */
     public function fetchAllByReserva($idreserva) {
-        $habporreslist = array();
-        if(intval($idreserva) > 0) {
+        $habporreslist = $this->cache->get_array('reserva_habitacion_por_reserva_'.$idreserva);
+        if(!$idreserva || !$habporreslist) {
             $habsporres = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE idreserva = " . (int)$idreserva . " ORDER BY id ASC;");
             if ($habsporres) {
                 foreach ($habsporres as $habsporre) {
                     $habporreslist[] = new habitacion_por_reserva($habsporre);
                 }
+                $this->cache->set('reserva_habitacion_por_reserva_'.$idreserva, $habporreslist);
             }
         }
         return $habporreslist;
@@ -201,6 +224,14 @@ class habitacion_por_reserva extends fs_model {
         return $status;
     }
 
+    protected function insert() {
+
+    }
+
+    protected function update() {
+
+    }
+
     /**
      * @return bool
      */
@@ -213,6 +244,8 @@ class habitacion_por_reserva extends fs_model {
             } else {
                 $sql = "INSERT INTO " . $this->table_name . " (idhabitacion,idreserva) VALUES (" .
                        $this->idhabitacion . ",". $this->idreserva .");";
+                ////BUUUUUUUUUUG
+                //$this->setId( intval( $this->db->lastval() ) );
             }
 
             return $this->db->exec($sql);
@@ -242,5 +275,14 @@ class habitacion_por_reserva extends fs_model {
             return habitacion::get($idhabitacion);
         }
     }
+
+    public function __toString() {
+        return
+            $this->idhabitacion . ':' .
+            $this->idreserva . ':' .
+            $this->id;
+    }
+
+
 
 }

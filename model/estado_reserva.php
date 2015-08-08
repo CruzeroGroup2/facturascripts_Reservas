@@ -23,9 +23,11 @@ class estado_reserva extends fs_model {
     protected $descripcion;
 
     const INCOMPLETA = 'Incompleta';
-    const SINSENA = 'Sin Seniar';
-    const SENADO =  'Se�ado';
+    const SINSENA = 'Sin Señar';
+    const SENADO =  'Señado';
     const PAGO =  'Pago';
+    const CHECKIN =  'Checked-In';
+    const CANCELADA =  'Cancelada';
 
     function __construct($data = array()) {
         parent::__construct('estado_reserva', 'plugins/reservas/');
@@ -99,9 +101,11 @@ INSERT INTO
   `$this->table_name`(`descripcion`)
 VALUES
   ('Incompleta'),
-  ('Sin Se�ar'),
-  ('Se�ado'),
-  ('Pago');
+  ('Sin Señar'),
+  ('Señado'),
+  ('Pago'),
+  ('Checked-In'),
+  ('Cancelada');
 SQL;
 
         return $sql;
@@ -128,7 +132,11 @@ SQL;
      * @return bool|estado_reserva
      */
     public function fetch($id) {
-        $estado = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE id = " . (int)$id . ";");
+        $estado = $this->cache->get('reserva_estado_reserva_'.$id);
+        if($id && !$estado) {
+            $estado = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE id = " . (int)$id . ";");
+            $this->cache->set('reserva_estado_reserva_'.$id, $estado);
+        }
         if ($estado) {
             return new estado_reserva($estado[0]);
         } else {
@@ -187,7 +195,7 @@ SQL;
         $this->descripcion = $this->no_html($this->descripcion);
 
         if (strlen($this->descripcion) < 1 OR strlen($this->descripcion) > 50) {
-            $this->new_error_msg("Descripcion no v�lida.");
+            $this->new_error_msg("Descripcion no válida.");
         } else {
             $status = true;
         }

@@ -1,5 +1,6 @@
 {include="header"}
 <link href="plugins/reservas/view/css/custom.css" rel="stylesheet" />
+<script type="text/javascript" src="view/js/jquery.validate.min.js"></script>
 <script type="text/javascript" src="plugins/reservas/view/js/nueva_reserva.js"></script>
 
 <div id="modal_fecha" class="modal fade" role="dialog">
@@ -11,64 +12,61 @@
             </div>
             <div class="modal-body">
                 <div class="container-fluid">
-                    <form id="fecha" action="{$fsc->new_url(2)}" method="post">
-                        <input type="hidden" name="codcliente" id="codcliente" value="" />
-                        <div class="row">
-                            <div class="col-md-3">
+                    <div id="errors" class="alert alert-danger hidden"></div>
+                    <form id="fecha" action="{$fsc->new_url($fsc->step)}" method="post">
+                        <input type="hidden" name="codcliente" id="codcliente" value="{$fsc->getReserva()->getCodCliente()}" />
+                        <input type="hidden" name="idsHabitaciones" id="idsHabitaciones" value="{function="implode(',', $fsc->getReserva()->getHabitaciones(true))"}" />
+                        <div class="row form-group">
+                            <div class="col-md-4">
                                 <label><span>Fecha de Ingreso</span>
-                                    <input type="date" name="fecha_in" id="fecha_in" value="{function="date('Y-m-d')"}" />
+                                    <input type="date" name="fecha_in" id="fecha_in" class="form-control input-sm"  value="{$fsc->getReserva()->getFechaIn()}" required data-msg="No ha ingresado fecha de ingreso" />
                                 </label>
                             </div>
-                            <div class="col-md-offset-1 col-md-3">
+                            <div class="col-md-offset-1 col-md-4">
                                 <label><span>Fecha de Egreso</span>
-                                    <input type="date" name="fecha_out" id="fecha_out" value="{function="date('Y-m-d')"}" />
+                                    <input type="date" name="fecha_out" id="fecha_out" class="form-control input-sm"  value="{$fsc->getReserva()->getFechaOut()}" required data-msg="No ha ingresado fecha de egreso" />
                                 </label>
                             </div>
                         </div>
-                        <div class="row">
+                        <div class="row form-group">
                             <div class="col-md-4">
                                 <label><span>Cantidad de Huespedes</span>
-                                    <input type="text" name="cantidad_adultos" id="cantidad_adultos" value="0" />
+                                    <input type="text" name="cantidad_adultos" id="cantidad_adultos" class="form-control input-sm"
+                                           value="{$fsc->getReserva()->getCantidadAdultos()}" required min="1" data-msg-min="Debe ingresar al menos 1 huesped adulto" />
                                 </label>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-offset-1 col-md-4">
                                 <label><span>Cantidad de Menores</span>
-                                    <input type="text" name="cantidad_menores" id="cantidad_menores" value="0" />
+                                    <input type="text" name="cantidad_menores" id="cantidad_menores" class="form-control input-sm"
+                                           value="{$fsc->getReserva()->getCantidadMenores()}" />
                                 </label>
                             </div>
                         </div>
-                        <div class="row">
+                        <div class="row form-group">
                             <div class="col-md-5">
                                 <label for="idcategoria">Categoría de Habitacion</label>
-                                <select id="idcategoria" name="idcategoria" class="form-control">
+                                <select id="idcategoria" name="idcategoria" class="form-control input-sm"
+                                        {if="$fsc->getReserva()->getCategoriaHabitacion() != null"} readonly="readonly"{/if}
+                                        required data-msg="Debe seleciconar la categoria de la habitacion">
                                     <option value="">Seleccione...</option>
                                     {loop="$fsc->getCategoriaHabitacion()->fetchAll()"}
-                                    <option value="{$value->getId()}"{if="$fsc->getHabitacion()->getIdCategoria() == $value->getId()"} selected="selected"{/if}>{$value->getNombre()}</option>
+                                    <option value="{$value->getId()}"{if="$fsc->getReserva()->getCategoriaHabitacion() == $value->getId()"} selected="selected"{/if}>{$value->getNombre()}</option>
                                     {/loop}
                                 </select>
                             </div>
                         </div>
-                        <div class="row">
+                        <div class="row form-group">
                             <div class="col-md-4">
                                 <label for="nombre_reserva">Nombre de la Reserva</label>
                             </div>
-                            <div class="col-md-8">
-                                <input id="nombre_reserva" class="form-control" name="nombre_reserva" type="text" />
+                            <div class="col-md-6">
+                                <input id="nombre_reserva" class="form-control input-sm" name="nombre_reserva" type="text"
+                                       value="{$fsc->getReserva()->getCliente()->nombre}" required data-msg="Debe ingresar el nombre de la reserva" />
                                 <span id="cliente_loading" class="glyphicon glyphicon-refresh glyphicon-refresh-animate hidden"></span>
-                                <script type="text/javascript">
-                                    $(document).ready(function() {
-                                        $("#nombre_reserva").autocomplete({
-                                            serviceUrl: 'index.php?page=nueva_venta&tipo=factura',
-                                            paramName: 'buscar_cliente',
-                                            minChars: 3,
-                                            onSearchStart: function(query) {
-                                                $('#cliente_loading').removeClass('hidden');
-                                            },
-                                            onSearchComplete: autocomplete_response,
-                                            onSelect: autcomplete_select
-                                        });
-                                    });
-                                </script>
+                            </div>
+                            <div class="col-md-2">
+                                <input id="media_pension" type="checkbox" name="media_pension">
+                                <label for="media_pension">Media Pension</label>
                             </div>
                         </div>
                     </form>
@@ -98,6 +96,34 @@
 <script type="text/javascript">
     $(document).ready(function() {
         $("#modal_fecha").modal('show');
+        $("#nombre_reserva").autocomplete({
+            serviceUrl: 'index.php?page=nueva_venta&tipo=factura',
+            paramName: 'buscar_cliente',
+            minChars: 3,
+            onSearchStart: function(query) {
+                $('#cliente_loading').removeClass('hidden');
+            },
+            onSearchComplete: autocomplete_response,
+            onSelect: autcomplete_select
+        });
+        $('#fecha').validate({
+            errorLabelContainer: "#errors",
+            invalidHandler: function(event, validator) {
+                var errors = validator.numberOfInvalids();
+                if (errors) {
+                    $("#errors").removeClass('hidden').addClass('show');
+                } else {
+                    $("#errors").removeClass('show').addClass('hidden');
+                }
+            },
+            highlight: function(element) {
+                $(element).closest('div').removeClass('has-success').addClass('has-error');
+            },
+            unhighlight: function(element) {
+                $(element).closest('div').removeClass('has-error').addClass('has-success');
+            },
+            errorElement: 'li'
+        })
     });
 </script>
 

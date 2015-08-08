@@ -246,7 +246,7 @@ class habitacion extends fs_model {
     /**
      * @param estado_habitacion $estado
      *
-     * @return $this
+     * @return habitacion
      */
     public function setEstado(estado_habitacion $estado) {
         $this->estado = $estado;
@@ -291,7 +291,11 @@ class habitacion extends fs_model {
      * @return bool|habitacion
      */
     public function fetch($id) {
-        $habitacion = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE id = " . (int)$id . ";");
+        $habitacion = $this->cache->get('reserva_habitacion_'.$id);
+        if($id && !$habitacion) {
+            $habitacion = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE id = " . (int)$id . ";");
+            $this->cache->set('reserva_habitacion_'.$id, $habitacion);
+        }
         if ($habitacion) {
             return new habitacion($habitacion[0]);
         } else {
@@ -300,7 +304,7 @@ class habitacion extends fs_model {
     }
 
     /**
-     * @return bool|tipo_cliente
+     * @return habitacion[]
      */
     public function fetchAll() {
         $habitacionlist = $this->cache->get_array('m_habitacion_all');
@@ -317,6 +321,33 @@ class habitacion extends fs_model {
         return $habitacionlist;
     }
 
+    /**
+     * @param int $idpabellon
+     *
+     * @return habitacion[]
+     */
+    public function fetchByPabellon($idpabellon = 0) {
+        $habitacionlist = array();
+        if (!$habitacionlist) {
+            $habitaciones = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE idpabellon = $idpabellon ORDER BY numero ASC;");
+            if ($habitaciones) {
+                foreach ($habitaciones as $habitacion) {
+                    $habitacionlist[] = new habitacion($habitacion);
+                }
+            }
+        }
+
+        return $habitacionlist;
+    }
+
+    /**
+     * @param null $minGuestPorHab
+     * @param null $arrival
+     * @param null $departure
+     * @param null $categoria
+     *
+     * @return array
+     */
     public function findByAmount($minGuestPorHab = null, $arrival = null, $departure = null, $categoria = null) {
         $sql = "SELECT
   count(id) AS cantidadHabitaciones,
@@ -329,7 +360,7 @@ WHERE id NOT IN (
   SELECT habitacion_por_reserva.idhabitacion
   FROM habitacion_por_reserva
     LEFT JOIN reserva ON (reserva.id = habitacion_por_reserva.idreserva)
-  WHERE fecha_in >= '$arrival' OR fecha_out <= '$departure'
+  WHERE fecha_in >= '$arrival' AND fecha_out <= '$departure'
 )";
 
         if(is_int($minGuestPorHab) || $minGuestPorHab > 0) {
@@ -342,7 +373,7 @@ WHERE id NOT IN (
 
         $sql .= '
 GROUP BY plaza_maxima, idpabellon, idcategoria
-ORDER BY plaza_maxima DESC;';
+ORDER BY plaza_maxima ASC;';
         return $this->db->select($sql);
     }
 
@@ -447,18 +478,24 @@ ORDER BY plaza_maxima DESC;';
     }
 
     private function get_pabellon($idpabellon) {
-        return pabellon::get($idpabellon);
+        if($idpabellon) {
+            return pabellon::get($idpabellon);
+        }
     }
 
     private function get_tipohabitacion($id_tipohabitacion) {
     }
 
     private function get_categoria($idcategoria) {
-        return categoria_habitacion::get($idcategoria);
+        if($idcategoria) {
+            return categoria_habitacion::get($idcategoria);
+        }
     }
 
     private function get_estado($idestado) {
-        return estado_habitacion::get($idestado);
+        if($idestado) {
+            return estado_habitacion::get($idestado);
+        }
     }
 
 }

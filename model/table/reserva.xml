@@ -46,6 +46,12 @@
       <nulo>NO</nulo>
    </columna>
    <columna>
+      <nombre>media_pension</nombre>
+      <tipo>integer</tipo>
+      <nulo>NO</nulo>
+      <defecto>0</defecto>
+   </columna>
+   <columna>
       <nombre>descuento</nombre>
       <tipo>double precision</tipo>
       <nulo>NO</nulo>

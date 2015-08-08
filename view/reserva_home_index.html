@@ -1,4 +1,7 @@
 {include="header"}
+<link href="plugins/reservas/view/css/custom.css" rel="stylesheet" />
+<script type="text/javascript" src="view/js/jquery.validate.min.js"></script>
+<script type="text/javascript" src="plugins/reservas/view/js/reserva_home.js"></script>
 
 <div class="container-fluid">
     <div class="row">
@@ -17,56 +20,50 @@
     </div>
 </div>
 
-<div class="table-responsive">
-    <table class="table table-hover table-bordered table-condensed">
+<div class="container">
+    <h2>Disponibilidad</h2>
+    <div class="row bottom-buffer">
+        <div class="col-md-offset-5 col-md-7">
+            <form action="{$fsc->url()}" method="post" class="form-inline">
+                <div class="form-group">
+                    <label for="fecha_desde">Fecha Desde:</label>
+                    <input type="date" id="fecha_desde" name="fecha_desde" class="form-control input-sm" placeholder="Ingresar fecha Desde" value="{$fsc->getFechaDesde()}">
+                </div>
+                <div class="form-group">
+                    <label for="fecha_hasta">Fecha Hasta:</label>
+                    <input type="date" id="fecha_hasta" name="fecha_hasta" class="form-control input-sm" placeholder="Ingresar fecha Hasta" value="{$fsc->getFechaHasta()}">
+                </div>
+                <button type="submit" name="buscar" id="buscar" class="btn btn-primary">Buscar</button>
+            </form>
+        </div>
+    </div>
+    <table class=" table table-condensed table-bordered table-striped">
         <thead>
-            <tr>
-                <th>Cliente</th>
-                <th>Habitacion</th>
-                <th>Tafira</th>
-                <th>Estado</th>
-                <th>Tipo Huesped</th>
-                <th>Fecha Ingreso</th>
-                <th>Fecha Egreso</th>
-                <th>Cantidad Adultos</th>
-                <th>Cantidad Menores</th>
-                <th>Pago</th>
-                <th class="text-right">Opciones</th>
-            </tr>
+        <col style="width: 100px;" />
+        <tr>
+            <th>Habitacion</th>
+            {loop="$fsc->rango_fechas"}
+            <th>{$value->format('d/m')}</th>
+            {/loop}
+        </tr>
         </thead>
         <tbody>
-        {if="$fsc->reservas"}
-            {loop="$fsc->reservas"}
+        {loop="$fsc->pabellones"}
             <tr>
-                <td>{$value->getCliente()->nombre}</td>
-                <td>{function="implode(', ',$value->getHabitaciones(true))"}</td>
-                <td>{$value->getTarifa()->getMonto()}</td>
-                <td>{$value->getEstado()->getDescripcion()}</td>
-                <td>{$value->getGrupoCliente()->nombre}</td>
-                <td>{$value->getFechaIn()}</td>
-                <td>{$value->getFechaOut()}</td>
-                <td>{$value->getCantidadAdultos()}</td>
-                <td>{$value->getCantidadMenores()}</td>
-                <td>{$value->getPago()}</td>
-                <td>
-                    <a href="{$fsc->edit_url($value)}">
-                        <span class="glyphicon glyphicon-pencil"></span>
-                    </a>
-                    &nbsp;
-                    <a onclick="return confirm('Esta seguro que desea eliminar la Reserva?')"
-                       href="{$fsc->delete_url($value)}">
-                        <span class="glyphicon glyphicon-trash"></span>
-                    </a>
-                </td>
+                <th colspan={$fsc->cantidad_dias}" class="text-center">{$value->getDescripcion()}</th>
+            </tr>
+            {loop="$value->fetchHabitacionesByPabellon()"}
+            <tr>
+                <td>{$value->getNumero()}</td>
+                {loop="$fsc->rango_fechas"}
+                    {$fsc->getHabitacionCell($value2, $value3)}
+                {/loop}
             </tr>
             {/loop}
-        {else}
-            <tr>
-                <td colspan="11">No hay reservas disponibles</td>
-            </tr>
-        {/if}
+        {/loop}
         </tbody>
     </table>
 </div>
+
 
 {include="footer"}

@@ -106,9 +106,11 @@ SQL;
      * @return bool|estado_habitacion
      */
     public static function get($id) {
-        $estado = new self();
+        if($id) {
+            $estado = new self();
 
-        return $estado->fetch($id);
+            return $estado->fetch($id);
+        }
     }
 
     /**
@@ -117,7 +119,11 @@ SQL;
      * @return bool|estado_habitacion
      */
     public function fetch($id) {
-        $estado = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE id = " . (int)$id . ";");
+        $estado = $this->cache->get('reserva_estado_habitacion_'.$id);
+        if($id && !$estado) {
+            $estado = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE id = " . (int)$id . ";");
+            $this->cache->set('reserva_estado_habitacion_'.$id, $estado);
+        }
         if ($estado) {
             return new estado_habitacion($estado[0]);
         } else {

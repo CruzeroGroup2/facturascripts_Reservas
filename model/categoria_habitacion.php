@@ -104,7 +104,11 @@ SQL;
      * @return bool|categoria_habitacion
      */
     public function fetch($id) {
-        $categoria = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE id = " . (int)$id . ";");
+        $categoria = $this->cache->get('reserva_categoria_habitacion_'.$id);
+        if($id && !$categoria) {
+            $categoria = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE id = " . (int)$id . ";");
+            $this->cache->set('reserva_categoria_habitacion_'.$id, $categoria);
+        }
         if ($categoria) {
             return new categoria_habitacion($categoria[0]);
         } else {

@@ -2,6 +2,8 @@
 
 require_once 'base/fs_model.php';
 
+require_model('habitacion.php');
+
 
 class pabellon extends fs_model {
 
@@ -120,7 +122,11 @@ SQL;
      * @return bool|pabellon
      */
     public function fetch($id) {
-        $pabellon = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE id = " . (int)$id . ";");
+        $pabellon = $this->cache->get('reserva_pabellon_'.$id);
+        if($id && !$pabellon) {
+            $pabellon = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE id = " . (int)$id . ";");
+            $this->cache->set('reserva_pabellon_'.$id, $pabellon);
+        }
         if ($pabellon) {
             return new pabellon($pabellon[0]);
         } else {
@@ -129,7 +135,7 @@ SQL;
     }
 
     /**
-     * @return bool|array
+     * @return pabellon[]
      */
     public function fetchAll() {
         $pabellonlist = $this->cache->get_array('m_pabellon_all');
@@ -144,6 +150,18 @@ SQL;
         }
 
         return $pabellonlist;
+    }
+
+    /**
+     * @param int $id
+     *
+     * @return habitacion[]
+     */
+    public function fetchHabitacionesByPabellon($id = 0) {
+        $idpabellon = $id != 0 ? $id : $this->getId();
+
+        $habitacion = new habitacion();
+        return $habitacion->fetchByPabellon($idpabellon);
     }
 
     /**

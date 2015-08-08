@@ -30,12 +30,12 @@ class reserva extends fs_model {
     protected $cliente;
 
     /**
-     * @var array
+     * @var habitacion_por_reserva[]
      */
     protected $habitaciones;
 
     /**
-     * @var array
+     * @var pasajero_por_reserva[]
      */
     protected $pasajeros;
 
@@ -119,6 +119,11 @@ class reserva extends fs_model {
      */
     public $totales;
 
+    /**
+     * @var string[]
+     */
+    private $remover_pasajeros;
+
     const DATE_FORMAT = 'Y-m-d';
 
     /**
@@ -146,6 +151,18 @@ class reserva extends fs_model {
 
             if (isset($data['id'])) {
                 $this->id = $data['id'];
+            }
+        }
+
+        if($this->habitaciones) {
+            foreach($this->habitaciones as $habitacion) {
+                $habitacion->setIdReserva($this->id);
+            }
+        }
+
+        if($this->pasajeros) {
+            foreach($this->pasajeros as $pasajero) {
+                $pasajero->setIdReserva($this->id);
             }
         }
 
@@ -192,13 +209,13 @@ class reserva extends fs_model {
     /**
      * @param $stringify
      *
-     * @return array
+     * @return string[]|habitacion_por_reserva[]
      */
     public function getHabitaciones($stringify = false) {
         $result = array();
         if($stringify) {
             foreach($this->habitaciones as $habitacion) {
-                $result[] = $habitacion->getHabitacion()->getId();
+                $result[] = (string) $habitacion;
             }
         } else {
             $result = $this->habitaciones;
@@ -214,9 +231,19 @@ class reserva extends fs_model {
     public function setHabitaciones( $habitaciones = array() ) {
         $this->habitaciones = array();
         foreach ( $habitaciones as $habitacion ) {
+            $datos_habitacion = explode(':',$habitacion);
+            //Si no estÃ¡ el idreserva
+            if(!isset($datos_habitacion[1])) {
+                $datos_habitacion[1] = $this->getId();
+            }
+            //Si no estÃ¡ el id
+            if(!isset($datos_habitacion[2])) {
+                $datos_habitacion[2] = null;
+            }
             $this->habitaciones[] = new habitacion_por_reserva( array(
-                'idhabitacion' => $habitacion,
-                'idreserva' => $this->getId()
+                'idhabitacion' => $datos_habitacion[0],
+                'idreserva' => $datos_habitacion[1],
+                'id' => $datos_habitacion[2]
             ) );
         }
         return $this;
@@ -225,7 +252,7 @@ class reserva extends fs_model {
     /**
      * @param $stringify
      *
-     * @return array
+     * @return string[]|pasajero_por_reserva[]
      */
     public function getPasajeros($stringify = false) {
         $result = array();
@@ -247,25 +274,35 @@ class reserva extends fs_model {
     public function setPasajeros($pasajeros = array() ) {
         $this->pasajeros = array();
         foreach ($pasajeros as $pasajero) {
-            $datos_pasajero = explode(':',$pasajero);
-            //Si no está el idreserva
-            if(!isset($datos_pasajero[4])) {
-                $datos_pasajero[4] = $this->getId();
-            }
-            //Si no está el idpasajeroporreserva
-            if(!isset($datos_pasajero[5])) {
-                $datos_pasajero[5] = 0;
-            }
-            $this->pasajeros[] = new pasajero_por_reserva( array(
-                'nombre_completo' => $datos_pasajero[0],
-                'tipo_documento' => $datos_pasajero[1],
-                'documento' => $datos_pasajero[2],
-                'fecha_nacimiento' => $datos_pasajero[3],
-                'idreserva' => $datos_pasajero[4],
-                'id' => $datos_pasajero[5]
-            ) );
+            $this->pasajeros[] = $this->__parsePasajero($pasajero);
         }
         return $this;
+    }
+
+    /**
+     * @param $string
+     *
+     * @return pasajero_por_reserva
+     */
+    private function __parsePasajero($string) {
+        $datos_pasajero = explode(':',$string);
+        //Si no estÃ¡ el idreserva
+        if(!isset($datos_pasajero[4])) {
+            $datos_pasajero[4] = $this->getId();
+        }
+        //Si no estÃ¡ el idpasajeroporreserva
+        if(!isset($datos_pasajero[5])) {
+            $datos_pasajero[5] = 0;
+        }
+        return new pasajero_por_reserva( array(
+            'nombre_completo' => $datos_pasajero[0],
+            'tipo_documento' => $datos_pasajero[1],
+            'documento' => $datos_pasajero[2],
+            'fecha_nacimiento' => $datos_pasajero[3],
+            'idreserva' => $datos_pasajero[4],
+            'id' => $datos_pasajero[5]
+        ) );
+
     }
 
     /**
@@ -476,6 +513,35 @@ class reserva extends fs_model {
     }
 
     /**
+     * @return bool
+     */
+    public function getMediaPension() {
+        return $this->media_pension;
+    }
+
+    /**
+     * @param bool|false $media_pension
+     *
+     * @return reserva
+     */
+    public function setMediaPension($media_pension = false) {
+        $this->media_pension = $media_pension;
+
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getCategoriaHabitacion() {
+        if($this->habitaciones) {
+            //Obtengo una de las habitaciones
+            $hab = $this->habitaciones[0];
+            return $hab->getHabitacion()->getIdCategoria();
+        }
+    }
+
+    /**
      * @return float
      */
     public function getDescuento() {
@@ -554,39 +620,73 @@ class reserva extends fs_model {
 
     public function setValues( $data = array() ) {
         $this->setId( $data );
+        //Datos bÃ¡sicos de la reserva
+        //Obtener informacion relacionada al cliente
         $this->codcliente = ( isset( $data['codcliente'] ) ) ? $data['codcliente'] : null;
         if ( $this->codcliente ) {
             $this->cliente = $this->get_cliente( $this->codcliente );
             $this->codgrupo = $this->cliente->codgrupo;
             $this->grupo_clientes = $this->get_grupo_clientes( $this->codgrupo );
+        } else {
+            $this->cliente = new cliente();
+            $this->grupo_clientes = new grupo_clientes();
         }
-        ( isset( $data['fecha_in'] ) ) ? $this->setFechaIn($data['fecha_in']) : null;
-        ( isset( $data['fecha_out'] ) ) ? $this->setFechaOut($data['fecha_out']) : null;
-        $this->cantidad_adultos = ( isset( $data['cantidad_adultos'] ) ) ? $data['cantidad_adultos'] : null;
-        $this->cantidad_menores = ( isset( $data['cantidad_menores'] ) ) ? $data['cantidad_menores'] : null;
-        $this->media_pension = ( isset( $data['media_pension'] ) ) ? true : false;
-        $this->descuento = ( isset( $data['descuento'] ) ) ? $data['descuento'] : 0;
-        $this->idtarifa = ( isset( $data['idtarifa'] ) ) ? $data['idtarifa'] : null;
-        if ( $this->idtarifa ) {
-            $this->tarifa = $this->get_tarifa( $this->idtarifa );
-            //Si el tipo de convenio es Invitado pero tiene media pensión
-            // usar tarifa de afiliado
-            if($this->getTarifa()->getGrupoCliente()->nombre == 'Invitado' &&
-               $this->media_pension) {
-                // OJO CON ESTO ES UNA NEGRADA PERO NO HAY OTRA
-                // LA CATEGORÍA ACTIVO SIMEPRE DEBE SER LA 1
-                $this->tarifa = $this->tarifa->fetchByCategoriaYTipoPasajero(
-                    $this->tarifa->getCategoriaHabitacion(),
-                    $this->grupo_clientes->get('1')
-                );
-            }
+        //Fecha ingreso
+        if(isset( $data['fecha_in'] ) ) {
+            $this->setFechaIn($data['fecha_in']);
+        }
+        //Fecha egreso
+        if(isset( $data['fecha_out'] )) {
+            $this->setFechaOut( $data['fecha_out'] );
         }
 
-        if ( isset( $data['idsHabitaciones'] ) ) {
+        $this->cantidad_adultos = ( isset( $data['cantidad_adultos'] ) ) ? $data['cantidad_adultos'] : null;
+        $this->cantidad_menores = ( isset( $data['cantidad_menores'] ) ) ? $data['cantidad_menores'] : null;
+        $this->descuento = ( isset( $data['descuento'] ) ) ? $data['descuento'] : 0;
+
+        $this->remover_pasajeros = ( isset( $data['remover_pasajeros'] ) ) ? $data['remover_pasajeros'] : array();
+        //Habitaciones
+        if ( isset( $data['idsHabitaciones'] ) && $data['idsHabitaciones']) {
             $this->setHabitaciones( explode( ',', $data['idsHabitaciones'] ) );
         } else {
             $this->habitaciones = $this->get_habitaciones( $this->getId() );
         }
+
+        //Tarifa
+        $this->idtarifa = ( isset( $data['idtarifa'] ) ) ? $data['idtarifa'] : null;
+        //Media pension
+        $this->media_pension = ( isset( $data['media_pension'] ) && $data['media_pension'] ) ? true : false;
+        if ( $this->idtarifa ) {
+            $this->setTarifa($this->get_tarifa( $this->idtarifa ));
+        } elseif($this->cliente->codcliente) {
+            $this->tarifa = new tarifa_reserva();
+            //Si el tipo de convenio es Invitado pero tiene media pensiÃ³n
+            // usar tarifa de afiliado
+            if($this->getGrupoCliente()->nombre == 'Invitado' &&
+               $this->media_pension) {
+                // OJO CON ESTO ES UNA NEGRADA PERO NO HAY OTRA
+                // LA CATEGORÃA ACTIVO SIMEPRE DEBE SER LA 1
+                $this->setTarifa($this->tarifa->fetchByCategoriaYTipoPasajero(
+                    $this->getCategoriaHabitacion(),
+                    $this->grupo_clientes->get('1')
+                ));
+            } else {
+                if(isset( $data['idcategoria'])) {
+                    $categoria_habitacion =$data['idcategoria'];
+                } else {
+                    $categoria_habitacion = $this->getCategoriaHabitacion();
+                }
+                $this->setTarifa($this->tarifa->fetchByCategoriaYTipoPasajero(
+                    $categoria_habitacion,
+                    $this->getCodGrupoCliente()
+                ));
+            }
+        }
+/*        //Si la reserva estÃ¡ incompleta la marcamos como sin seÃ±a
+        if($this->reserva->getEstado()->getDescripcion() == estado_reserva::INCOMPLETA) {
+            $this->reserva->setEstado(estado_reserva::get(estado_reserva::SINSENA));
+        }*/
+
         $this->idestado = ( isset( $data['idestado'] ) ) ? (int) $data['idestado'] : null;
         $this->estado = $this->get_estado( $this->idestado );
         $this->idpago = ( isset( $data['idpago'] ) ) ? $data['idpago'] : null;
@@ -599,7 +699,29 @@ class reserva extends fs_model {
             $this->pasajeros = $this->get_pasajeros($this->getId());
         }
         $this->comentario = ( isset( $data['comentario'] ) ) ? $data['comentario'] : null;
-        $this->calcularTotales();
+    }
+
+    public function getStep() {
+        if(!$this->getFechaOut()) {
+            return '1';
+        }
+
+        if(!$this->habitaciones) {
+            return '2';
+        }
+
+        if($this->habitaciones && $this->cliente) {
+            return '3';
+        }
+
+    }
+
+    public function getSuccesMessage() {
+        if($this->getStep() > 2) {
+            return "Reserva actualizada correctamente!";
+        } else {
+            return "Reserva agregada correctamente!";
+        }
     }
 
     protected function install() {
@@ -630,7 +752,11 @@ class reserva extends fs_model {
      * @return bool|reserva
      */
     public function fetch( $id ) {
-        $reserva = $this->db->select( "SELECT * FROM " . $this->table_name . " WHERE id = " . (int) $id . ";" );
+        $reserva = $this->cache->get('reserva_reserva_'.$id);
+        if($id && !$reserva) {
+            $reserva = $this->db->select( "SELECT * FROM " . $this->table_name . " WHERE id = " . (int) $id . ";" );
+            $this->cache->set('reserva_reserva_'.$id, $reserva);
+        }
         if ( $reserva ) {
             return new reserva( $reserva[0] );
         } else {
@@ -639,20 +765,42 @@ class reserva extends fs_model {
     }
 
     /**
-     * @return bool|array
+     * @return reserva[]
      */
     public function fetchAll() {
-        $reservalist = $this->cache->get_array( 'm_reserva_all' );
-        if ( ! $reservalist ) {
+        $reservalist = array();
+        $reservas = $this->cache->get('m_reserva_all');
+        if (!$reservas) {
             $reservas = $this->db->select( "SELECT * FROM " . $this->table_name . " ORDER BY fecha_in ASC;" );
-            if ( $reservas ) {
-                foreach ( $reservas as $reserva ) {
-                    $reservalist[] = new reserva( $reserva );
-                }
-            }
-            $this->cache->set( 'm_reserva_all', $reservalist );
+            $this->cache->set( 'm_reserva_all', $reservas);
+        }
+        foreach ( $reservas as $reserva ) {
+            $reservalist[] = new reserva( $reserva );
         }
 
+        return $reservalist;
+    }
+
+    /**
+     * @param $idhabitacion
+     * @param $fecha
+     *
+     * @return reserva[]
+     */
+    public function findByHabitacionYFecha($idhabitacion, $fecha, $limit = 1) {
+        $sql = "SELECT
+$this->table_name.*
+FROM " . $this->table_name . "
+    JOIN habitacion_por_reserva ON (reserva.id = habitacion_por_reserva.idreserva)
+WHERE idhabitacion = $idhabitacion AND (fecha_in <= '$fecha' AND fecha_out >= '$fecha')
+LIMIT $limit";
+        $reservalist = array();
+        $reservas = $this->db->select($sql);
+        if ( $reservas ) {
+            foreach ( $reservas as $reserva ) {
+                $reservalist[] = new reserva( $reserva );
+            }
+        }
         return $reservalist;
     }
 
@@ -675,11 +823,11 @@ class reserva extends fs_model {
         $this->id = (int) $this->id;
 
         if ( $this->codgrupo == 0 ) {
-            $this->new_error_msg( "Grupo de Cliente no válido." );
+            $this->new_error_msg( "Grupo de Cliente no vÃ¡lido." );
         }
 
         if($this->getCantidadDias() < 1) {
-            $this->new_error_msg( "Fecha de reserva no válida." );
+            $this->new_error_msg( "Fecha de reserva no vÃ¡lida." );
         }
 
         if (!$this->get_errors()) {
@@ -693,15 +841,14 @@ class reserva extends fs_model {
     protected function insert() {
         $sql = 'INSERT ' . $this->table_name .
                ' SET ' .
-               'codcliente = ' . $this->var2str( $this->getCodCliente() ) . ',';
-        if ( (int) $this->getIdTarifa() != 0 ) {
-            $sql .= 'idtarifa = ' . $this->intval( $this->getIdTarifa() ) . ',';
-        }
-        $sql .= 'idestado = ' . $this->intval( $this->getEstado()->getId() ) . ',' .
+               'codcliente = ' . $this->var2str( $this->getCodCliente() ) . ',' .
+                'idtarifa = ' . $this->intval( $this->getIdTarifa() ) . ',' .
+                'idestado = ' . $this->intval( $this->getEstado()->getId() ) . ',' .
                 'fecha_in = ' . $this->var2str( $this->getFechaIn() ) . ',' .
                 'fecha_out = ' . $this->var2str( $this->getFechaOut() ) . ',' .
                 'cantidad_adultos = ' . $this->intval( $this->getCantidadAdultos() ) . ',' .
                 'cantidad_menores = ' . $this->intval( $this->getCantidadMenores() ) . ',' .
+                'media_pension = ' . $this->intval( $this->getMediaPension() ) . ',' .
                 'descuento = ' . floatval( $this->getDescuento() ) . ',';
         if ( (int) $this->getIdPago() != 0 ) {
             $sql .= 'idpago = ' . $this->intval( $this->getIdPago() ) . ',';
@@ -710,25 +857,21 @@ class reserva extends fs_model {
                 ';';
 
         $ret = $this->db->exec( $sql );
-        $this->saveHabitaciones();
-        $this->savePasajeros();
-
         return $ret;
     }
 
     protected function update() {
         $sql = 'UPDATE ' . $this->table_name .
                ' SET ' .
-               'codcliente = ' . $this->var2str( $this->getCodCliente() ) . ',';
-        if ( (int) $this->getIdTarifa() != 0 ) {
-            $sql .= 'idtarifa = ' . $this->intval( $this->getIdTarifa() ) . ',';
-        }
-        $sql .= 'idestado = ' . $this->intval( $this->getEstado()->getId() ) . ',' .
-                'fecha_in = ' . $this->var2str( $this->getFechaIn() ) . ',' .
-                'fecha_out = ' . $this->var2str( $this->getFechaOut() ) . ',' .
-                'cantidad_adultos = ' . $this->intval( $this->getCantidadAdultos() ) . ',' .
-                'cantidad_menores = ' . $this->intval( $this->getCantidadMenores() ) . ',' .
-                'descuento = ' . floatval( $this->getDescuento() ) . ',';
+               'codcliente = ' . $this->var2str( $this->getCodCliente() ) . ',' .
+               'idtarifa = ' . $this->intval( $this->getIdTarifa() ) . ',' .
+               'idestado = ' . $this->intval( $this->getEstado()->getId() ) . ',' .
+               'fecha_in = ' . $this->var2str( $this->getFechaIn() ) . ',' .
+               'fecha_out = ' . $this->var2str( $this->getFechaOut() ) . ',' .
+               'cantidad_adultos = ' . $this->intval( $this->getCantidadAdultos() ) . ',' .
+               'cantidad_menores = ' . $this->intval( $this->getCantidadMenores() ) . ',' .
+               'media_pension = ' . $this->intval( $this->getMediaPension() ) . ',' .
+               'descuento = ' . floatval( $this->getDescuento() ) . ',';
         if ( (int) $this->getIdPago() != 0 ) {
             $sql .= 'idpago = ' . $this->intval( $this->getIdPago() ) . ',';
         }
@@ -736,8 +879,6 @@ class reserva extends fs_model {
                 ' WHERE id = ' . $this->getId() . ';';
 
         $ret = $this->db->exec( $sql );
-        $this->saveHabitaciones();
-        $this->savePasajeros();
         return $ret;
     }
 
@@ -750,9 +891,14 @@ class reserva extends fs_model {
             $this->clean_cache();
             if ( $this->exists() ) {
                 $ret = $this->update();
+                $this->saveHabitaciones();
+                $this->savePasajeros();
             } else {
                 $ret = $this->insert();
                 $this->setId( intval( $this->db->lastval() ) );
+                $this->saveHabitaciones();
+                $this->savePasajeros();
+
             };
         }
 
@@ -834,12 +980,14 @@ class reserva extends fs_model {
     }
 
     /**
-     * @param $idtafira
+     * @param $idtarifa
      *
      * @return bool|tarifa_reserva
      */
-    private function get_tarifa( $idtafira ) {
-        return tarifa_reserva::get( $idtafira );
+    private function get_tarifa( $idtarifa ) {
+        if($idtarifa) {
+            return tarifa_reserva::get( $idtarifa );
+        }
     }
 
     /**
@@ -860,6 +1008,10 @@ class reserva extends fs_model {
         $grupo_cliente = new grupo_clientes();
 
         return $grupo_cliente->get( $codgrupo );
+    }
+
+    public function getCheckIn() {
+        return null;
     }
 
     /**
@@ -922,7 +1074,6 @@ class reserva extends fs_model {
 
     private function saveHabitaciones() {
         if($this->habitaciones) {
-            /** @var habitacion_por_reserva $habitaciones */
             foreach($this->habitaciones as $habitaciones) {
                 $habitaciones->save();
             }
@@ -931,9 +1082,14 @@ class reserva extends fs_model {
 
     private function savePasajeros() {
         if($this->pasajeros) {
-            /** @var pasajero_por_reserva $pasajero */
             foreach($this->pasajeros as $pasajero) {
                 $pasajero->save();
+            }
+        }
+        if($this->remover_pasajeros) {
+            foreach($this->remover_pasajeros as $pasajero) {
+                $objPasa = $this->__parsePasajero($pasajero);
+                $objPasa->delete();
             }
         }
     }

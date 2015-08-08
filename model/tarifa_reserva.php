@@ -247,7 +247,11 @@ class tarifa_reserva extends fs_model {
      * @return bool|tarifa_reserva
      */
     public function fetch($id) {
-        $tarifa = $this->db->select("SELECT * FROM ".$this->table_name." WHERE id = ". (int) $id.";");
+        $tarifa = $this->cache->get('reserva_tarifa_reserva_'.$id);
+        if($id && !$tarifa) {
+            $tarifa = $this->db->select("SELECT * FROM ".$this->table_name." WHERE id = ". (int) $id.";");
+            $this->cache->set('reserva_tarifa_reserva_'.$id, $tarifa);
+        }
         if($tarifa) {
             return new self($tarifa[0]);
         } else {
@@ -440,7 +444,9 @@ class tarifa_reserva extends fs_model {
      * @return categoria_habitacion
      */
     public function get_categoria($id) {
-        return categoria_habitacion::get($id);
+        if($id) {
+            return categoria_habitacion::get($id);
+        }
     }
 
     /**
