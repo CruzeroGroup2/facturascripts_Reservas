@@ -24,7 +24,7 @@
     <h2>Disponibilidad</h2>
     <div class="row bottom-buffer">
         <div class="col-md-offset-5 col-md-7">
-            <form action="{$fsc->url()}" method="post" class="form-inline">
+            <form action="{$fsc->list_url()}" method="post" class="form-inline">
                 <div class="form-group">
                     <label for="fecha_desde">Fecha Desde:</label>
                     <input type="date" id="fecha_desde" name="fecha_desde" class="form-control input-sm" placeholder="Ingresar fecha Desde" value="{$fsc->getFechaDesde()}">
@@ -37,7 +37,7 @@
             </form>
         </div>
     </div>
-    <table class=" table table-condensed table-bordered table-striped">
+    <table class="table table-condensed table-bordered table-striped">
         <thead>
         <col style="width: 100px;" />
         <tr>

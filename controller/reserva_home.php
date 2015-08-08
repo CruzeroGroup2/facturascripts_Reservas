@@ -76,6 +76,12 @@ class reserva_home extends fs_controller {
         }
     }
 
+    public function list_url() {
+        $this->page->extra_url = '&action=list';
+
+        return $this->url();
+    }
+
     public function new_url() {
         $this->page->extra_url = '&action=add';
 
@@ -116,6 +122,7 @@ class reserva_home extends fs_controller {
     }
 
     public function indexAction() {
+        $this->page->extra_url = '';
         $this->fecha_desde = ( isset( $_POST['fecha_desde'] ) ) ? $_POST['fecha_desde'] : date('Y-m-d');
         $this->fecha_hasta = ( isset( $_POST['fecha_hasta'] ) ) ? $_POST['fecha_hasta'] : date('Y-m-d');
         $this->rango_fechas = new DatePeriod(
