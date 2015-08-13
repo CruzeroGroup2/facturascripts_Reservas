@@ -28,6 +28,7 @@ class estado_reserva extends fs_model {
     const PAGO =  'Pago';
     const CHECKIN =  'Checked-In';
     const CANCELADA =  'Cancelada';
+    const FINALIZADA =  'Finalizada';
 
     function __construct($data = array()) {
         parent::__construct('estado_reserva', 'plugins/reservas/');
@@ -105,14 +106,15 @@ VALUES
   ('Señado'),
   ('Pago'),
   ('Checked-In'),
-  ('Cancelada');
+  ('Cancelada'),
+  ('Finalizada');
 SQL;
 
         return $sql;
     }
 
     /**
-     * @param $id
+     * @param int|string $id
      *
      * @return bool|estado_reserva
      */
@@ -266,6 +268,10 @@ SQL;
         }
 
         return $estadolist;
+    }
+
+    public function __toString() {
+        return $this->getDescripcion();
     }
 
 

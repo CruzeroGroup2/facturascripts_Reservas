@@ -58,25 +58,32 @@ function calculate_amount() {
 
 }
 
+function clear_pasajero_fields() {
+    $('#id_pasajero').val('');
+    $('#nombre_pasajero').val('');
+    $('#documento_pasajero').val('');
+    $('input[name="documento_pasajero_tipo"]:checked').removeAttr('checked');
+    $('#fechanac_pasajero').val('');
+}
 var agregar_pasajero = function(event) {
-    var idreservaEle = $('#idreserva'),
-        idreserva = idreservaEle.val(),
-        idpasajeroEle = $('#id_pasajero'),
-        idpasajero = idpasajeroEle.val(),
-        nombreEle = $('#nombre_pasajero'),
-        nombre = nombreEle.val(),
-        tipoDocumentoEle = $('input[name="documento_pasajero_tipo"]:checked'),
-        tipoDocumento = tipoDocumentoEle.val(),
-        documentoEle = $('#documento_pasajero'),
-        documento = documentoEle.val(),
-        fechaNacEle = $('#fechanac_pasajero'),
-        fechaNac = fechaNacEle.val();
+    var idreserva = $('#idreserva').val(),
+        idpasajero = $('#id_pasajero').val(),
+        nombre = $('#nombre_pasajero').val(),
+        tipoDocumento = $('input[name="documento_pasajero_tipo"]:checked').val(),
+        documento = $('#documento_pasajero').val(),
+        fechaNac = $('#fechanac_pasajero').val(),
+        cantAdultos = parseInt($('#cantidad_adultos').val()),
+        cantMenores = parseInt($('#cantidad_menores').val()),
+        cantPasajeros = cantAdultos+cantMenores;
+
+    if($('input[name="pasajeros[]"').length >= cantPasajeros) {
+        alert('No puedes agregar más pasajeros a la reserva');
+        clear_pasajero_fields();
+        return false;
+    }
+
     if(nombre && documento && fechaNac) {
-        idpasajeroEle.val('');
-        nombreEle.val('');
-        documentoEle.val('');
-        tipoDocumentoEle.removeAttr('checked');
-        fechaNacEle.val('');
+        clear_pasajero_fields();
         $('#lista_pasajeros tbody').append('<tr>'+
             '<td>' + nombre + '</td>' +
             '<td>' + documento + '</td>' +
@@ -123,6 +130,10 @@ var autocomplete_response = function(query, suggestions) {
 };
 
 var find_habitacion = function() {
+    if(!$('#habitaciones')) {
+        return;
+    }
+
     var baseUrl = 'index.php?page=reserva_habitacion&action=find';
     var formValues = {};
     $.each($('#habitaciones').serializeArray(), function(i, field) {
@@ -155,14 +166,13 @@ var select_habitacion = function(event) {
 
 function edit_huesped(element) {
     var parent = $(element.parentNode),
-        huespedInfo = parent.find('input[type="hidden"]').val().split(':'),
-        fechaNac;
+        huespedInfo = parent.find('input[type="hidden"]').val().split(':');
     remove_huesped(element);
     $('#nombre_pasajero').val(huespedInfo[0]);
     $('input[value="'+huespedInfo[1]+'"]').attr('checked','checked');
     $('#documento_pasajero').val(huespedInfo[2]);
     $('#fechanac_pasajero').val(huespedInfo[3]);
-    $('#id_pasajero').val(huespedInfo[5])
+    $('#id_pasajero').val(huespedInfo[5]);
     return false;
 }
 
@@ -185,6 +195,9 @@ $(document).ready(function() {
     $('#agregar_pasajero').on('click', agregar_pasajero);
     $('#habitaciones').on('change', function() {
         find_habitacion();
+        calculate_amount();
+    });
+    $('#pasajeros').on('change', function() {
         calculate_amount();
     });
     find_habitacion();

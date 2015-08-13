@@ -84,14 +84,11 @@ class habitacion extends fs_model {
         $this->setId($data);
         $this->numero = (isset($data['numero'])) ? $data['numero'] : null;
         $this->idpabellon = (isset($data['idpabellon'])) ? $data['idpabellon'] : null;
-        $this->pabellon = $this->get_pabellon($this->idpabellon);
         $this->id_tipohabitacion = (isset($data['id_tipohabitacion'])) ? $data['id_tipohabitacion'] : null;
         $this->tipohabitacion = $this->get_tipohabitacion($this->id_tipohabitacion);
         $this->plaza_maxima = (isset($data['plaza_maxima'])) ? $data['plaza_maxima'] : null;
         $this->idcategoria = (isset($data['idcategoria'])) ? $data['idcategoria'] : null;
-        $this->categoria = $this->get_categoria($this->idcategoria);
         $this->idestado = (isset($data['idestado'])) ? $data['idestado'] : null;
-        $this->estado = $this->get_estado($this->idestado);
     }
 
     /**
@@ -145,6 +142,9 @@ class habitacion extends fs_model {
      * @return pabellon
      */
     public function getPabellon() {
+        if(!$this->pabellon) {
+            $this->pabellon = $this->get_pabellon($this->idpabellon);
+        }
         return $this->pabellon;
     }
 
@@ -209,6 +209,9 @@ class habitacion extends fs_model {
      * @return categoria_habitacion
      */
     public function getCategoria() {
+        if(!$this->categoria) {
+            $this->categoria = $this->get_categoria($this->idcategoria);
+        }
         return $this->categoria;
     }
 
@@ -240,6 +243,9 @@ class habitacion extends fs_model {
      * @return estado_habitacion
      */
     public function getEstado() {
+        if(!$this->estado) {
+            $this->estado = $this->get_estado($this->idestado);
+        }
         return $this->estado;
     }
 
@@ -496,6 +502,10 @@ ORDER BY plaza_maxima ASC;';
         if($idestado) {
             return estado_habitacion::get($idestado);
         }
+    }
+
+    public function __toString() {
+        return (string) $this->numero;
     }
 
 }

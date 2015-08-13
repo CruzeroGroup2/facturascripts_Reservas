@@ -25,7 +25,7 @@
         <input type="hidden" name="idreserva" id="idreserva" value="{$fsc->getReserva()->getId()}">
         <input type="hidden" name="codcliente" id="codcliente" value="{$fsc->getReserva()->getCodCliente()}" />
         <input type="hidden" name="codgrupo" id="codgrupo" value="{$fsc->getReserva()->getCodGrupoCliente()}" />
-        <input type="hidden" name="idcategoriahab" id="idcategoriahab" value="{$fsc->getReserva()->getCategoriaHabitacion()}" />
+        <input type="hidden" name="idcategoria" id="idcategoria" value="{$fsc->getReserva()->getCategoriaHabitacion()}" />
         <input type="hidden" name="idsHabitaciones" id="idsHabitaciones" value="{function="implode(',', $fsc->getReserva()->getHabitaciones(true))"}" />
         <div class="row">
             <div class="col-md-2">

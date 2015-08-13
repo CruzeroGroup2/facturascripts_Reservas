@@ -58,9 +58,9 @@
       <defecto>0</defecto>
    </columna>
    <columna>
-      <nombre>idpago</nombre>
+      <nombre>idalbaran</nombre>
       <tipo>integer</tipo>
-      <nulo>NO</nulo>
+      <nulo>YES</nulo>
    </columna>
    <columna>
       <nombre>comentario</nombre>

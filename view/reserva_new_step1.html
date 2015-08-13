@@ -8,7 +8,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
-                <h4 class="modal-title" id="gridSystemModalLabel">Seleccionar Fechas y habitacion</h4>
+                <h4 class="modal-title" id="gridSystemModalLabel">Seleccionar Fechas, Categoria Habitacion y Nombre de la Reserva</h4>
             </div>
             <div class="modal-body">
                 <div class="container-fluid">
@@ -61,7 +61,8 @@
                             </div>
                             <div class="col-md-6">
                                 <input id="nombre_reserva" class="form-control input-sm" name="nombre_reserva" type="text"
-                                       value="{$fsc->getReserva()->getCliente()->nombre}" required data-msg="Debe ingresar el nombre de la reserva" />
+                                       {if="$fsc->getReserva()->getCliente()"}value="{$fsc->getReserva()->getCliente()->nombre}"{/if}
+                                       required data-msg="Debe ingresar el nombre de la reserva" />
                                 <span id="cliente_loading" class="glyphicon glyphicon-refresh glyphicon-refresh-animate hidden"></span>
                             </div>
                             <div class="col-md-2">
@@ -73,8 +74,8 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                <button type="submit" form="fecha" class="btn btn-primary">Save changes</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+                <button type="submit" form="fecha" class="btn btn-primary">Generar Presupuesto</button>
             </div>
         </div>
     </div>
@@ -84,7 +85,7 @@
     <div class="row">
         <div class="col-lg-12">
             <h1>Paso 1:</h1>
-            <p>Selecciona la fecha y el Huesped.</p>
+            <p>Selecciona la fecha y el nombre de la reserva.</p>
             <a href="#" class="btn btn-block btn-default" data-toggle="modal" data-target="#modal_fecha">Seleccionar fecha</a>
             <h2>Paso 2:</h2>
             <p>Disponibilidad de habitaciones.</p>

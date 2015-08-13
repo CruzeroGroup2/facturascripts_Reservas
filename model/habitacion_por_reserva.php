@@ -44,7 +44,6 @@ class habitacion_por_reserva extends fs_model {
     public function setValues($data = array()) {
         $this->setId($data);
         $this->idhabitacion = (isset($data['idhabitacion'])) ? $data['idhabitacion'] : null;
-        $this->habitacion = $this->get_habitacion($this->idhabitacion);
         $this->idreserva = (isset($data['idreserva'])) ? $data['idreserva'] : null;
     }
 
@@ -83,6 +82,9 @@ class habitacion_por_reserva extends fs_model {
      * @return habitacion
      */
     public function getHabitacion() {
+        if(!$this->habitacion) {
+            $this->habitacion = $this->get_habitacion($this->idhabitacion);
+        }
         return $this->habitacion;
     }
 
@@ -215,7 +217,7 @@ class habitacion_por_reserva extends fs_model {
         $this->idhabitacion = intval($this->no_html($this->idhabitacion));
         $this->idreserva = intval($this->no_html($this->idreserva));
 
-        if (!is_a($this->habitacion, 'habitacion') && !$this->habitacion->exists()) {
+        if (!is_a($this->getHabitacion(), 'habitacion') && !$this->getHabitacion()->exists()) {
             $this->new_error_msg("habitacion no válida.");
         } else {
             $status = true;
@@ -225,33 +227,37 @@ class habitacion_por_reserva extends fs_model {
     }
 
     protected function insert() {
+        $sql = "INSERT INTO " . $this->table_name . " (idhabitacion,idreserva) VALUES (" .
+               $this->idhabitacion . ",". $this->idreserva .");";
 
+        $ret = $this->db->exec( $sql );
+        return $ret;
     }
 
     protected function update() {
+        $sql = "UPDATE " . $this->table_name . " SET idhabitacion = " . $this->idhabitacion .
+               ", idreserva = " . $this->idreserva . " WHERE id = " . (int)$this->id . ";";
 
+        $ret = $this->db->exec( $sql );
+        return $ret;
     }
 
     /**
      * @return bool
      */
     public function save() {
+        $ret = false;
         if ($this->test()) {
             $this->clean_cache();
-            if ($this->exists()) {
-                $sql = "UPDATE " . $this->table_name . " SET idhabitacion = " . $this->idhabitacion .
-                       ", idreserva = " . $this->idreserva . " WHERE id = " . (int)$this->id . ";";
+            if ( $this->exists() ) {
+                $ret = $this->update();
             } else {
-                $sql = "INSERT INTO " . $this->table_name . " (idhabitacion,idreserva) VALUES (" .
-                       $this->idhabitacion . ",". $this->idreserva .");";
-                ////BUUUUUUUUUUG
-                //$this->setId( intval( $this->db->lastval() ) );
+                $ret = $this->insert();
+                $this->setId( intval( $this->db->lastval() ) );
             }
 
-            return $this->db->exec($sql);
-        } else {
-            return false;
         }
+        return $ret;
     }
 
     /**

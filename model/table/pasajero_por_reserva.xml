@@ -35,6 +35,21 @@
         <tipo>integer</tipo>
         <nulo>NO</nulo>
     </columna>
+    <columna>
+        <nombre>idhabitacion</nombre>
+        <tipo>integer</tipo>
+        <nulo>YES</nulo>
+    </columna>
+    <columna>
+        <nombre>fecha_in</nombre>
+        <tipo>timestamp</tipo>
+        <nulo>YES</nulo>
+    </columna>
+    <columna>
+        <nombre>fecha_out</nombre>
+        <tipo>timestamp</tipo>
+        <nulo>YES</nulo>
+    </columna>
     <restriccion>
         <nombre>pasajero_por_reserva_pkey</nombre>
         <consulta>PRIMARY KEY (id)</consulta>
@@ -43,6 +58,12 @@
         <nombre>pasajero_por_reserva_idreserva_fk</nombre>
         <consulta>FOREIGN KEY (idreserva)
             REFERENCES reserva (id)
+            ON DELETE CASCADE ON UPDATE CASCADE</consulta>
+    </restriccion>
+    <restriccion>
+        <nombre>pasajero_por_reserva_idhabitacion_fk</nombre>
+        <consulta>FOREIGN KEY (idhabitacion)
+            REFERENCES habitacion (id)
             ON DELETE CASCADE ON UPDATE CASCADE</consulta>
     </restriccion>
 </tabla>

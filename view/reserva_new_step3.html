@@ -21,23 +21,36 @@
 </div>
 
 <div class="container">
-    <form id="habitaciones" class="" action="{$fsc->new_url(4)}" method="post">
+    <form id="pasajeros" class="" action="{$fsc->new_url(4)}" method="post">
         <input type="hidden" name="idreserva" id="idreserva" value="{$fsc->getReserva()->getId()}">
         <input type="hidden" name="codcliente" id="codcliente" value="{$fsc->getReserva()->getCodCliente()}" />
+        <input type="hidden" name="idtarifa" id="idtarifa" value="{$fsc->getReserva()->getTarifa()->getId()}" />
         <input type="hidden" name="idsHabitaciones" id="idsHabitaciones" value="{function="implode(',', $fsc->getReserva()->getHabitaciones(true))"}" />
         <div class="row form-group">
-            <h2>Habitaciones:</h2>
-            <ul class="list-group">
-                <li class="habitacionItem list-group-item">
-                    {loop="$fsc->getReserva()->getHabitaciones()"}
+            <div class="col-md-8">
+                <h2>Habitaciones:</h2>
+                <ul class="list-group">
+                    <li class="habitacionItem list-group-item">
+                        {loop="$fsc->getReserva()->getHabitaciones()"}
                     <span style="color:black;"
                           class="btn disponible"
                           title="{$value->getHabitacion()->getNumero()}">
                         {$value->getHabitacion()->getNumero()}: {$value->getHabitacion()->getPlazaMaxima()}
                     </span>
-                    {/loop}
-                </li>
-            </ul>
+                        {/loop}
+                    </li>
+                </ul>
+            </div>
+            <div class="col-md-4">
+                <div style="margin-top: 40px"></div>
+                <div class="row bottom-buffer">
+                    <button type="submit" {if="!$fsc->getReserva()->getCheckIn()"}disabled="disabled"{/if}
+                    class="form-control btn btn-primary" formaction="{$fsc->checkin_url($fsc->getReserva())}">Check In</button>
+                </div>
+                <div class="row">
+                    <button type="submit" {if="!$fsc->getReserva()->getCheckOut()"}disabled="disabled"{/if} class="form-control btn" formaction="{$fsc->checkout_url($fsc->getReserva())}">Check Out</button>
+                </div>
+            </div>
         </div>
         <div class="row form-group">
             <div class="col-md-2">
@@ -60,7 +73,7 @@
                     <label for="nombre_reserva">Nombre de la Reserva</label>
                 </div>
                 <div class="col-md-4">
-                    <input id="nombre_reserva" class="form-control input-sm" name="nombre_reserva" type="text" value="{$fsc->getReserva()->getCliente()->nombre}" />
+                    <input id="nombre_reserva" class="form-control input-sm" name="nombre_reserva" type="text" readonly="readonly" value="{$fsc->getReserva()->getCliente()->nombre}" />
                     <span id="cliente_loading" class="glyphicon glyphicon-refresh glyphicon-refresh-animate hidden"></span>
                     <script type="text/javascript">
                         $(document).ready(function() {
@@ -94,13 +107,13 @@
                     <label for="telefono">Telefono</label>
                 </div>
                 <div class="col-md-2">
-                    <input id="telefono" class="form-control input-sm" name="telefono" value="{$fsc->getReserva()->getCliente()->telefono1}" />
+                    <input id="telefono" class="form-control input-sm" name="telefono" type="text" readonly="readonly" value="{$fsc->getReserva()->getCliente()->telefono1}" />
                 </div>
                 <div class="col-md-2">
                     <label for="email">E-Mail</label>
                 </div>
                 <div class="col-md-6">
-                    <input id="email" class="form-control input-sm" name="email" value="{$fsc->getReserva()->getCliente()->email}" />
+                    <input id="email" class="form-control input-sm" name="email" type="text" readonly="readonly" value="{$fsc->getReserva()->getCliente()->email}" />
                 </div>
             </div>
             <div class="row form-group">
@@ -108,7 +121,7 @@
                     <label for="idtipocliente">Tipo de Convenio</label>
                 </div>
                 <div class="col-md-2">
-                    <select id="idtipocliente" name="idtipocliente" class="form-control input-sm">
+                    <select id="idtipocliente" name="idtipocliente" readonly="readonly" class="form-control input-sm">
                         <option value="">Seleccione...</option>
                         {loop="$fsc->getGruposCliente()->all()"}
                         <option value="{$value->codgrupo}"{if="$fsc->getReserva()->getCliente()->codgrupo == $value->codgrupo"} selected="selected"{/if}>{$value->nombre}</option>
@@ -125,13 +138,13 @@
                     <label>Adultos</label>
                 </div>
                 <div class="col-md-1">
-                    <input id="cantidad_adultos" class="form-control input-sm" name="cantidad_adultos" value="{$fsc->getReserva()->getCantidadAdultos()}" />
+                    <input id="cantidad_adultos" class="form-control input-sm" type="number" readonly="readonly" name="cantidad_adultos" value="{$fsc->getReserva()->getCantidadAdultos()}" />
                 </div>
                 <div class="col-md-1">
                     <label>Menores de 5</label>
                 </div>
                 <div class="col-md-1">
-                    <input id="cantidad_menores" class="form-control input-sm" name="cantidad_menores" value="{$fsc->getReserva()->getCantidadMenores()}" />
+                    <input id="cantidad_menores" class="form-control input-sm" type="number" readonly="readonly" name="cantidad_menores" value="{$fsc->getReserva()->getCantidadMenores()}" />
                 </div>
             </div>
             <h2>Lista de Pasajeros:</h2>
@@ -154,9 +167,11 @@
                             <td>{$value->getDocumento()}</td>
                             <td>{$value->getFechaNacimiento()}</td>
                             <td>
-                                <input type="hidden" name="pasajeros[]" value="{$value->__toString()}">
+                                {if="!$fsc->getReserva()->isCheckedIn()"}
+                                <input type="hidden" name="pasajeros[]" value="{$value}">
                                 <button class="text-right" onclick="return edit_huesped(this)"><span class="glyphicon glyphicon-pencil"></span></button>
                                 <button class="text-right" onclick="return remove_huesped(this)"><span class="glyphicon glyphicon-trash"></span></button>
+                                {/if}
                             </td>
                         </tr>
                     {/loop}
@@ -164,6 +179,7 @@
                     </tbody>
                 </table>
             </div>
+            {if="!$fsc->getReserva()->isCheckedIn()"}
             <div class="row form-group">
                 <div class="col-md-3">
                     <label for="nombre_pasajero">Nombre</label>
@@ -204,6 +220,7 @@
                     <span class="glyphicon glyphicon-plus"></span> &nbsp; Agregar
                 </button>
             </div>
+            {/if}
         </div>
         <div class="row form-group">
             <div class="col-md-6">
@@ -217,10 +234,11 @@
                         <label for="total">Total</label>
                     </div>
                     <div class="col-md-5">
-                        <input id="total" class="form-control" name="total" type="text" value="{$fsc->getReserva()->getTotal()}"><br>
+                        <input id="total" class="form-control" name="total" type="text" readonly="readonly" value="{$fsc->getReserva()->getTotal()}"><br>
                     </div>
                     <div class="col-md-4">
-                        <input type="submit" value="Grabar Reserva" id="guardar" class="form-control btn-primary">
+                        <input type="submit" value="Grabar Reserva" id="guardar" class="form-control btn-primary bottom-buffer">
+                        <button type="submit" class="form-control btn-primary" formaction="{$fsc->voucher_url($fsc->getReserva())}">Generar Voucher</button>
                     </div>
                 </div>
                 <div class="row form-group">
@@ -231,7 +249,7 @@
                         <input id="descuento" class="form-control" name="descuento" type="text" value="{$fsc->getReserva()->getDescuento()}">
                     </div>
                     <div class="col-md-4">
-                        <input type="button" value="Generar Pago" id="pago" class="form-control"><br>
+                        <button type="submit" class="form-control btn-success" id="pago" formaction="{$fsc->pago_url($fsc->getReserva())}">Generar Pago</button>
                     </div>
                 </div>
                 <div class="row" form-group>
@@ -239,7 +257,7 @@
                         <label for="total_final">Total Reserva</label>
                     </div>
                     <div class="col-md-5">
-                        <input id="total_final" class="form-control" name="total_final" type="text" value="{$fsc->getReserva()->getTotalFinal()}">
+                        <input id="total_final" class="form-control" name="total_final" type="text" readonly="readonly" value="{$fsc->getReserva()->getTotalFinal()}">
                     </div>
                     <div class="col-md-4">
                         <input type="button" value="Imprimir" id="imprimir" class="form-control"><br>

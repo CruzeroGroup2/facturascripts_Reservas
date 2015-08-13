@@ -40,6 +40,21 @@ class pasajero_por_reserva extends fs_model {
      */
     protected $idreserva = null;
 
+    /**
+     * @var int
+     */
+    protected $idhabitacion = null;
+
+    /**
+     * @var string
+     */
+    protected $fecha_in = null;
+
+    /**
+     * @var string
+     */
+    protected $fecha_out = null;
+
     const DATE_FORMAT = 'Y-m-d';
 
     const EDAD_MAX_MENOR = 5;
@@ -67,6 +82,11 @@ class pasajero_por_reserva extends fs_model {
             $this->setFechaNacimiento($data['fecha_nacimiento']);
         }
         $this->idreserva = (isset($data['idreserva'])) ? $data['idreserva'] : null;
+
+        //Datos correspondientes al checkin
+        $this->idhabitacion = (isset($data['idhabitacion'])) ? $data['idhabitacion'] : null;
+        $this->fecha_in = (isset($data['fecha_in'])) ? $data['fecha_in'] : null;
+        $this->fecha_out = (isset($data['fecha_out'])) ? $data['fecha_out'] : null;
     }
 
     /**
@@ -215,7 +235,59 @@ class pasajero_por_reserva extends fs_model {
         return date_diff(date_create($this->getFechaNacimiento()), date_create('today'))->y;
     }
 
+    /**
+     * @return int
+     */
+    public function getIdHabitacion() {
+        return $this->idhabitacion;
+    }
 
+    /**
+     * @param int $idhabitacion
+     *
+     * @return pasajero_por_reserva
+     */
+    public function setIdHabitacion($idhabitacion) {
+        $this->idhabitacion = $idhabitacion;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getFechaIn() {
+        return $this->fecha_in;
+    }
+
+    /**
+     * @param string $fecha_in
+     *
+     * @return pasajero_por_reserva
+     */
+    public function setFechaIn($fecha_in) {
+        $this->fecha_in = $fecha_in;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getFechaOut() {
+        return $this->fecha_out;
+    }
+
+    /**
+     * @param string $fecha_out
+     *
+     * @return pasajero_por_reserva
+     */
+    public function setFechaOut($fecha_out) {
+        $this->fecha_out = $fecha_out;
+
+        return $this;
+    }
 
     /**
      * @return string
@@ -351,37 +423,72 @@ class pasajero_por_reserva extends fs_model {
         return $status;
     }
 
+    protected function insert() {
+        $sql = 'INSERT ' . $this->table_name .
+               ' SET '.
+               'nombre_completo = ' . $this->var2str($this->nombre_completo) . ',' .
+               'tipo_documento = ' . $this->var2str($this->tipo_documento) . ',' .
+               'documento = ' . $this->var2str($this->documento) . ',' .
+               'fecha_nacimiento = ' . $this->var2str($this->fecha_nacimiento) . ',' .
+               'idreserva = ' . $this->idreserva;
+        if($this->fecha_in) {
+            $sql .= ', fecha_in = ' . $this->var2str($this->fecha_in);
+        }
+
+        if($this->fecha_out) {
+            $sql .= ', fecha_out = ' . $this->var2str($this->fecha_out);
+        }
+
+        if($this->idhabitacion) {
+            $sql .= ', idhabitacion = ' . $this->var2str($this->idhabitacion);
+
+        }
+        $sql .= ';';
+        $ret = $this->db->exec( $sql );
+        return $ret;
+    }
+
+    protected function update() {
+        $sql = 'UPDATE ' . $this->table_name .
+               ' SET '.
+               'nombre_completo = ' . $this->var2str($this->nombre_completo) . ',' .
+               'tipo_documento = ' . $this->var2str($this->tipo_documento) . ',' .
+               'documento = ' . $this->var2str($this->documento) . ',' .
+               'fecha_nacimiento = ' . $this->var2str($this->fecha_nacimiento) . ',' .
+               'idreserva = ' . $this->idreserva;
+        if($this->fecha_in) {
+            $sql .= ', fecha_in = ' . $this->var2str($this->fecha_in);
+        }
+
+        if($this->fecha_out) {
+            $sql .= ', fecha_out = ' . $this->var2str($this->fecha_out);
+        }
+
+        if($this->idhabitacion) {
+            $sql .= ', idhabitacion = ' . $this->var2str($this->idhabitacion);
+
+        }
+        $sql .= ' WHERE id = ' . (int)$this->id . ';';
+        $ret = $this->db->exec( $sql );
+        return $ret;
+    }
+
     /**
      * @return bool
      */
     public function save() {
+        $ret = false;
         if ($this->test()) {
             $this->clean_cache();
-            if ($this->exists()) {
-                $sql = "UPDATE " . $this->table_name .
-                       " SET ".
-                           "nombre_completo = " . $this->var2str($this->nombre_completo).",".
-                           "tipo_documento = " . $this->var2str($this->tipo_documento).",".
-                           "documento = " . $this->var2str($this->documento) .",".
-                           "fecha_nacimiento = " . $this->var2str($this->fecha_nacimiento) .",".
-                           "idreserva = " . $this->idreserva .
-                       " WHERE id = " . (int)$this->id . ";";
+            if ( $this->exists() ) {
+                $ret = $this->update();
             } else {
-                $sql = "INSERT INTO " . $this->table_name .
-                       " (nombre_completo,tipo_documento,documento,fecha_nacimiento,idreserva) VALUES (" .
-                       $this->var2str($this->nombre_completo) .",".
-                       $this->var2str($this->tipo_documento) .",".
-                       $this->var2str($this->documento) .",".
-                       $this->var2str($this->fecha_nacimiento) .",".
-                       $this->idreserva .");";
-                ////BUUUUUUUUUUG
-                //$this->setId( intval( $this->db->lastval() ) );
+                $ret = $this->insert();
+                $this->setId( intval( $this->db->lastval() ) );
             }
 
-            return $this->db->exec($sql);
-        } else {
-            return false;
         }
+        return $ret;
     }
 
     /**

@@ -1,0 +1,84 @@
+{include="header"}
+<link href="plugins/reservas/view/css/custom.css" rel="stylesheet" />
+<script type="text/javascript" src="view/js/jquery.validate.min.js"></script>
+
+<div class="container">
+    <h2>Check In de Pasajeros:</h2>
+    <form id="checkin" method="post" action="{$fsc->url()}">
+        <div class="row">
+            <div id="errors" class="alert alert-danger hidden"></div>
+            <table id="lista_pasajeros" class="table table-bordered">
+                <thead>
+                <tr>
+                    <th>Nombre Completo</th>
+                    <th>Documento</th>
+                    <th>Tipo de Documento</th>
+                    <th>Fecha de Nacimiento</th>
+                    <th>Habitacion</th>
+                </tr>
+                </thead>
+                <tbody>
+                {loop="$fsc->getReserva()->getCantPasajeros(true)"}
+                <tr>{$pasajero=$fsc->getReserva()->getPasajero($value)}
+                    <td>
+                        <input type="hidden" name="pasajero[{$value}][id]" value="{$pasajero->getId()}" />
+                        <input type="hidden" name="pasajero[{$value}][idreserva]" value="{$pasajero->getIdReserva()}" />
+                        <input type="text" class="form-control input-sm" name="pasajero[{$value}][nombre_completo]" value="{$pasajero->getNombreCompleto()}" required />
+                    </td>
+                    <td>
+                        <input type="text" class="form-control input-sm" name="pasajero[{$value}][documento]" value="{$pasajero->getDocumento()}" required />
+                    </td>
+                    <td>
+                        <input type="radio" name="pasajero[{$value}][tipo_documento]" {if="$pasajero->getTipoDocumento()=='DNI'"}checked="checked"{/if} value="DNI" required />
+                        <label>DNI</label>
+                        <br>
+                        <input type="radio" name="pasajero[{$value}][tipo_documento]" {if="$pasajero->getTipoDocumento()=='AFILIADO'"}checked="checked"{/if} value="AFILIADO" required />
+                        <label>Numero afiliado</label>
+                    </td>
+                    <td>
+                        <input type="date" class="form-control input-sm" name="pasajero[{$value}][fecha_nacimiento]" value="{$pasajero->getFechaNacimiento()}" required data-msg="No ha ingresado fecha de nacimiento" />
+                    </td>
+                    <td>
+                        <select class="form-control input-sm" name="pasajero[{$value}][idhabitacion]">
+                            <option value="">Seleccione una habitacion</option>
+                            {loop="$fsc->getReserva()->getHabitaciones()"}
+                            <option value="{$value->getHabitacion()->getId()}" {if="$value->getHabitacion()->getId()==$pasajero->getIdHabitacion()"}selected="selected"{/if}>{$value->getHabitacion()->getNumero()}: {$value->getHabitacion()->getPlazaMaxima()}</option>
+                            {/loop}
+                        </select>
+                    </td>
+                    {/loop}
+                </tbody>
+            </table>
+        </div>
+        <div class="row">
+            <div class="col-md-offset-10 col-md-2">
+                <input type="submit" id="submit" name="submit" class="form-control btn btn-primary" value="Check In" />
+            </div>
+        </div>
+    </form>
+</div>
+
+<script type="text/javascript">
+    $(document).ready(function() {
+        $('#checkin').validate({
+            errorLabelContainer: "#errors",
+            invalidHandler: function(event, validator) {
+                var errors = validator.numberOfInvalids();
+                if (errors) {
+                    $("#errors").removeClass('hidden').addClass('show');
+                } else {
+                    $("#errors").removeClass('show').addClass('hidden');
+                }
+            },
+            highlight: function(element) {
+                $(element).closest('div').removeClass('has-success').addClass('has-error');
+            },
+            unhighlight: function(element) {
+                $(element).closest('div').removeClass('has-error').addClass('has-success');
+            },
+            errorElement: 'li'
+        })
+    });
+</script>
+
+{include="footer"}

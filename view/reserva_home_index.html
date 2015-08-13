@@ -37,20 +37,20 @@
             </form>
         </div>
     </div>
-    <table class="table table-condensed table-bordered table-striped">
+    <table id="habitaciones_disponibles" class="table table-condensed table-bordered table-striped">
         <thead>
         <col style="width: 100px;" />
-        <tr>
-            <th>Habitacion</th>
-            {loop="$fsc->rango_fechas"}
-            <th>{$value->format('d/m')}</th>
-            {/loop}
-        </tr>
+            <tr>
+                <th>Habitacion</th>
+                {loop="$fsc->rango_fechas"}
+                <th>{$value->format('d/m')}</th>
+                {/loop}
+            </tr>
         </thead>
         <tbody>
         {loop="$fsc->pabellones"}
             <tr>
-                <th colspan={$fsc->cantidad_dias}" class="text-center">{$value->getDescripcion()}</th>
+                <th colspan="{$fsc->cantidad_dias}" class="text-center">{$value->getDescripcion()}</th>
             </tr>
             {loop="$value->fetchHabitacionesByPabellon()"}
             <tr>

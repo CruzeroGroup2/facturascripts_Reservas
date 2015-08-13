@@ -65,9 +65,7 @@ class tarifa_reserva extends fs_model {
         $this->fecha_inicio = (isset($data['fecha_inicio'])) ? $data['fecha_inicio'] : date("Y-m-d H:i:s");
         $this->fecha_fin = (isset($data['fecha_fin'])) ? $data['fecha_fin'] : null;
         $this->idcategoria = (isset($data['idcategoria'])) ? $data['idcategoria'] : null;
-        $this->categoria_habitacion = $this->get_categoria($this->idcategoria);
         $this->codgrupo = (isset($data['codgrupo'])) ? $data['codgrupo'] : null;
-        $this->grupo_clientes = $this->get_grupo_cliente($this->codgrupo);
     }
 
     /**
@@ -153,7 +151,7 @@ class tarifa_reserva extends fs_model {
      * @return categoria_habitacion
      */
     public function getCategoriaHabitacion() {
-        if(is_null($this->categoria_habitacion)) {
+        if(!$this->categoria_habitacion) {
             $this->categoria_habitacion = $this->get_categoria($this->idcategoria);
         }
         return $this->categoria_habitacion;
@@ -188,7 +186,7 @@ class tarifa_reserva extends fs_model {
      * @return grupo_clientes
      */
     public function getGrupoCliente() {
-        if(is_null($this->grupo_clientes)) {
+        if(!$this->grupo_clientes) {
             $this->grupo_clientes = $this->get_grupo_cliente($this->codgrupo);
         }
         return $this->grupo_clientes;
