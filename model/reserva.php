@@ -135,9 +135,9 @@ class reserva extends fs_model {
      */
     private $remover_pasajeros;
 
-    const DATE_FORMAT = 'Y-m-d';
+    const DATE_FORMAT = 'd-m-Y';
 
-    const DATE_FORMAT_FULL = 'Y-m-d H:i:s';
+    const DATE_FORMAT_FULL = 'd-m-Y H:i:s';
 
     /**
      * @return int
@@ -210,6 +210,18 @@ class reserva extends fs_model {
         }
 
         return $this->cliente;
+    }
+
+    public function getIncialesCliente() {
+        if(!$this->cliente) {
+            $this->getCliente();
+        }
+        $partes = explode(' ', ucwords($this->cliente->nombre));
+        $res = '';
+        foreach($partes as $parte) {
+            $res .= $parte[0] . '.';
+        }
+        return $res;
     }
 
     /**
@@ -313,6 +325,10 @@ class reserva extends fs_model {
      * @return int
      */
     public function getCategoriaHabitacion() {
+        if(!$this->habitaciones) {
+            $this->getHabitaciones();
+        }
+
         if($this->habitaciones) {
             //Obtengo una de las habitaciones
             $hab = $this->habitaciones[0];
@@ -815,8 +831,8 @@ class reserva extends fs_model {
     public function getCheckIn() {
         $ret = false;
         $estado = (string) $this->getEstado();
-        if($estado == estado_reserva::PAGO ||
-           $estado == estado_reserva::SENADO
+        if(($estado == estado_reserva::PAGO || $estado == estado_reserva::SENADO) ||
+           ($estado == estado_reserva::CHECKIN  && $this->getCantPasajeros() != $this->getCheckInPasajeros())
         ) {
             $ret = true;
         }
@@ -846,6 +862,14 @@ class reserva extends fs_model {
         $albaranes = new albaran_cliente();
 
         return '';
+    }
+
+    public function url() {
+        if(!$this->id) {
+            return 'index.php?page=reserva_home';
+        } else {
+            return 'index.php?page=reserva_home&action=edit&id='.$this->id;
+        }
     }
 
     /**
@@ -1186,7 +1210,7 @@ LIMIT $limit";
         return $this->totales['final'];
     }
 
-    private function getCantidadDias() {
+    public function getCantidadDias() {
         $date1 = new DateTime($this->getFechaIn());
         $date2 = new DateTime($this->getFechaOut());
 
@@ -1213,6 +1237,12 @@ LIMIT $limit";
                 $objPasa->delete();
             }
         }
+    }
+
+    private function getCheckInPasajeros() {
+        $pasajeros = new pasajero_por_reserva();
+
+        return $pasajeros->fecthCheckInCountByReserva($this->id);
     }
 
 }

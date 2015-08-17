@@ -70,7 +70,7 @@ class reserva_pagos extends fs_controller {
     protected $forma_pago;
 
     public function __construct() {
-        parent::__construct(__CLASS__, "Pagos", "Reserva");
+        parent::__construct(__CLASS__, "Pagos", "Reserva", false, false);
     }
 
     protected function process() {
@@ -188,6 +188,13 @@ class reserva_pagos extends fs_controller {
                 $this->albaran->total = $this->albaran->neto + $this->albaran->totaliva - $this->albaran->totalirpf + $this->albaran->totalrecargo;
                 if($this->albaran->save()) {
                     $this->new_message("<a href='" . $this->albaran->url() . "'>" . ucfirst(FS_ALBARAN) . "</a> guardado correctamente.");
+                    $this->reserva->setAlbaranCliente($this->albaran);
+                    if($this->reserva->save()) {
+                        $this->new_message($this->reserva->getSuccesMessage());
+                    } else {
+                        $this->new_error_msg("Error al actualizar la reserva!");
+                    }
+                    header('Location: '.$this->albaran->url());
                 }
             } else {
                 $this->albaran->delete();

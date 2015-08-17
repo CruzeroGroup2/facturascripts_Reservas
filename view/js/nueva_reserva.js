@@ -8,7 +8,9 @@
  * @returns {Date}
  */
 function parseDate(str) {
-    return new Date(str);
+    var tmp = str.split(' ');
+    var tmp2 = tmp[0].split('-');
+    return new Date(tmp2[2],tmp2[1],tmp2[0]);
 }
 
 /**
@@ -21,41 +23,67 @@ function daydiff(first, second) {
     return (second-first)/(1000*60*60*24);
 }
 
+/**
+ *
+ * @param options "{idtarifa: int}" | "{idcategoria: int, codgrupo: str}"
+ * @param done_func
+ * @returns {*}
+ */
+function get_tarifa(options, done_func) {
+    return $.post(
+        'index.php?page=reserva_tarifa_habitacion&action=find',
+        options
+    ).done(done_func);
+}
+
+/**
+ *
+ * @param tarifa
+ * @param descuento
+ * @param cantAdultos
+ * @param cantMenores
+ * @returns {{total: (number|*), montoDescuento: (number|*), total_final: (number|*)}}
+ */
+function calculate_totals(tarifa, dias, descuento, cantAdultos, cantMenores) {
+    var monto = parseFloat(tarifa.monto),
+        cantAdultos = parseInt(cantAdultos),
+        cantMenores = parseInt(cantMenores),
+        cantPasajeros = cantAdultos + cantMenores;
+
+    if (cantPasajeros == 1) {
+        monto += monto * 0.6;
+    }
+
+    var totalPorDia = monto * cantAdultos;
+
+    if (cantMenores > 0) {
+        totalPorDia += (cantMenores * monto * 0.6);
+    }
+
+    var total = dias * totalPorDia,
+        montoDescuento = descuento > 0 ? total * (1 / descuento) : 0,
+        total_final = total - montoDescuento;
+    return {
+        "total": total,
+        "montoDescuento": montoDescuento,
+        "total_final": total_final
+    };
+}
+
 
 function calculate_amount() {
     var fechaIn = parseDate($('#fecha_in').val()),
         fechaOut = parseDate($('#fecha_out').val()),
         dias = daydiff(fechaIn, fechaOut),
-        catHab = $('#idcategoriahab').val(),
-        codgrupo = $('#codgrupo').val(),
-        cantHab = $('#idsHabitaciones').val().split(',').length,
+        tarifa = $('#idtarifa').val(),
         cantAdultos = parseInt($('#cantidad_adultos').val()),
         cantMenores = parseInt($('#cantidad_menores').val()),
-        cantPasajeros = cantAdultos+cantMenores,
         descuento = parseInt($('#descuento').val());
-    $.post(
-        'index.php?page=reserva_tarifa_habitacion&action=find',
-        {idcategoria: catHab, codgrupo: codgrupo}
-    ).done(function(data) {
-        monto = parseFloat(data.monto);
-
-        if(cantPasajeros == 1) {
-            monto += monto*0.6;
-        }
-
-        totalPorDia = monto*cantAdultos
-
-        if(cantMenores > 0) {
-            totalPorDia += (cantMenores*monto*0.6);
-        }
-
-        total = dias*cantPasajeros*monto;
-        montoDescuento = descuento > 0 ? total*(1/descuento) : 0;
-        total_final = total - montoDescuento;
-        $('#total').val(total);
-        $('#total_final').val(total_final);
+    get_tarifa({idtarifa: tarifa}, function(data) {
+        var totales = calculate_totals(data, dias, descuento, cantAdultos, cantMenores);
+        $('#total').val(totales.total);
+        $('#total_final').val(totales.total_final);
     });
-
 }
 
 function clear_pasajero_fields() {
@@ -105,11 +133,12 @@ var autcomplete_select = function(suggestion) {
         $.ajax('index.php?page=nueva_venta&datoscliente='+client_id, {
             success: function(data) {
                 $('#codcliente').data(data);
+                $('#codgrupo').val(data.codgrupo);
             },
             complete: function() {
                 $('#cliente_loading').addClass('hidden');
             }
-        })
+        });
         $('#codcliente').val(client_id);
     } else {
         $('#myModal').modal('show');
@@ -122,21 +151,22 @@ var autocomplete_response = function(query, suggestions) {
     // suggestions is the array that's about to be sent to the response callback.
     if (suggestions.length === 0) {
         suggestions.push({
-            label: 'Agregar Cliente',
-            value: 0
+            value: 'Agregar Cliente',
+            data: 0
         });
     }
     return false;
 };
 
 var find_habitacion = function() {
-    if(!$('#habitaciones')) {
-        return;
+    var habitaciones = $('#habitaciones');
+    if(habitaciones.length === 0) {
+        return ;
     }
 
     var baseUrl = 'index.php?page=reserva_habitacion&action=find';
     var formValues = {};
-    $.each($('#habitaciones').serializeArray(), function(i, field) {
+    $.each(habitaciones.serializeArray(), function(i, field) {
         formValues[field.name] = field.value;
     });
     $('#habitacionesResult').html('<span id="loading" class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>');
@@ -198,7 +228,7 @@ $(document).ready(function() {
         calculate_amount();
     });
     $('#pasajeros').on('change', function() {
-        calculate_amount();
+        //calculate_amount();
     });
     find_habitacion();
 });

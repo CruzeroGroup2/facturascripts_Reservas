@@ -15,6 +15,7 @@
                     <th>Tipo de Documento</th>
                     <th>Fecha de Nacimiento</th>
                     <th>Habitacion</th>
+                    <th>Check In</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -36,7 +37,7 @@
                         <label>Numero afiliado</label>
                     </td>
                     <td>
-                        <input type="date" class="form-control input-sm" name="pasajero[{$value}][fecha_nacimiento]" value="{$pasajero->getFechaNacimiento()}" required data-msg="No ha ingresado fecha de nacimiento" />
+                        <input type="text" class="form-control input-sm datepicker" name="pasajero[{$value}][fecha_nacimiento]" value="{$pasajero->getFechaNacimiento()}" required data-msg="No ha ingresado fecha de nacimiento" />
                     </td>
                     <td>
                         <select class="form-control input-sm" name="pasajero[{$value}][idhabitacion]">
@@ -45,6 +46,9 @@
                             <option value="{$value->getHabitacion()->getId()}" {if="$value->getHabitacion()->getId()==$pasajero->getIdHabitacion()"}selected="selected"{/if}>{$value->getHabitacion()->getNumero()}: {$value->getHabitacion()->getPlazaMaxima()}</option>
                             {/loop}
                         </select>
+                    </td>
+                    <td>
+                        <input type="checkbox" id="pasajero_checkin_{$value}" name="pasajero[{$value}][checkin]" checked="checked" value="true" />
                     </td>
                     {/loop}
                 </tbody>
@@ -69,6 +73,26 @@
                 } else {
                     $("#errors").removeClass('show').addClass('hidden');
                 }
+            },
+            rules: {
+                {loop="$fsc->getReserva()->getCantPasajeros(true)"}
+                "pasajero[{$value}][nombre_completo]": {
+                    required: "#pasajero_checkin_{$value}:checked"
+                },
+                "pasajero[{$value}][documento]": {
+                    required: "#pasajero_checkin_{$value}:checked"
+                },
+                "pasajero[{$value}][tipo_documento]": {
+                    required: "#pasajero_checkin_{$value}:checked"
+                },
+                "pasajero[{$value}][fecha_nacimiento]": {
+                    required: "#pasajero_checkin_{$value}:checked"
+                },
+                "pasajero[{$value}][idhabitacion]": {
+                    required: "#pasajero_checkin_{$value}:checked"
+                },
+                {/loop}
+                "":{}
             },
             highlight: function(element) {
                 $(element).closest('div').removeClass('has-success').addClass('has-error');

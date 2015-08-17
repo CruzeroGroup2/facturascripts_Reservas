@@ -289,6 +289,7 @@ class tarifa_reserva extends fs_model {
         if($tarifa) {
             return new self($tarifa[0]);
         } else {
+            trigger_error("Tarifa no encontrada para la cegoria id = '".$idcategoria."' y tipo cliente = '$codgrupo'", E_USER_ERROR);
             return false;
         }
     }

@@ -15,16 +15,17 @@
                     <div id="errors" class="alert alert-danger hidden"></div>
                     <form id="fecha" action="{$fsc->new_url($fsc->step)}" method="post">
                         <input type="hidden" name="codcliente" id="codcliente" value="{$fsc->getReserva()->getCodCliente()}" />
+                        <input type="hidden" name="codgrupo" id="codgrupo" value="{$fsc->getReserva()->getCodGrupoCliente()}" />
                         <input type="hidden" name="idsHabitaciones" id="idsHabitaciones" value="{function="implode(',', $fsc->getReserva()->getHabitaciones(true))"}" />
                         <div class="row form-group">
                             <div class="col-md-4">
                                 <label><span>Fecha de Ingreso</span>
-                                    <input type="date" name="fecha_in" id="fecha_in" class="form-control input-sm"  value="{$fsc->getReserva()->getFechaIn()}" required data-msg="No ha ingresado fecha de ingreso" />
+                                    <input type="text" name="fecha_in" id="fecha_in" class="form-control input-sm datepicker"  value="{$fsc->getReserva()->getFechaIn()}" required data-msg="No ha ingresado fecha de ingreso" />
                                 </label>
                             </div>
                             <div class="col-md-offset-1 col-md-4">
                                 <label><span>Fecha de Egreso</span>
-                                    <input type="date" name="fecha_out" id="fecha_out" class="form-control input-sm"  value="{$fsc->getReserva()->getFechaOut()}" required data-msg="No ha ingresado fecha de egreso" />
+                                    <input type="text" name="fecha_out" id="fecha_out" class="form-control input-sm datepicker"  value="{$fsc->getReserva()->getFechaOut()}" required data-msg="No ha ingresado fecha de egreso" />
                                 </label>
                             </div>
                         </div>
@@ -75,7 +76,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
-                <button type="submit" form="fecha" class="btn btn-primary">Generar Presupuesto</button>
+                <button type="submit" form="fecha" id="generar_presupuesto" class="btn btn-primary">Generar Presupuesto</button>
             </div>
         </div>
     </div>
@@ -105,11 +106,12 @@
                 $('#cliente_loading').removeClass('hidden');
             },
             onSearchComplete: autocomplete_response,
-            onSelect: autcomplete_select
+            onSelect: autcomplete_select,
+            showNoSuggestionNotice: true
         });
         $('#fecha').validate({
             errorLabelContainer: "#errors",
-            invalidHandler: function(event, validator) {
+            invalidHandler: function (event, validator) {
                 var errors = validator.numberOfInvalids();
                 if (errors) {
                     $("#errors").removeClass('hidden').addClass('show');
@@ -117,14 +119,30 @@
                     $("#errors").removeClass('show').addClass('hidden');
                 }
             },
-            highlight: function(element) {
+            highlight: function (element) {
                 $(element).closest('div').removeClass('has-success').addClass('has-error');
             },
-            unhighlight: function(element) {
+            unhighlight: function (element) {
                 $(element).closest('div').removeClass('has-error').addClass('has-success');
             },
-            errorElement: 'li'
-        })
+            errorElement: 'li',
+            submitHandler: function (form) {
+                $('#generar_presupuesto').prop('disabled', true);
+                get_tarifa({idcategoria: $('#idcategoria').val(), codgrupo: $('#codgrupo').val()}, function (data) {
+                    var fechaIn = parseDate($('#fecha_in').val()),
+                        fechaOut = parseDate($('#fecha_out').val()),
+                        dias = daydiff(fechaIn, fechaOut),
+                        cantAdultos = parseInt($('#cantidad_adultos').val()),
+                        cantMenores = parseInt($('#cantidad_menores').val()),
+                        cantPass=cantAdultos+cantMenores,
+                        totales = calculate_totals(data, dias, 0, cantAdultos, cantMenores);
+                    if(confirm("Está a punto de crear una reserva por '"+dias+"' noches y para '"+cantPass+"' pasajeros " +
+                                    "con un costo de $"+totales.total_final.toFixed(2)+", está seguro que desea continuar?")) {
+                        form.submit();
+                    }
+                });
+            }
+        });
     });
 </script>
 

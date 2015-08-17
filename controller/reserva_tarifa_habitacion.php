@@ -115,7 +115,15 @@ class reserva_tarifa_habitacion extends fs_controller {
         $this->page->extra_url = '&action=find';
         $idcategoria =  (int) isset($_POST['idcategoria']) ? $_POST['idcategoria'] : 0;
         $codgrupo =  (int) isset($_POST['codgrupo']) ? $_POST['codgrupo'] : 0;
-        $tarifa = $this->tarifa->fetchByCategoriaYTipoPasajero($idcategoria, $codgrupo);
+        $idtarifa =  (int) isset($_POST['idtarifa']) ? $_POST['idtarifa'] : 0;
+
+        if($idcategoria && $codgrupo) {
+            $tarifa = $this->tarifa->fetchByCategoriaYTipoPasajero($idcategoria, $codgrupo);
+        }
+
+        if($idtarifa) {
+            $tarifa = $this->tarifa->get($idtarifa);
+        }
         $this->template = FALSE;
         header('Content-Type: application/json');
         echo json_encode($tarifa->__toArray());

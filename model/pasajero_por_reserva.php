@@ -377,6 +377,18 @@ class pasajero_por_reserva extends fs_model {
         return $pasporreslist;
     }
 
+    public function fecthCountByReserva($reservaid) {
+        $cant = $this->db->select('SELECT count(id) as cant_pasajeros FROM '. $this->table_name .' WHERE idreserva = '.(int) $reservaid);
+
+        return $cant[0]['cant_pasajeros'];
+    }
+
+    public function fecthCheckInCountByReserva($reservaid) {
+        $cant = $this->db->select('SELECT count(id) as cant_pasajeros FROM '. $this->table_name .' WHERE idreserva = '.(int) $reservaid.' AND fecha_in is not null');
+
+        return $cant[0]['cant_pasajeros'];
+    }
+
     /**
      * @return bool|array
      */

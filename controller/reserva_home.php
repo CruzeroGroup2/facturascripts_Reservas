@@ -54,6 +54,7 @@ class reserva_home extends fs_controller {
     }
 
     protected function process() {
+
         $action = (string) isset($_GET['action']) ? $_GET['action'] : 'list';
         $this->reserva = new reserva();
         $this->pabellon = new pabellon();
@@ -242,7 +243,7 @@ class reserva_home extends fs_controller {
         $voucher->setValue('nombreReserva', htmlspecialchars($this->reserva->getCliente()->nombre));
         $voucher->setValue('documento', htmlspecialchars($this->reserva->getCliente()->cifnif));
         $voucher->setValue('categoría', htmlspecialchars($this->reserva->getGrupoCliente()->nombre));
-        $voucher->setValue('montoTarifa', htmlspecialchars($this->reserva->getTarifa()->getMonto()));
+        $voucher->setValue('montoTarifa', htmlspecialchars(number_format($this->reserva->getTarifa()->getMonto(), 2)));
         $voucher->setValue('email', htmlspecialchars($this->reserva->getCliente()->email));
         $voucher->setValue('domicilio', htmlspecialchars($direcciones[0]->direccion));
         $voucher->setValue('telefono', htmlspecialchars($this->reserva->getCliente()->telefono1));
@@ -255,7 +256,7 @@ class reserva_home extends fs_controller {
         $voucher->setValue('habitaciones', htmlspecialchars(implode(', ', $this->reserva->getNumerosHabitaciones())));
         $voucher->setValue('adultos', htmlspecialchars($this->reserva->getCantidadAdultos()));
         $voucher->setValue('menores', htmlspecialchars($this->reserva->getCantidadMenores()));
-        $voucher->setValue('total', htmlspecialchars($this->reserva->totales['total']));
+        $voucher->setValue('total', htmlspecialchars(number_format($this->reserva->totales['total'], 2)));
 
         $voucher->cloneRow('nombrePasajero', $this->reserva->getCantPasajeros());
 
@@ -270,9 +271,9 @@ class reserva_home extends fs_controller {
         if($pagos) {
             $voucher->cloneRow('numeroRecibo', count($pagos));
             foreach($pagos as $num => $pago) {
-                $voucher->setValue('numeroRecibo'.($num+1), htmlspecialchars($pago->id));
-                $voucher->setValue('fechaRecibo'.($num+1), htmlspecialchars($pago->fecha));
-                $voucher->setValue('montoRecibo'.($num+1), htmlspecialchars($pago->importe));
+                $voucher->setValue('numeroRecibo#'.($num+1), htmlspecialchars($pago->id));
+                $voucher->setValue('fechaRecibo#'.($num+1), htmlspecialchars($pago->fecha));
+                $voucher->setValue('montoRecibo#'.($num+1), htmlspecialchars(number_format($pago->importe, 2)));
             }
         } else {
             $voucher->setValue('numeroRecibo', '');
@@ -301,17 +302,20 @@ class reserva_home extends fs_controller {
         $pasajero_por_reserva = new pasajero_por_reserva();
         if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
             foreach($_POST['pasajero'] as $pasajero) {
-                if(isset($pasajero['id']) && $pasajero['id']) {
-                    $pasajero_por_reserva = pasajero_por_reserva::get($pasajero['id']);
+                if(isset($pasajero['checkin']) && $pasajero['checkin']) {
+                    if(isset($pasajero['id']) && $pasajero['id']) {
+                        $pasajero_por_reserva = pasajero_por_reserva::get($pasajero['id']);
+                    }
+                    $pasajero_por_reserva->setValues($pasajero);
+                    $pasajero_por_reserva->setFechaIn(date('Y-m-d H:i:s'));
+                    $pasajeros[] = clone $pasajero_por_reserva;
                 }
-                $pasajero_por_reserva->setValues($pasajero);
-                $pasajero_por_reserva->setFechaIn(date('Y-m-d H:i:s'));
-                $pasajeros[] = clone $pasajero_por_reserva;
             }
             $this->reserva->setPasajeros($pasajeros);
             $this->reserva->setEstado(estado_reserva::get(estado_reserva::CHECKIN));
             if($this->reserva->save()) {
                 $this->new_message($this->reserva->getSuccesMessage());
+                header('Refresh: 3;url='.$this->reserva->url());
             } else {
                 $this->new_error_msg("¡Error en Reserva!");
             }
@@ -457,13 +461,17 @@ class reserva_home extends fs_controller {
 
         //Si hay reserva y no hay seña
         if($reserva) {
+            $texto = $reserva->getIncialesCliente();
             $estado = (string) $reserva->getEstado();
-            if($estado === estado_reserva::INCOMPLETA ||
-               $estado === estado_reserva::SINSENA
+            if(($estado === estado_reserva::INCOMPLETA ||
+               $estado === estado_reserva::SINSENA) &&
+               !$reserva->getIdAlbaran()
             ) {
                 $cssClass = "reservada";
-            } elseif($estado === estado_reserva::SENADO ||
-                     $estado === estado_reserva::PAGO
+            } elseif(($estado === estado_reserva::SENADO ||
+                     $estado === estado_reserva::PAGO) ||
+                     $reserva->getIdAlbaran() &&
+                     $estado !== estado_reserva::CHECKIN
             ) {
                 $cssClass = "reservada_senia";
                 //Si hay check_in está ocupada
@@ -473,6 +481,7 @@ class reserva_home extends fs_controller {
         } else {
             //Si no hay reserva la habitacion está
             $cssClass = "disponible";
+            $texto = '&nbsp';
         }
 
         $cell = '<td>';
@@ -481,7 +490,7 @@ class reserva_home extends fs_controller {
         } else {
             $href = $this->new_url($habitacion, $fecha);
         }
-        $cell .= '<a href="' . $href . '" class="btn ' . $cssClass . '">&nbsp;</a>';
+        $cell .= '<a href="' . $href . '" class="btn ' . $cssClass . '">'.$texto.'</a>';
         if($reserva && $reserva->getFechaOut() == $fecha->format('Y-m-d')) {
             $cell .= '<a href="' . $this->new_url($habitacion, $fecha) . '" style="width: 100%;" class="btn disponible">&nbsp;</a>';
         }

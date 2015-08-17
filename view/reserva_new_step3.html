@@ -57,13 +57,21 @@
                 <label for="fecha_in"><span>Fecha de Ingreso</span></label>
             </div>
             <div class="col-md-2">
-                <input type="date" readonly="readonly" name="fecha_in" id="fecha_in" class="form-control input-sm" value="{$fsc->getReserva()->getFechaIn()}" />
+                <input type="text" readonly="readonly" name="fecha_in" id="fecha_in" class="form-control input-sm" value="{$fsc->getReserva()->getFechaIn()}" />
             </div>
             <div class="col-md-2">
                 <label for="fecha_out"><span>Fecha de Egreso</span></label>
             </div>
             <div class="col-md-2">
-                <input type="date" readonly="readonly" name="fecha_out" id="fecha_out" class="form-control input-sm" value="{$fsc->getReserva()->getFechaOut()}" />
+                <input type="text" readonly="readonly" name="fecha_out" id="fecha_out" class="form-control input-sm" value="{$fsc->getReserva()->getFechaOut()}" />
+            </div>
+        </div>
+        <div class="row form-group">
+            <div class="col-md-3">
+                Cantidad de Noches: {$fsc->getReserva()->getCantidadDias()}
+            </div>
+            <div class="col-md-4">
+                Monto Tarifa: $ {function="number_format($fsc->getReserva()->getTarifa()->getMonto(), 2)"}
             </div>
         </div>
         <div class="container">
@@ -74,21 +82,6 @@
                 </div>
                 <div class="col-md-4">
                     <input id="nombre_reserva" class="form-control input-sm" name="nombre_reserva" type="text" readonly="readonly" value="{$fsc->getReserva()->getCliente()->nombre}" />
-                    <span id="cliente_loading" class="glyphicon glyphicon-refresh glyphicon-refresh-animate hidden"></span>
-                    <script type="text/javascript">
-                        $(document).ready(function() {
-                            $("#nombre_reserva").autocomplete({
-                                serviceUrl: 'index.php?page=nueva_venta&tipo=factura',
-                                paramName: 'buscar_cliente',
-                                minChars: 3,
-                                onSearchStart: function(query) {
-                                    $('#cliente_loading').removeClass('hidden');
-                                },
-                                onSearchComplete: autocomplete_response,
-                                onSelect: autcomplete_select
-                            });
-                        });
-                    </script>
                 </div>
                 <div class="col-md-2">
                     <label for="idestado">Estado Reserva</label>
@@ -203,7 +196,7 @@
                 <div class="col-md-4">
                     <div class="col-md-7">
                         <label for="fechanac_pasajero">Fecha Nacimiento</label>
-                        <input type="date" id="fechanac_pasajero" class="form-control input-sm" name="fechanac_pasajero">
+                        <input type="text" id="fechanac_pasajero" class="form-control input-sm datepicker" name="fechanac_pasajero">
                     </div>
                     <div class="col-md-5">
                         <br>
@@ -234,7 +227,7 @@
                         <label for="total">Total</label>
                     </div>
                     <div class="col-md-5">
-                        <input id="total" class="form-control" name="total" type="text" readonly="readonly" value="{$fsc->getReserva()->getTotal()}"><br>
+                        <input id="total" class="form-control" name="total" type="text" readonly="readonly" value="{function="number_format($fsc->getReserva()->getTotal(), 2)"}"><br>
                     </div>
                     <div class="col-md-4">
                         <input type="submit" value="Grabar Reserva" id="guardar" class="form-control btn-primary bottom-buffer">
@@ -257,7 +250,7 @@
                         <label for="total_final">Total Reserva</label>
                     </div>
                     <div class="col-md-5">
-                        <input id="total_final" class="form-control" name="total_final" type="text" readonly="readonly" value="{$fsc->getReserva()->getTotalFinal()}">
+                        <input id="total_final" class="form-control" name="total_final" type="text" readonly="readonly" value="{function="number_format($fsc->getReserva()->getTotalFinal(), 2)"}">
                     </div>
                     <div class="col-md-4">
                         <input type="button" value="Imprimir" id="imprimir" class="form-control"><br>
