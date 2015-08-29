@@ -4,6 +4,7 @@
 <script type="text/javascript" src="plugins/reservas/view/js/nueva_reserva.js"></script>
 
 <div id="modal_fecha" class="modal fade" role="dialog">
+    <form id="fecha" action="{$fsc->new_url($fsc->step)}" method="post">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -13,7 +14,6 @@
             <div class="modal-body">
                 <div class="container-fluid">
                     <div id="errors" class="alert alert-danger hidden"></div>
-                    <form id="fecha" action="{$fsc->new_url($fsc->step)}" method="post">
                         <input type="hidden" name="codcliente" id="codcliente" value="{$fsc->getReserva()->getCodCliente()}" />
                         <input type="hidden" name="codgrupo" id="codgrupo" value="{$fsc->getReserva()->getCodGrupoCliente()}" />
                         <input type="hidden" name="idsHabitaciones" id="idsHabitaciones" value="{function="implode(',', $fsc->getReserva()->getHabitaciones(true))"}" />
@@ -33,7 +33,9 @@
                             <div class="col-md-4">
                                 <label><span>Cantidad de Huespedes</span>
                                     <input type="text" name="cantidad_adultos" id="cantidad_adultos" class="form-control input-sm"
-                                           value="{$fsc->getReserva()->getCantidadAdultos()}" required min="1" data-msg-min="Debe ingresar al menos 1 huesped adulto" />
+                                           value="{$fsc->getReserva()->getCantidadAdultos()}" required min="1"
+                                           {if="$fsc->getMaxPass()"} max="{$fsc->getMaxPass()}"{/if} data-msg-min="Debe ingresar al menos 1 huesped adulto"
+                                           data-msg-max="La Habitacion seleccionada no puede albergar la cantidad de pasajeros ingresada"/>
                                 </label>
                             </div>
                             <div class="col-md-offset-1 col-md-4">
@@ -71,15 +73,15 @@
                                 <label for="media_pension">Media Pension</label>
                             </div>
                         </div>
-                    </form>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
-                <button type="submit" form="fecha" id="generar_presupuesto" class="btn btn-primary">Generar Presupuesto</button>
+                <button type="reset" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+                <button type="submit" id="generar_presupuesto" class="btn btn-primary">Generar Presupuesto</button>
             </div>
         </div>
     </div>
+    </form>
 </div>
 
 <div class="container" style="margin-top: 10px; margin-bottom: 100px;">
@@ -131,7 +133,7 @@
                 get_tarifa({idcategoria: $('#idcategoria').val(), codgrupo: $('#codgrupo').val()}, function (data) {
                     var fechaIn = parseDate($('#fecha_in').val()),
                         fechaOut = parseDate($('#fecha_out').val()),
-                        dias = daydiff(fechaIn, fechaOut),
+                        dias = (fechaOut > fechaIn) ? daydiff(fechaIn, fechaOut) : 1,
                         cantAdultos = parseInt($('#cantidad_adultos').val()),
                         cantMenores = parseInt($('#cantidad_menores').val()),
                         cantPass=cantAdultos+cantMenores,

@@ -96,7 +96,7 @@
                         <label for="total">Total</label>
                     </div>
                     <div class="col-md-2">
-                        <input id="total" class="form-control" name="total" type="text" value="{$fsc->getReserva()->getTotal()}"><br>
+                        <input id="total" class="form-control" name="total" type="text" value="{$fsc->show_precio($fsc->getReserva()->getTotal())}"><br>
                     </div>
                     <div class="col-md-2">
                         <input type="submit" value="Grabar Reserva" id="guardar" class="form-control btn-primary">
@@ -107,10 +107,7 @@
                         <label for="descuento">Dto/Int</label>
                     </div>
                     <div class="col-md-2">
-                        <input id="descuento" class="form-control" name="descuento" type="text" value="0">
-                    </div>
-                    <div class="col-md-2">
-                        <input type="button" value="Generar Pago" id="pago" class="form-control"><br>
+                        <input id="descuento" class="form-control" name="descuento" type="text" value="{$fsc->getReserva()->getDescuento()}">
                     </div>
                 </div>
                 <div class="row">
@@ -118,11 +115,10 @@
                         <label for="total_final">Total Reserva</label>
                     </div>
                     <div class="col-md-2">
-                        <input id="total_final" class="form-control" name="total_final" type="text" value="{$fsc->getReserva()->getTotal()}">
+                        <input id="total_final" class="form-control" name="total_final" type="text" value="{$fsc->show_precio($fsc->getReserva()->getTotal())}">
                     </div>
                     <div class="col-md-2">
-                        <input type="button" value="Imprimir" id="imprimir" class="form-control"><br>
-                        <input type="reset" value="Cancelar" id="cancelar" class="form-control">
+                        <button type="submit" name="cancelar" id="cancelar" class="form-control btn-danger" formaction="{$fsc->cancel_url($fsc->getReserva())}">Cancelar</button>
                     </div>
                 </div>
             </div>

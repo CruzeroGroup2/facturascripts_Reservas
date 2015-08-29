@@ -366,7 +366,8 @@ WHERE id NOT IN (
   SELECT habitacion_por_reserva.idhabitacion
   FROM habitacion_por_reserva
     LEFT JOIN reserva ON (reserva.id = habitacion_por_reserva.idreserva)
-  WHERE fecha_in >= '$arrival' AND fecha_out <= '$departure'
+  WHERE fecha_in <= " . $this->var2str($arrival . ' 12:00:00') . " AND fecha_out >= " . $this->var2str($departure . ' 10:00:00') ."
+  AND reserva.idestado NOT IN (6,7) -- Except for canceled reservs
 )";
 
         if(is_int($minGuestPorHab) || $minGuestPorHab > 0) {

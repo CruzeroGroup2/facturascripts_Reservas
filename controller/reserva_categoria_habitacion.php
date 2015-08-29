@@ -8,7 +8,9 @@
 
 require_model('categoria_habitacion.php');
 
-class reserva_categoria_habitacion extends fs_controller {
+require_once 'reserva_controller.php';
+
+class reserva_categoria_habitacion extends reserva_controller {
 
     protected $categoria_habitacion = null;
 

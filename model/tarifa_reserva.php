@@ -49,6 +49,11 @@ class tarifa_reserva extends fs_model {
     protected $codgrupo;
 
     /**
+     * @var bool
+     */
+    protected $edit = false;
+
+    /**
      * @param array $data
      */
     public function __construct($data = array()) {
@@ -66,6 +71,7 @@ class tarifa_reserva extends fs_model {
         $this->fecha_fin = (isset($data['fecha_fin'])) ? $data['fecha_fin'] : null;
         $this->idcategoria = (isset($data['idcategoria'])) ? $data['idcategoria'] : null;
         $this->codgrupo = (isset($data['codgrupo'])) ? $data['codgrupo'] : null;
+        $this->edit = (isset($data['edit'])) ? $data['edit'] : false;
     }
 
     /**
@@ -219,7 +225,18 @@ class tarifa_reserva extends fs_model {
     }
 
     /**
-     * Esta funci�n es llamada al crear una tabla.
+     * @param $edit
+     *
+     * @return tarifa_reserva
+     */
+    public function setEdit($edit) {
+        $this->edit = $edit;
+
+        return $this;
+    }
+
+    /**
+     * Esta función es llamada al crear una tabla.
      * Permite insertar valores en la tabla.
      */
     protected function install() {
@@ -327,15 +344,19 @@ class tarifa_reserva extends fs_model {
         $this->id = (int)$this->id;
 
         if ($this->codgrupo == 0) {
-            $this->new_error_msg("Grupo de Cliente no v�lido.");
+            $this->new_error_msg("Grupo de Cliente no válido.");
         }
 
         if ($this->idcategoria == 0) {
-            $this->new_error_msg("Categor�a habitacion no v�lida.");
+            $this->new_error_msg("Categoría habitacion no válida.");
         }
 
         if(!is_float($this->monto) || $this->monto < 0) {
-            $this->new_error_msg("Monto de tarifa no v�lido!");
+            $this->new_error_msg("Monto de tarifa no válido!");
+        }
+
+        if(!$this->edit && $this->fetchByCategoriaYTipoPasajero($this->getIdCategoriaHabitacion(), $this->getCodGrupoCliente())) {
+            $this->new_error_msg("Ya existe una tarifa para la categoría y el grupo seleccionado");
         }
 
         if(!$this->get_errors()) {
@@ -359,19 +380,19 @@ class tarifa_reserva extends fs_model {
     }
 
     protected function update() {
-        $sql = 'UPDATE'. $this->table_name .
+        $sql = 'UPDATE '. $this->table_name .
                ' SET ' .
                     'monto = '. $this->getMonto() . ',' .
                     'fecha_inicio = ' . $this->var2str($this->getFechaInicio()) . ',' .
                     'fecha_fin = ' . $this->var2str($this->getFechaFin()) .',' .
                     'idcategoria = ' . $this->intval($this->getIdCategoriaHabitacion()) . ',' .
                     'codgrupo = ' . $this->intval($this->getCodGrupoCliente()) .
-               'WHERE id = ' . $this->getId() . ';';
+               ' WHERE id = ' . $this->getId() . ';';
         return $this->db->exec($sql);
     }
 
     /**
-     * Esta funci�n sirve tanto para insertar como para actualizar
+     * Esta función sirve tanto para insertar como para actualizar
      * los datos del objeto en la base de datos.
      */
     public function save() {
@@ -379,7 +400,7 @@ class tarifa_reserva extends fs_model {
             $this->clean_cache();
             // We don't update old tarifas! instead we add a new one!
             if ($this->exists()) {
-                $tarifaOld = clone $this;
+                $tarifaOld = $this->get($this->getId());
                 $tarifaOld->setFechaFin(date('Y-m-d H:i:s'));
                 $this->id = null;
                 return $tarifaOld->update() && $this->insert();

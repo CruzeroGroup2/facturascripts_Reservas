@@ -11,7 +11,9 @@ require_model('pabellon.php');
 require_model('categoria_habitacion.php');
 require_model('estado_habitacion.php');
 
-class reserva_habitacion extends fs_controller {
+require_once 'reserva_controller.php';
+
+class reserva_habitacion extends reserva_controller {
 
     /**
      * @var habitacion

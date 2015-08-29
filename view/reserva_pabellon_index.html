@@ -15,9 +15,14 @@
     </div>
 </div>
 
-<div class="container-fluid" id="div_pabellones">
+<div class="container" id="div_pabellones">
+    <div class="row">
+        <div class="col-md-5">
+            <h1>Pabellones</h1>
+        </div>
+    </div>
     <div class="table-responsive">
-        <table class="table table-hover">
+        <table class="table table-striped">
             <thead>
             <tr>
                 <th class="text-left">Nombre</th>
@@ -27,7 +32,7 @@
             {loop="$fsc->pabellones"}
             <tr>
                 <td>{$value->getDescripcion()}</td>
-                <td>
+                <td class="text-right">
                     <a href="{$fsc->edit_url($value)}">
                         <span class="glyphicon glyphicon-pencil"></span>
                     </a>

@@ -39,7 +39,7 @@
                         <span class="hidden-xs">&nbsp; Opciones</span>
                     </a>
                 </li -->
-                {if="$fsc->getAlbaran()->idalbaran"}
+                {if="$fsc->getFactura()->idfactura"}
                 {loop="$fsc->extensions"}
                 {if="$value->type=='tab'"}
                 <li role="presentation">
@@ -63,13 +63,13 @@
                                 <th class="text-right" width="90">Dto. %</th>
                             </tr>
                             </thead>
-                            <tbody id="lineas_albaran">
+                            <tbody id="lineas_factura">
                                 <tr>
                                     <td><input type="text" readonly="readonly" name="referencia_0" id="referencia_0" class="form-control" value="Reserva" /></td>
                                     <td><input type="text" readonly="readonly" name="desc_0" id="desc_0" class="form-control" value="Reserva {$fsc->getReserva()->getId()}" /></td>
                                     <td><input type="number" readonly="readonly" name="cantidad_0" id="cantidad_0" class="form-control text-right" value="1" /></td>
                                     <td></td>
-                                    <td><input type="text" readonly="readonly" name="pvp_0" id="pvp_0" class="form-control" value="{$fsc->getReserva()->getTotal()}"></td>
+                                    <td><input type="text" readonly="readonly" name="pvp_0" id="pvp_0" class="form-control" value="{$fsc->show_precio($fsc->getReserva()->getTotal())}"></td>
                                     <td><input type="text" readonly="readonly" name="dto_0" id="dto_0" class="form-control" value="{$fsc->getReserva()->getDescuento()}"></td>
                                 </tr>
                             </tbody>
@@ -219,11 +219,11 @@
                         </div>
                     </div>
                 </div>
-                {if="$fsc->getAlbaran()->idalbaran"}
+                {if="$fsc->getFactura()->idfactura"}
                 {loop="$fsc->extensions"}
                 {if="$value->type=='tab'"}
                 <div role="tabpanel" class="tab-pane" id="ext_{$value->name}">
-                    <iframe src="index.php?page={$value->from}{$value->params}&id={$fsc->getAlbaran()->idalbaran}" width="100%" height="600" frameborder="0"></iframe>
+                    <iframe src="index.php?page={$value->from}{$value->params}&id={$fsc->getFactura()->idfactura}" width="100%" height="600" frameborder="0"></iframe>
                 </div>
                 {/if}
                 {/loop}
@@ -245,7 +245,7 @@
             </div>
             <div class="row">
                 <div class="col-md-offset-9 col-md-3 text-right">
-                    <button type="submit" id="generar_albaran" name="generar_albaran" class="btn btn-success">Gererar {#FS_ALBARAN#}</button>
+                    <button type="submit" id="generar_factura" name="generar_factura" class="btn btn-success">Gererar {#FS_FACTURA#}</button>
                 </div>
             </div>
         </div>

@@ -8,7 +8,9 @@
 
 require_model('pabellon.php');
 
-class reserva_pabellon extends fs_controller {
+require_once 'reserva_controller.php';
+
+class reserva_pabellon extends reserva_controller {
 
     protected $pabellon;
 

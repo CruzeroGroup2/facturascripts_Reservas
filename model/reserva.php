@@ -9,8 +9,8 @@ require_model('estado_reserva.php');
 require_model('grupo_clientes.php');
 require_model('habitacion_por_reserva.php');
 require_model('pasajero_por_reserva.php');
-require_model('albaran_cliente.php');
-require_model('pago.php');
+require_model('factura_cliente.php');
+require_model('recibo_cliente.php');
 
 
 class reserva extends fs_model {
@@ -108,15 +108,15 @@ class reserva extends fs_model {
     /**
      * @var int
      */
-    protected $idalbaran;
+    protected $idfactura;
 
     /**
-     * @var albaran_cliente
+     * @var factura_cliente
      */
-    protected $albaran_cliente;
+    protected $factura_cliente;
 
     /**
-     * @var pago[]
+     * @var recibo_cliente[]
      */
     protected $pagos;
 
@@ -126,9 +126,19 @@ class reserva extends fs_model {
     protected $comentario;
 
     /**
+     *
+     */
+    protected $cancel_date;
+
+    /**
      * @var array
      */
     public $totales;
+
+    /**
+     * @var array
+     */
+    protected $refundPercentages;
 
     /**
      * @var string[]
@@ -138,6 +148,15 @@ class reserva extends fs_model {
     const DATE_FORMAT = 'd-m-Y';
 
     const DATE_FORMAT_FULL = 'd-m-Y H:i:s';
+
+    // Fecha de cancelacion <= 7 días no refund
+    const CANCEL_NO_REFUND = -7;
+
+    // Fecha de cancelacion >=8 && <= 15 30% de refund - gastos de envio
+    const CANCEL_PART_REFUND = -15;
+
+    // Fecha de cancelacion >= 16 días 100% de refund menos gastos de envios
+    const CANCEL_FULL_REFUND = -16;
 
     /**
      * @return int
@@ -333,6 +352,8 @@ class reserva extends fs_model {
             //Obtengo una de las habitaciones
             $hab = $this->habitaciones[0];
             $this->idcategoriahabitacion = $hab->getHabitacion()->getIdCategoria();
+        } else {
+            //trigger_error("No hay habitaciones para la reserva $this->id");
         }
 
         return $this->idcategoriahabitacion;
@@ -472,10 +493,23 @@ class reserva extends fs_model {
     public function setFechaOut($fecha_out) {
         if($fecha_out) {
             $date = new DateTime($fecha_out);
+            if($fecha_out == $this->getFechaIn()) {
+                $date->modify('+1 day');
+            }
             $this->fecha_out = $date->format(self::DATE_FORMAT) . ' 10:00:00';
         }
 
         return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getCantidadDias() {
+        $date1 = new DateTime($this->getFechaIn());
+        $date2 = new DateTime($this->getFechaOut());
+
+        return $date2->diff($date1)->format("%a");
     }
 
     /**
@@ -672,47 +706,47 @@ class reserva extends fs_model {
     /**
      * @return int
      */
-    public function getIdAlbaran() {
-        return $this->idalbaran;
+    public function getIdFactura() {
+        return $this->idfactura;
     }
 
     /**
-     * @param int $idalbaran
+     * @param int $idfactura
      *
      * @return reserva
      */
-    public function setIdAlbaran($idalbaran) {
-        $this->idalbaran = $idalbaran;
+    public function setIdFactura($idfactura) {
+        $this->idfactura = $idfactura;
 
         return $this;
     }
 
     /**
-     * @return albaran_cliente
+     * @return factura_cliente
      */
-    public function getAlbaranCliente() {
-        if(!$this->albaran_cliente && $this->idalbaran) {
-            $this->albaran_cliente = $this->get_albaran($this->idalbaran);
+    public function getFacturaCliente() {
+        if(!$this->factura_cliente && $this->idfactura) {
+            $this->factura_cliente = $this->get_factura($this->idfactura);
         }
-        return $this->albaran_cliente;
+        return $this->factura_cliente;
     }
 
     /**
-     * @param albaran_cliente $albaran_cliente
+     * @param factura_cliente $factura_cliente
      *
      * @return reserva
      */
-    public function setAlbaranCliente(albaran_cliente $albaran_cliente) {
-        $this->albaran_cliente = $albaran_cliente;
-        $this->idalbaran = $albaran_cliente->idalbaran;
+    public function setFacturaCliente(factura_cliente $factura_cliente) {
+        $this->factura_cliente = $factura_cliente;
+        $this->idfactura = $factura_cliente->idfactura;
 
         return $this;
     }
 
     public function getPagos() {
-        if(!$this->pagos && $this->idalbaran) {
-            $pago = new pago();
-            $this->pagos = $pago->all_from_albaran($this->idalbaran);
+        if(!$this->pagos && $this->idfactura) {
+            $pago = new recibo_cliente();
+            $this->pagos = $pago->all_from_factura($this->idfactura);
         }
         return $this->pagos;
     }
@@ -736,8 +770,93 @@ class reserva extends fs_model {
         return $this;
     }
 
+    /**
+     * @param DateTime $cancelDate
+     *
+     * @return reserva
+     */
+    public function setCancelDate(DateTime $cancelDate) {
+        $this->cancel_date = $cancelDate->format(self::DATE_FORMAT_FULL);
+
+        return $this;
+    }
+
+
+    /**
+     * @return string
+     */
+    public function getCancelDate($full_date = false) {
+        $ret = null;
+        if($this->cancel_date) {
+            $fecha = new DateTime($this->cancel_date);
+            $format = self::DATE_FORMAT;
+            if($full_date) {
+                $format = self::DATE_FORMAT_FULL;
+            }
+            $ret = $fecha->format($format);
+        }
+
+        return $ret;
+    }
+
+    public function getCancelDays() {
+        $cancelDate = new DateTime($this->getCancelDate());
+        $reservaDate = new DateTime($this->getFechaIn());
+        $diasCancel = intval($reservaDate->diff($cancelDate, false)->format('%R%a'));
+
+        return $diasCancel;
+    }
+
+    public function getRefundAmount() {
+        $refundStatus = $this->getRefundStatus();
+        $refundPercentage = $this->refundPercentages[$refundStatus];
+
+        return $this->getTotal() * ($refundPercentage/100);
+    }
+
+    public function getRefundStatus() {
+        $diasCancel = $this->getCancelDays();
+        if($diasCancel >= reserva::CANCEL_NO_REFUND) {
+            return reserva::CANCEL_NO_REFUND;
+        } elseif ($diasCancel >= reserva::CANCEL_PART_REFUND) {
+            return reserva::CANCEL_PART_REFUND;
+        } elseif ($diasCancel <= reserva::CANCEL_FULL_REFUND) {
+            return reserva::CANCEL_FULL_REFUND;
+        } else {
+            trigger_error("La cantidad de dias de cancelacion da el valor '$diasCancel' que no está comtenplado", E_USER_ERROR);
+        }
+    }
+
+    public function getCancelMessage() {
+        $refund = $this->getRefundStatus();
+        $msg = '';
+        switch ($refund) {
+            case reserva::CANCEL_NO_REFUND:
+                //echo 'NO REFUND!'; //No refund at all!
+                $msg = 'La cancelacion de esta reserva no generá ningún tipo de devolucion al cliente';
+                break;
+            case reserva::CANCEL_PART_REFUND:
+                //echo '30% REFUND!';
+                $msg = 'La cancelacion de esta reserva generá una nota de credito del 30% del monto menos los gastos de envio al cliente';
+                break;
+            case reserva::CANCEL_FULL_REFUND:
+                //echo '100% REFUND!';
+                $msg = 'La cancelacion de esta reserva generá una nota de credito del 100% del monto menos los gastos de envio al cliente';
+                break;
+        }
+
+        return $msg;
+
+    }
+
     public function __construct($data = array()) {
         parent::__construct('reserva', 'plugins/reservas/');
+
+        $this->refundPercentages = array(
+            reserva::CANCEL_FULL_REFUND => 100,
+            reserva::CANCEL_PART_REFUND => 30,
+            reserva::CANCEL_NO_REFUND => 0
+        );
 
         $this->setValues($data);
     }
@@ -795,8 +914,8 @@ class reserva extends fs_model {
         //Obtener el estado de la reserva
         $this->idestado = (isset($data['idestado'])) ? (int) $data['idestado'] : null;
 
-        //Albaran de la reserva
-        $this->idalbaran = (isset($data['idalbaran'])) ? $data['idalbaran'] : null;
+        //Factura de la reserva
+        $this->idfactura = (isset($data['idfactura'])) ? $data['idfactura'] : null;
 
         if(isset($data['pasajeros'])) {
             $this->setPasajeros($data['pasajeros']);
@@ -853,13 +972,28 @@ class reserva extends fs_model {
         return (string) $this->getEstado() == estado_reserva::CHECKIN;
     }
 
+    public function isCanceled() {
+        return (string) $this->getEstado() == estado_reserva::CANCELADA;
+    }
+
+    public function getMaxPasajeros() {
+        $habitaciones = $this->getHabitaciones();
+        $cant = 0;
+        foreach($habitaciones as $habitacion) {
+            $cant += (int) $habitacion->getHabitacion()->getPlazaMaxima();
+        }
+
+        return $cant;
+    }
+
     protected function install() {
         $cliente = new cliente();
         $habitacion = new habitacion();
         $tarifa = new tarifa_reserva();
         $estado = new estado_reserva();
         $habporres = new habitacion_por_reserva();
-        $albaranes = new albaran_cliente();
+        $facturas = new factura_cliente();
+        $pago = new pago_recibo_cliente();
 
         return '';
     }
@@ -946,6 +1080,22 @@ LIMIT $limit";
         return $reservalist;
     }
 
+    public function findByEstadoYFecha($idestado, $fecha) {
+        $reservalist = array();
+        $reservas = $this->db->select('SELECT * FROM ' . $this->table_name . ' WHERE idestado = ' . $idestado . ' AND fecha_in >= ' . $this->var2str($fecha));
+        if($reservas) {
+            foreach($reservas as $reserva) {
+                $reservalist[] = new reserva($reserva);
+            }
+        }
+
+        return $reservalist;
+    }
+
+    public function findByEstado($idestado) {
+        return $this->findByEstadoYFecha($idestado, date('Y-m-d'));
+    }
+
     /**
      * @return bool|array
      */
@@ -993,8 +1143,8 @@ LIMIT $limit";
                'media_pension = ' . $this->intval($this->getMediaPension()) . ',' .
                'descuento = ' . floatval($this->getDescuento()) . ',' .
                'comentario = ' . $this->var2str($this->getComentario());
-        if($this->idalbaran) {
-            $sql .= ', idalbaran = ' . $this->idalbaran;
+        if($this->idfactura) {
+            $sql .= ', idfactura = ' . $this->idfactura;
         }
         $sql .= ';';
 
@@ -1016,8 +1166,12 @@ LIMIT $limit";
                'media_pension = ' . $this->intval($this->getMediaPension()) . ',' .
                'descuento = ' . floatval($this->getDescuento()) . ',' .
                'comentario = ' . $this->var2str($this->getComentario());
-        if($this->idalbaran) {
-            $sql .= ', idalbaran = ' . $this->idalbaran;
+        if($this->idfactura) {
+            $sql .= ', idfactura = ' . $this->idfactura;
+        }
+
+        if($this->cancel_date) {
+            $sql .= ', cancel_date = ' . $this->var2str($this->getCancelDate(true));
         }
         $sql .= ' WHERE id = ' . $this->getId() . ';';
 
@@ -1156,16 +1310,26 @@ LIMIT $limit";
         return $estado;
     }
 
+    /**
+     * @param $codgrupo
+     *
+     * @return bool|grupo_clientes
+     */
     private function get_grupo_clientes($codgrupo) {
         $grupo_cliente = new grupo_clientes();
 
         return $grupo_cliente->get($codgrupo);
     }
 
-    private function get_albaran($idalbaran) {
-        $albaran_cliente = new albaran_cliente();
+    /**
+     * @param $idfactura
+     *
+     * @return bool|factura_cliente
+     */
+    private function get_factura($idfactura) {
+        $factura_cliente = new factura_cliente();
 
-        return $albaran_cliente->get($idalbaran);
+        return $factura_cliente->get($idfactura);
     }
 
     public function calcularTotales() {
@@ -1208,13 +1372,6 @@ LIMIT $limit";
 
     public function getTotalFinal() {
         return $this->totales['final'];
-    }
-
-    public function getCantidadDias() {
-        $date1 = new DateTime($this->getFechaIn());
-        $date2 = new DateTime($this->getFechaOut());
-
-        return $date2->diff($date1)->format("%a");
     }
 
     private function saveHabitaciones() {

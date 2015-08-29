@@ -17,10 +17,15 @@
     </div>
 </div>
 
-
-<div class="table-responsive">
-    <table class="table table-hover table-bordered table-condensed">
-        <thead>
+<div class="container">
+    <div class="row">
+        <div class="col-md-5">
+            <h1>Listado de Habitaciones</h1>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
             <tr>
                 <th class="text-left">Numero</th>
                 <th class="text-left">Pabellon</th>
@@ -29,17 +34,17 @@
                 <th class="text-left">Estado</th>
                 <th class="text-right">Opciones</th>
             </tr>
-        </thead>
-        <tbody>
-        {if="$fsc->habitaciones"}
-        {loop="$fsc->habitaciones"}
+            </thead>
+            <tbody>
+            {if="$fsc->habitaciones"}
+            {loop="$fsc->habitaciones"}
             <tr>
                 <td>{$value->getNumero()}</td>
                 <td>{$value->getPabellon()->getDescripcion()}</td>
                 <td>{$value->getPlazaMaxima()}</td>
                 <td>{$value->getCategoria()->getNombre()}</td>
                 <td>{$value->getEstado()->getDescripcion()}</td>
-                <td>
+                <td class="text-right">
                     <a href="{$fsc->edit_url($value)}">
                         <span class="glyphicon glyphicon-pencil"></span>
                     </a>
@@ -50,13 +55,14 @@
                     </a>
                 </td>
             </tr>
-        {/loop}
-        {else}
+            {/loop}
+            {else}
             <tr>
                 <td colspan="6">No hay habitaciones</td>
             </tr>
-        {/if}
-        </tbody>
-    </table>
+            {/if}
+            </tbody>
+        </table>
+    </div>
 </div>
 {include="footer"}

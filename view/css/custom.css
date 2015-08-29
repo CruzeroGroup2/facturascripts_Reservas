@@ -37,6 +37,9 @@
 .bottom-buffer {
     margin-bottom: 15px;
 }
+.top-buffer {
+    margin-bottom: 15px;
+}
 
 .defecto {
     background-color: #D8D8D8; }

@@ -8,7 +8,9 @@
 
 require_model('estado_habitacion.php');
 
-class reserva_estado extends fs_controller {
+require_once 'reserva_controller.php';
+
+class reserva_estado extends reserva_controller {
 
     protected $estado;
 

@@ -2,7 +2,9 @@
 
 require_model('reserva.php');
 
-class reserva_home extends fs_controller {
+require_once 'reserva_controller.php';
+
+class reserva_home extends reserva_controller {
 
     /**
      * @var reserva
@@ -48,6 +50,11 @@ class reserva_home extends fs_controller {
 
     protected $fecha_hasta = null;
 
+    /**
+     * @var int
+     */
+    protected $max_pass = 0;
+
 
     public function __construct() {
         parent::__construct(__CLASS__, "Reserva", "Reserva");
@@ -77,7 +84,7 @@ class reserva_home extends fs_controller {
             case 'voucher':
                 $this->voucherAction();
                 break;
-            case 'cancelar':
+            case 'cancel':
                 $this->cancelarAction();
                 break;
             case 'checkin':
@@ -156,6 +163,12 @@ class reserva_home extends fs_controller {
         return $this->url();
     }
 
+    public function cancel_url(reserva $reserva) {
+        $this->page->extra_url = '&action=cancel&id=' . (int) $reserva->getId();
+
+        return $this->url();
+    }
+
     public function anterior_url() {
         return '';
     }
@@ -166,8 +179,8 @@ class reserva_home extends fs_controller {
 
     private function indexAction() {
         $this->page->extra_url = '';
-        $this->fecha_desde = (isset($_POST['fecha_desde'])) ? $_POST['fecha_desde'] : date('Y-m-d');
-        $this->fecha_hasta = (isset($_POST['fecha_hasta'])) ? $_POST['fecha_hasta'] : date('Y-m-d');
+        $this->fecha_desde = (isset($_POST['fecha_desde'])) ? $_POST['fecha_desde'] : date('d-m-Y');
+        $this->fecha_hasta = (isset($_POST['fecha_hasta'])) ? $_POST['fecha_hasta'] : date('d-m-Y');
         $this->rango_fechas = new DatePeriod(
             new DateTime($this->fecha_desde),
             DateInterval::createFromDateString('+1 day'),
@@ -187,13 +200,16 @@ class reserva_home extends fs_controller {
 
     private function addAction() {
         $this->page->extra_url = '&action=add';
+
         if(isset($_GET['fecha_in'])) {
             $this->fecha_desde = $_GET['fecha_in'];
             $this->reserva->setFechaIn($_GET['fecha_in']);
         }
+
         if(isset($_GET['idsHabitaciones'])) {
             $idhabitacion = $_GET['idsHabitaciones'];
             $this->reserva->setHabitaciones(array($idhabitacion));
+            $this->max_pass = $this->reserva->getMaxPasajeros();
         }
         //Si tengo un request por post levantar la reserva
         // actualizar los datos y guardar, mostrar mensage con respecto a la accion realizada
@@ -243,7 +259,7 @@ class reserva_home extends fs_controller {
         $voucher->setValue('nombreReserva', htmlspecialchars($this->reserva->getCliente()->nombre));
         $voucher->setValue('documento', htmlspecialchars($this->reserva->getCliente()->cifnif));
         $voucher->setValue('categoría', htmlspecialchars($this->reserva->getGrupoCliente()->nombre));
-        $voucher->setValue('montoTarifa', htmlspecialchars(number_format($this->reserva->getTarifa()->getMonto(), 2)));
+        $voucher->setValue('montoTarifa', htmlspecialchars(number_format($this->reserva->getTarifa()->getMonto(), FS_NF0, FS_NF1, FS_NF2)));
         $voucher->setValue('email', htmlspecialchars($this->reserva->getCliente()->email));
         $voucher->setValue('domicilio', htmlspecialchars($direcciones[0]->direccion));
         $voucher->setValue('telefono', htmlspecialchars($this->reserva->getCliente()->telefono1));
@@ -256,7 +272,7 @@ class reserva_home extends fs_controller {
         $voucher->setValue('habitaciones', htmlspecialchars(implode(', ', $this->reserva->getNumerosHabitaciones())));
         $voucher->setValue('adultos', htmlspecialchars($this->reserva->getCantidadAdultos()));
         $voucher->setValue('menores', htmlspecialchars($this->reserva->getCantidadMenores()));
-        $voucher->setValue('total', htmlspecialchars(number_format($this->reserva->totales['total'], 2)));
+        $voucher->setValue('total', htmlspecialchars(number_format($this->reserva->totales['total'], FS_NF0, FS_NF1, FS_NF2)));
 
         $voucher->cloneRow('nombrePasajero', $this->reserva->getCantPasajeros());
 
@@ -271,9 +287,9 @@ class reserva_home extends fs_controller {
         if($pagos) {
             $voucher->cloneRow('numeroRecibo', count($pagos));
             foreach($pagos as $num => $pago) {
-                $voucher->setValue('numeroRecibo#'.($num+1), htmlspecialchars($pago->id));
+                $voucher->setValue('numeroRecibo#'.($num+1), htmlspecialchars($pago->idrecibo));
                 $voucher->setValue('fechaRecibo#'.($num+1), htmlspecialchars($pago->fecha));
-                $voucher->setValue('montoRecibo#'.($num+1), htmlspecialchars(number_format($pago->importe, 2)));
+                $voucher->setValue('montoRecibo#'.($num+1), htmlspecialchars(number_format($pago->importe, FS_NF0, FS_NF1, FS_NF2)));
             }
         } else {
             $voucher->setValue('numeroRecibo', '');
@@ -356,6 +372,34 @@ class reserva_home extends fs_controller {
         }    }
 
     private function cancelarAction() {
+        $id = (int) isset($_GET['id']) ? $_GET['id'] : 0;
+        $this->page->extra_url = '&action=cancel&id='.$id;
+        $this->reserva = reserva::get($id);
+        if(!$this->reserva) {
+            $this->reserva = new reserva();
+            $this->indexAction();
+        } else {
+            $this->template = 'reserva_cancel_form';
+        }
+
+        $this->cliente = $this->reserva->getCliente();
+        $this->factura = $this->reserva->getFacturaCliente();
+
+        $this->reserva->setCancelDate(new DateTime());
+
+        if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancelar_reserva'])) {
+            //TODO: Crear facura con los gastos de envio
+            $this->reserva->setEstado(estado_reserva::get(estado_reserva::CANCELADA));
+            if($this->reserva->save()) {
+                $this->new_message('La reserva a sido cancelada correctamente!');
+                $this->indexAction();
+            } else {
+                $this->new_error_msg('Error al cancelar la reserva');
+            }
+        } else {
+            $this->new_advice($this->reserva->getCancelMessage());
+        }
+
     }
 
     private function deleteAction() {
@@ -452,6 +496,14 @@ class reserva_home extends fs_controller {
         return $this->fecha_hasta;
     }
 
+    public function getMaxPass() {
+        $max_pass = false;
+        if($this->max_pass > 0) {
+            $max_pass = $this->max_pass;
+        }
+        return $max_pass;
+    }
+
     public function getHabitacionCell(habitacion $habitacion, DateTime $fecha) {
         $reserva = false;
         $reservas = $this->reserva->findByHabitacionYFecha($habitacion->getId(), $fecha->format('Y-m-d'));
@@ -465,12 +517,12 @@ class reserva_home extends fs_controller {
             $estado = (string) $reserva->getEstado();
             if(($estado === estado_reserva::INCOMPLETA ||
                $estado === estado_reserva::SINSENA) &&
-               !$reserva->getIdAlbaran()
+               !$reserva->getIdFactura()
             ) {
                 $cssClass = "reservada";
             } elseif(($estado === estado_reserva::SENADO ||
                      $estado === estado_reserva::PAGO) ||
-                     $reserva->getIdAlbaran() &&
+                     $reserva->getIdFactura() &&
                      $estado !== estado_reserva::CHECKIN
             ) {
                 $cssClass = "reservada_senia";
@@ -491,7 +543,7 @@ class reserva_home extends fs_controller {
             $href = $this->new_url($habitacion, $fecha);
         }
         $cell .= '<a href="' . $href . '" class="btn ' . $cssClass . '">'.$texto.'</a>';
-        if($reserva && $reserva->getFechaOut() == $fecha->format('Y-m-d')) {
+        if($reserva && $reserva->getFechaOut() == $fecha->format('d-m-Y')) {
             $cell .= '<a href="' . $this->new_url($habitacion, $fecha) . '" style="width: 100%;" class="btn disponible">&nbsp;</a>';
         }
 

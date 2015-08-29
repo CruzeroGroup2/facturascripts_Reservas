@@ -8,7 +8,9 @@
 
 require_model('tarifa_reserva.php');
 
-class reserva_tarifa_habitacion extends fs_controller {
+require_once 'reserva_controller.php';
+
+class reserva_tarifa_habitacion extends reserva_controller {
 
     /**
      * @var tarifa_reserva
@@ -97,12 +99,13 @@ class reserva_tarifa_habitacion extends fs_controller {
     }
 
     public function editAction() {
-        $this->page->extra_url = '&action=edit';
         $id = (int) isset($_GET['id']) ? $_GET['id'] : 0;
         $this->tarifa = tarifa_reserva::get($id);
+        $this->page->extra_url = '&action=edit&id=' . (int) $this->tarifa->getId();;
         $this->template = 'reserva_tarifa_form';
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->tarifa->setValues($_POST);
+            $this->tarifa->setEdit(true);
             if ($this->tarifa->save()) {
                 $this->new_message("Tarifa actualizadp correctamente!.");
             } else {

@@ -8,8 +8,10 @@ require_model('agente.php');
 require_model('almacen.php');
 require_model('serie.php');
 require_model('divisa.php');
-require_model('albaran_cliente.php');
+require_model('factura_cliente.php');
 require_model('forma_pago.php');
+
+require_once 'reserva_controller.php';
 
 /**
  * Created by IntelliJ IDEA.
@@ -17,7 +19,7 @@ require_model('forma_pago.php');
  * Date: 12/08/2015
  * Time: 09:36 PM
  */
-class reserva_pagos extends fs_controller {
+class reserva_pagos extends reserva_controller {
 
     /**
      * @var reserva
@@ -60,9 +62,9 @@ class reserva_pagos extends fs_controller {
     protected $divisa;
 
     /**
-     * @var albaran_cliente
+     * @var factura_cliente
      */
-    protected $albaran;
+    protected $factura;
 
     /**
      * @var forma_pago
@@ -100,7 +102,7 @@ class reserva_pagos extends fs_controller {
         $this->almacen = new almacen();
         $this->serie = new serie();
         $this->divisa = new divisa();
-        $this->albaran = new albaran_cliente();
+        $this->factura = new factura_cliente();
         $this->forma_pago = new forma_pago();
         foreach($this->cliente->get_direcciones() as $dir) {
             if($dir->domfacturacion) {
@@ -112,13 +114,13 @@ class reserva_pagos extends fs_controller {
         $this->agente = $this->user->get_agente();
         $this->template = 'reserva_pago_form';
         //$this->__createFactura();
-        if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generar_albaran'])) {
-            $this->__createAlbaran();
+        if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generar_factura'])) {
+            $this->__createFactura();
         }
         $this->share_extensions();
     }
 
-    private function __createAlbaran() {
+    private function __createFactura() {
         $date = new DateTime($_POST['fecha']);
         $fecha = $date->format('Y-m-d');
         $hora = $date->format('H:i:s');
@@ -135,32 +137,32 @@ class reserva_pagos extends fs_controller {
         $divisa = $this->divisa->get($_POST['divisa']);
 
         //Albarán
-        $this->albaran->fecha = $fecha;
-        $this->albaran->hora = $hora;
-        $this->albaran->codalmacen = $almacen->codalmacen;
-        $this->albaran->codejercicio = $ejercicio->codejercicio;
-        $this->albaran->codserie = $serie->codserie;
-        $this->albaran->codpago = $forma_pago->codpago;
-        $this->albaran->coddivisa = $divisa->coddivisa;
-        $this->albaran->tasaconv = $divisa->tasaconv;
-        $this->albaran->codagente = $this->agente->codagente;
-        $this->albaran->numero2 = '';
-        $this->albaran->observaciones = '';
-        $this->albaran->irpf = $serie->irpf;
-        $this->albaran->porcomision = $this->agente->porcomision;
-        $this->albaran->codcliente = $this->cliente->codcliente;
-        $this->albaran->cifnif = $this->cliente->cifnif;
-        $this->albaran->nombrecliente = $this->cliente->razonsocial;
-        $this->albaran->ciudad = $this->direccion->ciudad;
-        $this->albaran->codpais = $this->direccion->codpais;
-        $this->albaran->codpostal = $this->direccion->codpostal;
-        $this->albaran->direccion = $this->direccion->direccion;
-        $this->albaran->provincia = $this->direccion->provincia;
+        $this->factura->fecha = $fecha;
+        $this->factura->hora = $hora;
+        $this->factura->codalmacen = $almacen->codalmacen;
+        $this->factura->codejercicio = $ejercicio->codejercicio;
+        $this->factura->codserie = $serie->codserie;
+        $this->factura->codpago = $forma_pago->codpago;
+        $this->factura->coddivisa = $divisa->coddivisa;
+        $this->factura->tasaconv = $divisa->tasaconv;
+        $this->factura->codagente = $this->agente->codagente;
+        $this->factura->numero2 = '';
+        $this->factura->observaciones = '';
+        $this->factura->irpf = $serie->irpf;
+        $this->factura->porcomision = $this->agente->porcomision;
+        $this->factura->codcliente = $this->cliente->codcliente;
+        $this->factura->cifnif = $this->cliente->cifnif;
+        $this->factura->nombrecliente = $this->cliente->razonsocial;
+        $this->factura->ciudad = $this->direccion->ciudad;
+        $this->factura->codpais = $this->direccion->codpais;
+        $this->factura->codpostal = $this->direccion->codpostal;
+        $this->factura->direccion = $this->direccion->direccion;
+        $this->factura->provincia = $this->direccion->provincia;
 
-        if($this->albaran->save()) {
+        if($this->factura->save()) {
             $art0 = new articulo();
-            $linea = new linea_albaran_cliente();
-            $linea->idalbaran = $this->albaran->idalbaran;
+            $linea = new linea_factura_cliente();
+            $linea->idfactura = $this->factura->idfactura;
             $linea->descripcion = $_POST[ 'desc_0'];
             $linea->pvpunitario = floatval($this->reserva->getTotal());
             $linea->cantidad = floatval(1);
@@ -174,34 +176,37 @@ class reserva_pagos extends fs_controller {
             }
 
             if($linea->save()) {
-                //Calcula totales del albaran con la reserva agregada
-                $this->albaran->neto += $linea->pvptotal;
-                $this->albaran->totaliva += ($linea->pvptotal * $linea->iva / 100);
-                $this->albaran->totalirpf += ($linea->pvptotal * $linea->irpf / 100);
-                $this->albaran->totalrecargo += ($linea->pvptotal * $linea->recargo / 100);
+                //Calcula totales de la factura con la reserva agregada
+                $this->factura->neto += $linea->pvptotal;
+                $this->factura->totaliva += ($linea->pvptotal * $linea->iva / 100);
+                $this->factura->totalirpf += ($linea->pvptotal * $linea->irpf / 100);
+                $this->factura->totalrecargo += ($linea->pvptotal * $linea->recargo / 100);
 
                 /// redondeamos
-                $this->albaran->neto = round($this->albaran->neto, FS_NF0);
-                $this->albaran->totaliva = round($this->albaran->totaliva, FS_NF0);
-                $this->albaran->totalirpf = round($this->albaran->totalirpf, FS_NF0);
-                $this->albaran->totalrecargo = round($this->albaran->totalrecargo, FS_NF0);
-                $this->albaran->total = $this->albaran->neto + $this->albaran->totaliva - $this->albaran->totalirpf + $this->albaran->totalrecargo;
-                if($this->albaran->save()) {
-                    $this->new_message("<a href='" . $this->albaran->url() . "'>" . ucfirst(FS_ALBARAN) . "</a> guardado correctamente.");
-                    $this->reserva->setAlbaranCliente($this->albaran);
+                $this->factura->neto = round($this->factura->neto, FS_NF0);
+                $this->factura->totaliva = round($this->factura->totaliva, FS_NF0);
+                $this->factura->totalirpf = round($this->factura->totalirpf, FS_NF0);
+                $this->factura->totalrecargo = round($this->factura->totalrecargo, FS_NF0);
+                $this->factura->total = $this->factura->neto + $this->factura->totaliva - $this->factura->totalirpf + $this->factura->totalrecargo;
+                if($this->factura->save()) {
+                    $this->new_message("<a href='" . $this->factura->url() . "'>" . ucfirst(FS_FACTURA) . "</a> guardado correctamente.");
+                    if( (string) $this->reserva->getEstado() === estado_reserva::SINSENA) {
+                        $this->reserva->setEstado(estado_reserva::get(estado_reserva::SENADO));
+                    }
+                    $this->reserva->setFacturaCliente($this->factura);
                     if($this->reserva->save()) {
                         $this->new_message($this->reserva->getSuccesMessage());
                     } else {
                         $this->new_error_msg("Error al actualizar la reserva!");
                     }
-                    header('Location: '.$this->albaran->url());
+                    header('Location: '.$this->factura->url());
                 }
             } else {
-                $this->albaran->delete();
-                $this->new_error_msg("¡Imposible guardar el ".FS_ALBARAN." para la reserva!");
+                $this->factura->delete();
+                $this->new_error_msg("¡Imposible guardar el ".FS_FACTURA." para la reserva!");
             }
         } else {
-            $this->new_error_msg("¡Imposible guardar el ".FS_ALBARAN." para la reserva!");
+            $this->new_error_msg("¡Imposible guardar el ".FS_FACTURA." para la reserva!");
         }
     }
 
@@ -237,8 +242,8 @@ class reserva_pagos extends fs_controller {
         return $this->divisa;
     }
 
-    public function getAlbaran() {
-        return $this->albaran;
+    public function getFactura() {
+        return $this->factura;
     }
 
     public function getFormaPago() {
@@ -253,7 +258,7 @@ class reserva_pagos extends fs_controller {
                 'page_to' => 'reserva_pagos',
                 'type' => 'tab',
                 'text' => '<span class="glyphicon glyphicon-piggy-bank" aria-hidden="true"></span><span class="hidden-xs">&nbsp; Pagos</span>',
-                'params' => '&albaran=TRUE'
+                'params' => '&factura=TRUE'
             )
         );
         foreach($extensiones as $ext)

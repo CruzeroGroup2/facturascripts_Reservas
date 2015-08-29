@@ -15,12 +15,14 @@ function parseDate(str) {
 
 /**
  *
- * @param first
- * @param second
+ * @param first {Date}
+ * @param second {Date}
  * @returns {number}
  */
 function daydiff(first, second) {
-    return (second-first)/(1000*60*60*24);
+    first.setHours(0, 0, 0);
+    second.setHours(23, 59, 59);
+    return Math.ceil((second-first)/(1000*60*60*24));
 }
 
 /**
@@ -74,7 +76,7 @@ function calculate_totals(tarifa, dias, descuento, cantAdultos, cantMenores) {
 function calculate_amount() {
     var fechaIn = parseDate($('#fecha_in').val()),
         fechaOut = parseDate($('#fecha_out').val()),
-        dias = daydiff(fechaIn, fechaOut),
+        dias = (fechaOut > fechaIn) ? daydiff(fechaIn, fechaOut) : 1,
         tarifa = $('#idtarifa').val(),
         cantAdultos = parseInt($('#cantidad_adultos').val()),
         cantMenores = parseInt($('#cantidad_menores').val()),
@@ -104,7 +106,7 @@ var agregar_pasajero = function(event) {
         cantMenores = parseInt($('#cantidad_menores').val()),
         cantPasajeros = cantAdultos+cantMenores;
 
-    if($('input[name="pasajeros[]"').length >= cantPasajeros) {
+    if($('input[name="pasajeros[]"]').length >= cantPasajeros) {
         alert('No puedes agregar más pasajeros a la reserva');
         clear_pasajero_fields();
         return false;
@@ -197,7 +199,7 @@ var select_habitacion = function(event) {
 function edit_huesped(element) {
     var parent = $(element.parentNode),
         huespedInfo = parent.find('input[type="hidden"]').val().split(':');
-    remove_huesped(element);
+    remove_huesped(element, true);
     $('#nombre_pasajero').val(huespedInfo[0]);
     $('input[value="'+huespedInfo[1]+'"]').attr('checked','checked');
     $('#documento_pasajero').val(huespedInfo[2]);
@@ -206,13 +208,12 @@ function edit_huesped(element) {
     return false;
 }
 
-function remove_huesped(element) {
+function remove_huesped(element, force) {
     var parent = $(element.parentNode),
         form = parent.closest('form'),
-        huespedInfo = parent.find('input[type="hidden"]').val().split(':');
-    if(confirm("Desea eliminar al pasajero "+huespedInfo[0])) {
-        console.log(parent);
-        console.log(parent.parent());
+        huespedInfo = parent.find('input[type="hidden"]').val().split(':'),
+        force = typeof force !== 'undefined' ? force : confirm("Desea eliminar al pasajero "+huespedInfo[0]);
+    if(force) {
         form.append('<input type="hidden" name="remover_pasajeros[]" value="'+huespedInfo.join(":")+'" />');
         parent.parent().remove();
     }

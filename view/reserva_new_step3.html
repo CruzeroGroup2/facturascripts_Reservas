@@ -71,7 +71,7 @@
                 Cantidad de Noches: {$fsc->getReserva()->getCantidadDias()}
             </div>
             <div class="col-md-4">
-                Monto Tarifa: $ {function="number_format($fsc->getReserva()->getTarifa()->getMonto(), 2)"}
+                Monto Tarifa: {$fsc->show_precio($fsc->getReserva()->getTarifa()->getMonto())}
             </div>
         </div>
         <div class="container">
@@ -227,7 +227,7 @@
                         <label for="total">Total</label>
                     </div>
                     <div class="col-md-5">
-                        <input id="total" class="form-control" name="total" type="text" readonly="readonly" value="{function="number_format($fsc->getReserva()->getTotal(), 2)"}"><br>
+                        <input id="total" class="form-control" name="total" type="text" readonly="readonly" value="{$fsc->show_precio($fsc->getReserva()->getTotal())}"><br>
                     </div>
                     <div class="col-md-4">
                         <input type="submit" value="Grabar Reserva" id="guardar" class="form-control btn-primary bottom-buffer">
@@ -242,19 +242,18 @@
                         <input id="descuento" class="form-control" name="descuento" type="text" value="{$fsc->getReserva()->getDescuento()}">
                     </div>
                     <div class="col-md-4">
-                        <button type="submit" class="form-control btn-success" id="pago" formaction="{$fsc->pago_url($fsc->getReserva())}">Generar Pago</button>
+                        <button type="submit" id="pago" class="form-control btn-success" formaction="{$fsc->pago_url($fsc->getReserva())}">Generar Pago</button>
                     </div>
                 </div>
-                <div class="row" form-group>
+                <div class="row form-group">
                     <div class="col-md-3">
                         <label for="total_final">Total Reserva</label>
                     </div>
                     <div class="col-md-5">
-                        <input id="total_final" class="form-control" name="total_final" type="text" readonly="readonly" value="{function="number_format($fsc->getReserva()->getTotalFinal(), 2)"}">
+                        <input id="total_final" class="form-control" name="total_final" type="text" readonly="readonly" value="{$fsc->show_precio($fsc->getReserva()->getTotalFinal())}" />
                     </div>
                     <div class="col-md-4">
-                        <input type="button" value="Imprimir" id="imprimir" class="form-control"><br>
-                        <input type="reset" value="Cancelar" id="cancelar" class="form-control">
+                        <button type="submit" name="cancelar" id="cancelar" class="form-control btn-danger" formaction="{$fsc->cancel_url($fsc->getReserva())}">Cancelar</button>
                     </div>
                 </div>
             </div>

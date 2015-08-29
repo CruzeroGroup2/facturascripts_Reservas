@@ -1,0 +1,66 @@
+{include="header"}
+<link href="plugins/reservas/view/css/custom.css" rel="stylesheet" />
+<script type="text/javascript" src="view/js/jquery.validate.min.js"></script>
+<script type="text/javascript" src="plugins/reservas/view/js/cancelar_reserva.js"></script>
+
+<div class="container">
+    <form action="{$fsc->cancel_url($fsc->getReserva())}" method="post" id="cancelacion" class="form-horizontal">
+        <input type="hidden" name="idreserva" id="idreserva" value="{$fsc->getReserva()->getId()}">
+        <input type="hidden" name="codcliente" id="codcliente" value="{$fsc->getReserva()->getCodCliente()}" />
+        <input type="hidden" name="idtarifa" id="idtarifa" value="{$fsc->getReserva()->getTarifa()->getId()}" />
+        <div class="bottom-buffer"></div>
+        <div class="row">
+            <div class="col-sm-8">
+                <h1>Cancelar Reserva {$fsc->getReserva()->getId()}</h1>
+            </div>
+            <div class="col-md-2">
+                <label for="fecha">Fecha y Hora</label>
+            </div>
+            <div class="col-md-2">
+                <input type="datetime" readonly="readonly" id="fecha" name="fecha" class="form-control" value="{function="date('Y-m-d H:i')"}" autocomplete="off"/>
+            </div>
+        </div>
+        <div role="tabpanel">
+            <div class="tab-content">
+                <div role="tabpanel" class="tab-pane active">
+                    <div class="table-responsive">
+                        <table class="table table-condensed">
+                            <thead>
+                            <tr>
+                                <th class="text-left" width="180">Referencia</th>
+                                <th class="text-left">Descripción</th>
+                                <th class="text-right" width="110">Precio</th>
+                            </tr>
+                            </thead>
+                            <tbody id="lineas">
+                                <tr>
+                                    <td><input type="text" readonly="readonly" name="referencia_0" id="referencia_0" class="form-control" value="Cancelacion Reserva" /></td>
+                                    <td><input type="text" readonly="readonly" name="desc_0" id="desc_0" class="form-control" value="Cancelacion - Reserva {$fsc->getReserva()->getId()} - {$fsc->show_precio($fsc->getReserva()->getTotal())}" /></td>
+                                    <td><input type="text" readonly="readonly" name="pvp_0" id="pvp_0" class="form-control" value="{$fsc->show_precio($fsc->getReserva()->getRefundAmount())}"></td>
+                                </tr>
+                                <tr>
+                                    <td><input type="text" readonly="readonly" name="referencia_1" id="referencia_1" class="form-control" value="Gastos de Envio" /></td>
+                                    <td><input type="text" readonly="readonly" name="desc_1" id="desc_1" class="form-control" value="Gastos envio - Reserva {$fsc->getReserva()->getId()}" /></td>
+                                    <td><input type="text" name="pvp_1" id="pvp_1" class="form-control" value=""></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" class="text-right">Totales:</td>
+                                    <td>
+                                        <input type="text" name="total" id="total" class="form-control text-right" style="font-weight: bold;" value="0" autocomplete="off" />
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-offset-9 col-md-3 text-right">
+                    <button type="submit" id="cancelar_reserva" name="cancelar_reserva" class="btn btn-success" {if="$fsc->getReserva()->isCanceled()"}disabled="disabled"{/if}>Cancelar Reserva</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+{include="footer"}
