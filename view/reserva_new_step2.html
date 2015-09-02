@@ -26,9 +26,8 @@
         <input type="hidden" name="codcliente" id="codcliente" value="{$fsc->getReserva()->getCodCliente()}" />
         <input type="hidden" name="codgrupo" id="codgrupo" value="{$fsc->getReserva()->getCodGrupoCliente()}" />
         <input type="hidden" name="idtarifa" id="idtarifa" value="{$fsc->getReserva()->getTarifa()->getId()}" />
-        <input type="hidden" name="idcategoria" id="idcategoria" value="{$fsc->getReserva()->getCategoriaHabitacion()}" />
         <input type="hidden" name="idsHabitaciones" id="idsHabitaciones" value="{function="implode(',', $fsc->getReserva()->getHabitaciones(true))"}" />
-        <div class="row">
+        <div class="row form-group">
             <div class="col-md-2">
                 <label><span>Fecha de Ingreso</span>
                     <input type="text" name="fecha_in" id="fecha_in" class="form-control input-sm datepicker" value="{$fsc->getReserva()->getFechaIn()}" />
@@ -40,7 +39,7 @@
                 </label>
             </div>
         </div>
-        <div class="row">
+        <div class="row form-group">
             <div class="col-md-2">
                 <label for="nombre_reserva">Nombre de la Reserva</label>
             </div>
@@ -63,8 +62,21 @@
                 </script>
             </div>
         </div>
-        <div class="row">
-            <div class="col-md-offset-3 col-md-1">
+        <div class="row form-group">
+            <div class="col-md-2">
+                <label for="idcategoria">Categoría de Habitacion</label>
+            </div>
+            <div class="col-md-2">
+                <select id="idcategoria" name="idcategoria" class="form-control input-sm"
+                        {if="$fsc->getReserva()->getNumerosHabitaciones()"} readonly="readonly"{/if}
+                required data-msg="Debe seleciconar la categoria de la habitacion">
+                <option value="">Seleccione...</option>
+                {loop="$fsc->getCategoriaHabitacion()->fetchAll()"}
+                <option value="{$value->getId()}"{if="$fsc->getReserva()->getCategoriaHabitacion() == $value->getId()"} selected="selected"{/if}>{$value->getNombre()}</option>
+                {/loop}
+                </select>
+            </div>
+            <div class="col-md-1">
                 <label>Adultos</label>
             </div>
             <div class="col-md-1">
@@ -76,13 +88,14 @@
             <div class="col-md-1">
                 <input id="cantidad_menores" class="form-control" name="cantidad_menores" value="{$fsc->getReserva()->getCantidadMenores()}" />
             </div>
-            <div class="col-md-2">
-                <label><span>Cantidad de Huespedes por Habitacion</span>
+            <div class="col-md-1">
+                <label><span>Cant. Huesp x Hab</span></label>
+            </div>
+            <div class="col-md-1">
                     <input type="number" min="2" max="6" name="cantidad_por_habitacion" id="cantidad_por_habitacion" value="2" />
-                </label>
             </div>
         </div>
-        <div class="row">
+        <div class="row form-group">
             <h2>Habitaciones Disponibles:</h2>
             <div id="habitacionesResult" class="has-spinner">
 
@@ -91,18 +104,18 @@
         <div class="row">
             <div class="container">
                 <h2>Totales</h2>
-                <div class="row">
+                <div class="row form-group">
                     <div class="col-md-2">
                         <label for="total">Total</label>
                     </div>
                     <div class="col-md-2">
-                        <input id="total" class="form-control" name="total" type="text" value="{$fsc->show_precio($fsc->getReserva()->getTotal())}"><br>
+                        <input id="total" class="form-control" name="total" type="text" value="{$fsc->show_precio($fsc->getReserva()->getTotal())}">
                     </div>
                     <div class="col-md-2">
                         <input type="submit" value="Grabar Reserva" id="guardar" class="form-control btn-primary">
                     </div>
                 </div>
-                <div class="row">
+                <div class="row form-group">
                     <div class="col-md-2">
                         <label for="descuento">Dto/Int</label>
                     </div>
@@ -110,7 +123,7 @@
                         <input id="descuento" class="form-control" name="descuento" type="text" value="{$fsc->getReserva()->getDescuento()}">
                     </div>
                 </div>
-                <div class="row">
+                <div class="row form-group">
                     <div class="col-md-2">
                         <label for="total_final">Total Reserva</label>
                     </div>

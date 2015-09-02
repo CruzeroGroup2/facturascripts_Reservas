@@ -346,6 +346,12 @@ class habitacion extends fs_model {
         return $habitacionlist;
     }
 
+    public function fetchCountPlazasDisponiblesByFecha($date) {
+        $cant = $this->db->select('SELECT SUM(plaza_maxima) as plazas_disponibles  FROM ' . $this->table_name . ' WHERE idestado = 1');
+
+        return $cant[0]['plazas_disponibles'];
+    }
+
     /**
      * @param null $minGuestPorHab
      * @param null $arrival
@@ -371,16 +377,16 @@ WHERE id NOT IN (
 )";
 
         if(is_int($minGuestPorHab) || $minGuestPorHab > 0) {
-            $sql .= ' AND plaza_maxima >= '.$minGuestPorHab;
+            $sql .= ' AND plaza_maxima >= ' . $minGuestPorHab . "\n";
         }
 
         if(is_int($categoria) && $categoria != 0) {
-            $sql .= ' AND idcategoria >= '.$categoria;
+            $sql .= ' AND habitacion.idcategoria = '.$categoria . "\n";
         }
 
-        $sql .= '
-GROUP BY plaza_maxima, idpabellon, idcategoria
+        $sql .= 'GROUP BY plaza_maxima, idpabellon, idcategoria
 ORDER BY plaza_maxima ASC;';
+        //echo '<pre>'.$sql.'</pre>';
         return $this->db->select($sql);
     }
 
@@ -397,19 +403,19 @@ ORDER BY plaza_maxima ASC;';
         $this->id = (int)$this->id;
 
         if (!is_numeric($this->numero)) {
-            $this->new_error_msg("Numero de habitacion no válido.");
+            $this->new_error_msg("Numero de habitacion no vÃ¡lido.");
         }
 
         if (!is_numeric($this->plaza_maxima)) {
-            $this->new_error_msg("Plazas Maximas no válido.");
+            $this->new_error_msg("Plazas Maximas no vÃ¡lido.");
         }
 
         if (!is_numeric($this->idpabellon) && $this->getPabellon()->exists()) {
-            $this->new_error_msg("Pabellon habitacion no válida.");
+            $this->new_error_msg("Pabellon habitacion no vÃ¡lida.");
         }
 
         if (!is_numeric($this->idcategoria) && $this->getCategoria()->exists()) {
-            $this->new_error_msg("Categoría habitacion no válida.");
+            $this->new_error_msg("CategorÃ­a habitacion no vÃ¡lida.");
         }
 
         if(!$this->get_errors()) {

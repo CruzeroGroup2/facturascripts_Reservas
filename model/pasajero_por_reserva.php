@@ -389,6 +389,13 @@ class pasajero_por_reserva extends fs_model {
         return $cant[0]['cant_pasajeros'];
     }
 
+    public function fetchCantCheckInByFecha($fecha) {
+        $fecha = new DateTime($fecha);
+        $cant = $this->db->select('SELECT COUNT(id) as cant_pasajeros FROM '. $this->table_name .' WHERE fecha_in >= '. $this->var2str($fecha->format('Y-m-d')) .' AND fecha_out IS NULL');
+
+        return $cant[0]['cant_pasajeros'];
+    }
+
     /**
      * @return bool|array
      */
@@ -412,7 +419,7 @@ class pasajero_por_reserva extends fs_model {
         $this->fecha_nacimiento = $this->no_html($this->fecha_nacimiento);
 
         if(strlen($this->nombre_completo) < 1 || strlen($this->nombre_completo) > 250) {
-            $this->new_error_msg( "Nombre de pasajero no válido." );
+            $this->new_error_msg( "Nombre de pasajero no vÃ¡lido." );
         }
 
         if($this->tipo_documento != 'DNI' && $this->tipo_documento != 'AFILIADO') {
@@ -420,12 +427,12 @@ class pasajero_por_reserva extends fs_model {
         }
 
         if(strlen($this->documento) < 1 || strlen($this->documento) > 10) {
-            $this->new_error_msg("Documento no válido");
+            $this->new_error_msg("Documento no vÃ¡lido");
         }
 
         $now = strtotime('today');
         if (strtotime($this->fecha_nacimiento) >= $now) {
-            $this->new_error_msg("Fecha de nacimiento no válida");
+            $this->new_error_msg("Fecha de nacimiento no vÃ¡lida");
         }
 
         if (!$this->get_errors()) {

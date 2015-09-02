@@ -79,7 +79,7 @@ class reserva_estado extends reserva_controller {
             if ($this->estado->save()) {
                 $this->new_message("Estado agregado correctamente!.");
             } else {
-                $this->new_error_msg("¡Imposible agregar Estado!");
+                $this->new_error_msg("Â¡Imposible agregar Estado!");
             }
         }
     }
@@ -94,7 +94,7 @@ class reserva_estado extends reserva_controller {
             if ($this->estado->save()) {
                 $this->new_message("Estado actualizado correctamente!.");
             } else {
-                $this->new_error_msg("¡Imposible actualizar estado_habitacion!");
+                $this->new_error_msg("Â¡Imposible actualizar estado_habitacion!");
             }
         }
     }
@@ -110,7 +110,7 @@ class reserva_estado extends reserva_controller {
         if($this->estado && $this->estado->delete()) {
             $this->new_message("Estado actualizado correctamente!.");
         } else {
-            $this->new_error_msg("¡Imposible eliminar estado_habitacion!");
+            $this->new_error_msg("Â¡Imposible eliminar estado_habitacion!");
         }
         $this->indexAction();
     }

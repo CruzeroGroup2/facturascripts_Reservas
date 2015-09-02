@@ -75,7 +75,7 @@ class categoria_habitacion extends fs_model {
     }
 
     /**
-     * Esta función es llamada al crear una tabla.
+     * Esta funciÃ³n es llamada al crear una tabla.
      * Permite insertar valores en la tabla.
      */
     protected function install() {
@@ -148,7 +148,7 @@ SQL;
         $this->nombre = $this->no_html($this->nombre);
 
         if (strlen($this->nombre) < 1 OR strlen($this->nombre) > 50) {
-            $this->new_error_msg("Nombre de Categoria de Habitacion no válido.");
+            $this->new_error_msg("Nombre de Categoria de Habitacion no vÃ¡lido.");
         } else {
             $status = true;
         }

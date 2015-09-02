@@ -96,28 +96,33 @@ class reserva_pagos extends reserva_controller {
         $id = (int) isset($_GET['id']) ? $_GET['id'] : 0;
         $this->reserva = reserva::get($id);
         $this->reserva->calcularTotales();
-        $this->cliente = $this->reserva->getCliente();
-        $this->direccion = new direccion_cliente();
-        $this->pais = new pais();
-        $this->almacen = new almacen();
-        $this->serie = new serie();
-        $this->divisa = new divisa();
-        $this->factura = new factura_cliente();
-        $this->forma_pago = new forma_pago();
-        foreach($this->cliente->get_direcciones() as $dir) {
-            if($dir->domfacturacion) {
-                $this->direccion = $dir;
-                break;
+
+        if($this->reserva->getFacturaCliente()) {
+            header('Location: '. $this->reserva->getFacturaCliente()->url());
+        } else {
+            $this->cliente = $this->reserva->getCliente();
+            $this->direccion = new direccion_cliente();
+            $this->pais = new pais();
+            $this->almacen = new almacen();
+            $this->serie = new serie();
+            $this->divisa = new divisa();
+            $this->factura = new factura_cliente();
+            $this->forma_pago = new forma_pago();
+            foreach($this->cliente->get_direcciones() as $dir) {
+                if($dir->domfacturacion) {
+                    $this->direccion = $dir;
+                    break;
+                }
             }
+            //Agente
+            $this->agente = $this->user->get_agente();
+            $this->template = 'reserva_pago_form';
+            //$this->__createFactura();
+            if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generar_factura'])) {
+                $this->__createFactura();
+            }
+            $this->share_extensions();
         }
-        //Agente
-        $this->agente = $this->user->get_agente();
-        $this->template = 'reserva_pago_form';
-        //$this->__createFactura();
-        if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generar_factura'])) {
-            $this->__createFactura();
-        }
-        $this->share_extensions();
     }
 
     private function __createFactura() {

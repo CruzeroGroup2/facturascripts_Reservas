@@ -222,6 +222,10 @@ class reserva_home extends reserva_controller {
                 if($this->reserva->getStep() > 2) {
                     $this->new_message($this->reserva->getSuccesMessage());
                 }
+
+                if(!$this->reserva->getNumerosHabitaciones()) {
+                    $this->new_advice('La reserva no tiene ninguna habitacion asociada!');
+                }
             } else {
                 $this->new_error_msg("¡Error en Reserva!");
             }
@@ -382,23 +386,24 @@ class reserva_home extends reserva_controller {
             $this->template = 'reserva_cancel_form';
         }
 
-        $this->cliente = $this->reserva->getCliente();
-        $this->factura = $this->reserva->getFacturaCliente();
-
         $this->reserva->setCancelDate(new DateTime());
 
-        if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancelar_reserva'])) {
-            //TODO: Crear facura con los gastos de envio
-            $this->reserva->setEstado(estado_reserva::get(estado_reserva::CANCELADA));
-            if($this->reserva->save()) {
-                $this->new_message('La reserva a sido cancelada correctamente!');
-                $this->indexAction();
-            } else {
-                $this->new_error_msg('Error al cancelar la reserva');
-            }
+        if($this->reserva->getEstado() == estado_reserva::INCOMPLETA) {
+            $this->_cancelReservaInDb();
+            $this->indexAction();
         } else {
-            $this->new_advice($this->reserva->getCancelMessage());
+            $this->cliente = $this->reserva->getCliente();
+            $this->factura = $this->reserva->getFacturaCliente();
+            if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancelar_reserva'])) {
+                //TODO: Crear facura con los gastos de envio
+                $this->_cancelReservaInDb();
+                $this->indexAction();
+
+            } else {
+                $this->new_advice($this->reserva->getCancelMessage());
+            }
         }
+
 
     }
 
@@ -425,6 +430,15 @@ class reserva_home extends reserva_controller {
                     $this->new_error_msg("¡Imposible eliminar Reserva!");
                 }
                 $this->indexAction();
+        }
+    }
+
+    private function _cancelReservaInDb() {
+        $this->reserva->setEstado(estado_reserva::get(estado_reserva::CANCELADA));
+        if($this->reserva->save()) {
+            $this->new_message('La reserva a sido cancelada correctamente!');
+        } else {
+            $this->new_error_msg('Error al cancelar la reserva');
         }
     }
 

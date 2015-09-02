@@ -91,9 +91,9 @@ class reserva_tarifa_habitacion extends reserva_controller {
         if($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->tarifa->setValues($_POST);
             if ($this->tarifa->save()) {
-                $this->new_message("Tarifa agregado correctamente!.");
+                $this->new_message("Tarifa agregada correctamente!");
             } else {
-                $this->new_error_msg("¡Imposible agregar Tarifa!");
+                $this->new_error_msg("Â¡Imposible agregar Tarifa!");
             }
         }
     }
@@ -107,9 +107,9 @@ class reserva_tarifa_habitacion extends reserva_controller {
             $this->tarifa->setValues($_POST);
             $this->tarifa->setEdit(true);
             if ($this->tarifa->save()) {
-                $this->new_message("Tarifa actualizadp correctamente!.");
+                $this->new_message("Tarifa actualizada correctamente!");
             } else {
-                $this->new_error_msg("¡Imposible actualizar Tarifa!");
+                $this->new_error_msg("Â¡Imposible actualizar Tarifa!");
             }
         }
     }
@@ -137,9 +137,9 @@ class reserva_tarifa_habitacion extends reserva_controller {
         $id = (int) isset($_GET['id']) ? $_GET['id'] : 0;
         $this->tarifa = tarifa_reserva::get($id);
         if($this->tarifa && $this->tarifa->delete()) {
-            $this->new_message("Tarifa eliminado correctamente!.");
+            $this->new_message("Tarifa eliminada correctamente!.");
         } else {
-            $this->new_error_msg("¡Imposible eliminar Tarifa!");
+            $this->new_error_msg("Â¡Imposible eliminar Tarifa!");
         }
         $this->indexAction();
     }

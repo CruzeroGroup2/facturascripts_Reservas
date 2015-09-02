@@ -49,7 +49,7 @@
                             <div class="col-md-5">
                                 <label for="idcategoria">Categoría de Habitacion</label>
                                 <select id="idcategoria" name="idcategoria" class="form-control input-sm"
-                                        {if="$fsc->getReserva()->getCategoriaHabitacion() != null"} readonly="readonly"{/if}
+                                        {if="$fsc->getReserva()->getNumerosHabitaciones()"} readonly="readonly"{/if}
                                         required data-msg="Debe seleciconar la categoria de la habitacion">
                                     <option value="">Seleccione...</option>
                                     {loop="$fsc->getCategoriaHabitacion()->fetchAll()"}

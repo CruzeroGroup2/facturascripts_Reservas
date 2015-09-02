@@ -74,9 +74,9 @@ class reserva_categoria_habitacion extends reserva_controller {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->categoria_habitacion->setValues($_POST);
             if ($this->categoria_habitacion->save()) {
-                $this->new_message("Categoría Habitacion agregado correctamente!.");
+                $this->new_message("CategorÃ­a Habitacion agregado correctamente!.");
             } else {
-                $this->new_error_msg("¡Imposible agregar Categoría Habitacion!");
+                $this->new_error_msg("Â¡Imposible agregar CategorÃ­a Habitacion!");
             }
         }
     }
@@ -89,9 +89,9 @@ class reserva_categoria_habitacion extends reserva_controller {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->categoria_habitacion->setValues($_POST);
             if ($this->categoria_habitacion->save()) {
-                $this->new_message("Categoría Habitacion actualizada correctamente!.");
+                $this->new_message("CategorÃ­a Habitacion actualizada correctamente!.");
             } else {
-                $this->new_error_msg("¡Imposible actualizar Categoría Habitacion!");
+                $this->new_error_msg("Â¡Imposible actualizar CategorÃ­a Habitacion!");
             }
         }
     }
@@ -105,9 +105,9 @@ class reserva_categoria_habitacion extends reserva_controller {
         $id = (int) isset($_GET['id']) ? $_GET['id'] : 0;
         $this->categoria_habitacion = categoria_habitacion::get($id);
         if($this->categoria_habitacion && $this->categoria_habitacion->delete()) {
-            $this->new_message("Categoría Habitacion eliminado correctamente!.");
+            $this->new_message("CategorÃ­a Habitacion eliminado correctamente!.");
         } else {
-            $this->new_error_msg("¡Imposible eliminar Categoría Habitacion!");
+            $this->new_error_msg("Â¡Imposible eliminar CategorÃ­a Habitacion!");
         }
         $this->indexAction();
     }

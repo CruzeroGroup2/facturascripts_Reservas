@@ -184,7 +184,7 @@ SQL;
         $this->descripcion = $this->no_html($this->descripcion);
 
         if (strlen($this->descripcion) < 1 OR strlen($this->descripcion) > 50) {
-            $this->new_error_msg("Descripcion no v·lida.");
+            $this->new_error_msg("Descripcion no v√°lida.");
         } else {
             $status = true;
         }

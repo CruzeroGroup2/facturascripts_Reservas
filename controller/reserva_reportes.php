@@ -1,6 +1,7 @@
 <?php
 
 require_model('reserva.php');
+require_model('pasajero_por_reserva.php');
 
 require_once 'reserva_controller.php';
 
@@ -64,6 +65,8 @@ class reserva_reportes extends reserva_controller {
 
     private function ocupacion() {
         $this->fecha = date('d-m-Y');
+
+
         $this->template = 'reserva_reportes_ocupacion';
     }
 
@@ -76,10 +79,25 @@ class reserva_reportes extends reserva_controller {
         return $this->fecha;
     }
 
+    public function getCantPasajerosCheckIn() {
+        $obj = new pasajero_por_reserva();
+
+        return $obj->fetchCantCheckInByFecha(date('Y-m-d'));
+    }
+
+    public function getCantPlazasDisponibles() {
+        $obj = new habitacion();
+
+        return $obj->fetchCountPlazasDisponiblesByFecha(date('Y-m-d'));
+    }
+
     public function getPorcentajeOcupacion() {
 
-    }
-    public function getCantidadDePersonas() {
+        $cantPasajerosCheckIn = $this->getCantPasajerosCheckIn();
+        $cantPlazDisponibles = $this->getCantPlazasDisponibles();
+
+        return number_format(($cantPasajerosCheckIn * 100) / $cantPlazDisponibles, FS_NF0, FS_NF1, FS_NF2);
 
     }
+
 }

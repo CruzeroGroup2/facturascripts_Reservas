@@ -218,7 +218,7 @@ class habitacion_por_reserva extends fs_model {
         $this->idreserva = intval($this->no_html($this->idreserva));
 
         if (!is_a($this->getHabitacion(), 'habitacion') && !$this->getHabitacion()->exists()) {
-            $this->new_error_msg("habitacion no válida.");
+            $this->new_error_msg("habitacion no vÃ¡lida.");
         } else {
             $status = true;
         }

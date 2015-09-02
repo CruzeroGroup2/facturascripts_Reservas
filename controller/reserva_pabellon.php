@@ -77,9 +77,9 @@ class reserva_pabellon extends reserva_controller {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->pabellon->setValues($_POST);
             if ($this->pabellon->save()) {
-                $this->new_message("Pabell髇 agregado correctamente!.");
+                $this->new_message("Pabell贸n agregado correctamente!.");
             } else {
-                $this->new_error_msg("mposible agregar Pabell髇!");
+                $this->new_error_msg("隆Imposible agregar Pabell贸n!");
             }
         }
     }
@@ -92,9 +92,9 @@ class reserva_pabellon extends reserva_controller {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->pabellon->setValues($_POST);
             if ($this->pabellon->save()) {
-                $this->new_message("Pabell髇 actualizado correctamente!.");
+                $this->new_message("Pabell贸n actualizado correctamente!.");
             } else {
-                $this->new_error_msg("mposible actualizar pabell髇!");
+                $this->new_error_msg("隆Imposible actualizar pabell贸n!");
             }
         }
     }
@@ -108,9 +108,9 @@ class reserva_pabellon extends reserva_controller {
         $id = (int)isset($_GET['id']) ? $_GET['id'] : 0;
         $this->pabellon = pabellon::get($id);
         if($this->pabellon && $this->pabellon->delete()) {
-            $this->new_message("Pabell髇 actualizado correctamente!.");
+            $this->new_message("Pabell贸n actualizado correctamente!.");
         } else {
-            $this->new_error_msg("mposible eliminar pabell髇!");
+            $this->new_error_msg("隆Imposible eliminar pabell贸n!");
         }
         $this->indexAction();
     }

@@ -39,6 +39,10 @@ class reserva_habitacion extends reserva_controller {
         parent::__construct(__CLASS__, "Habitacion", "Reserva");
     }
     protected function process() {
+        $this->habitacion = new habitacion();
+        $this->pabellon = new pabellon();
+        $this->categoria_habitacion = new categoria_habitacion();
+        $this->estado = new estado_habitacion();
         $action = (string) isset($_GET['action']) ? $_GET['action']: 'list';
 
         switch($action) {
@@ -90,24 +94,19 @@ class reserva_habitacion extends reserva_controller {
     }
 
     public function indexAction() {
-        $this->habitacion = new habitacion();
         $this->habitaciones = $this->habitacion->fetchAll();
         $this->template = 'reserva_habitacion_index';
     }
 
     public function addAction() {
         $this->page->extra_url = '&action=add';
-        $this->habitacion = new habitacion();
-        $this->pabellon = new pabellon();
-        $this->categoria_habitacion = new categoria_habitacion();
-        $this->estado = new estado_habitacion();
         $this->template = 'reserva_habitacion_form';
         if($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->habitacion->setValues($_POST);
             if ($this->habitacion->save()) {
-                $this->new_message("Habitacion agregado correctamente!.");
+                $this->new_message("Habitaci贸n agregada correctamente!");
             } else {
-                $this->new_error_msg("mposible agregar Tarifa!");
+                $this->new_error_msg("隆Imposible agregar Habitaci贸n!");
             }
         }
     }
@@ -120,24 +119,23 @@ class reserva_habitacion extends reserva_controller {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->habitacion->setValues($_POST);
             if ($this->habitacion->save()) {
-                $this->new_message("Habitacion actualizadp correctamente!.");
+                $this->new_message("Habitaci贸n actualizada correctamente!.");
             } else {
-                $this->new_error_msg("mposible actualizar Habitacion!");
+                $this->new_error_msg("隆Imposible actualizar Habitaci贸n!");
             }
         }
     }
 
     public function findAction() {
-        $this->habitacion = new habitacion();
-        $this->categoria_habitacion = new categoria_habitacion();
         $adultos = isset($_POST['cantidad_adultos']) ? intval($_POST['cantidad_adultos']) : 0;
         $menores = isset($_POST['cantidad_menores']) ? intval($_POST['cantidad_menores']) : 0;
         $minGuest = isset($_POST['cantidad_por_habitacion']) ? intval($_POST['cantidad_por_habitacion']) : 2;
         $arrival = isset($_POST['fecha_in']) ? $_POST['fecha_in'] : date('Y-m-d');
         $departure = isset($_POST['fecha_out']) ? $_POST['fecha_out'] : date('Y-m-d');
+        $idcategoria = isset($_POST['idcategoria']) ? intval($_POST['idcategoria']) : null;
 
         $origGuestAmount = $adultos + $menores;
-        $habitacionesDisponibles = $this->habitacion->findByAmount($minGuest, $arrival, $departure);
+        $habitacionesDisponibles = $this->habitacion->findByAmount($minGuest, $arrival, $departure, $idcategoria);
         $result = array();
         $guestAmount = $origGuestAmount;
         for($i=0; $i <= 10; $i++) {
@@ -232,11 +230,11 @@ class reserva_habitacion extends reserva_controller {
     public function deleteAction() {
         $this->page->extra_url = '&action=delete';
         $id = (int) isset($_GET['id']) ? $_GET['id'] : 0;
-        $this->tarifa = tarifa_reserva::get($id);
-        if($this->tarifa && $this->tarifa->delete()) {
-            $this->new_message("Tarifa eliminado correctamente!.");
+        $this->habitacion = habitacion::get($id);
+        if($this->habitacion && $this->habitacion->delete()) {
+            $this->new_message("Habitaci贸n eliminada correctamente!.");
         } else {
-            $this->new_error_msg("mposible eliminar Tarifa!");
+            $this->new_error_msg("隆Imposible eliminar Habitaci贸n!");
         }
         $this->indexAction();
     }

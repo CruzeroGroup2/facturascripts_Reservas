@@ -297,7 +297,7 @@ class tarifa_reserva extends fs_model {
      *
      * @return bool|tarifa_reserva
      */
-    public function fetchByCategoriaYTipoPasajero($idcategoria = 0, $codgrupo = '') {
+    public function fetchByCategoriaYTipoPasajero($idcategoria = 0, $codgrupo = '', $trigger_error = true) {
         $tarifa = $this->db->select("SELECT * FROM ".$this->table_name.
                                      " WHERE
                                          idcategoria = $idcategoria AND
@@ -306,7 +306,9 @@ class tarifa_reserva extends fs_model {
         if($tarifa) {
             return new self($tarifa[0]);
         } else {
-            trigger_error("Tarifa no encontrada para la cegoria id = '".$idcategoria."' y tipo cliente = '$codgrupo'", E_USER_ERROR);
+            if($trigger_error) {
+                trigger_error("Tarifa no encontrada para la cegoria id = '".$idcategoria."' y tipo cliente = '$codgrupo'", E_USER_ERROR);
+            }
             return false;
         }
     }
@@ -355,7 +357,7 @@ class tarifa_reserva extends fs_model {
             $this->new_error_msg("Monto de tarifa no válido!");
         }
 
-        if(!$this->edit && $this->fetchByCategoriaYTipoPasajero($this->getIdCategoriaHabitacion(), $this->getCodGrupoCliente())) {
+        if(!$this->edit && $this->fetchByCategoriaYTipoPasajero($this->getIdCategoriaHabitacion(), $this->getCodGrupoCliente(), false)) {
             $this->new_error_msg("Ya existe una tarifa para la categoría y el grupo seleccionado");
         }
 
@@ -417,8 +419,9 @@ class tarifa_reserva extends fs_model {
      */
     public function delete() {
         $this->clean_cache();
+        $this->setFechaFin(date('Y-m-d H:i:s'));
 
-        return $this->db->exec("DELETE FROM " . $this->table_name . " WHERE id = " . (int)$this->id . ";");
+        return $this->update();
     }
 
     /**
