@@ -53,6 +53,9 @@ class tarifa_reserva extends fs_model {
      */
     protected $edit = false;
 
+    const CACHE_KEY_ALL = 'reserva_tarifa_reserva_all';
+    const CACHE_KEY_SINGLE = 'reserva_tarifa_reserva_{id}';
+
     /**
      * @param array $data
      */
@@ -165,6 +168,7 @@ class tarifa_reserva extends fs_model {
 
     /**
      * @param categoria_habitacion $categoria_habitacion
+     *
      * @return tarifa_reserva
      */
     public function setCategoriaHabitacion($categoria_habitacion) {
@@ -181,6 +185,7 @@ class tarifa_reserva extends fs_model {
 
     /**
      * @param int $idCategoria
+     *
      * @return tarifa_reserva
      */
     public function setIdCategoriaHabitacion($idCategoria) {
@@ -200,6 +205,7 @@ class tarifa_reserva extends fs_model {
 
     /**
      * @param grupo_clientes $grupo_clientes
+     *
      * @return tarifa_reserva
      */
     public function setGrupoCliente(grupo_clientes $grupo_clientes) {
@@ -217,6 +223,7 @@ class tarifa_reserva extends fs_model {
 
     /**
      * @param string  $codgrupo
+     *
      * @return tarifa_reserva
      */
     public function setCodGrupoCliente($codgrupo) {
@@ -262,10 +269,10 @@ class tarifa_reserva extends fs_model {
      * @return bool|tarifa_reserva
      */
     public function fetch($id) {
-        $tarifa = $this->cache->get('reserva_tarifa_reserva_'.$id);
+        $tarifa = $this->cache->get(str_replace('{id}',$id,self::CACHE_KEY_SINGLE));
         if($id && !$tarifa) {
             $tarifa = $this->db->select("SELECT * FROM ".$this->table_name." WHERE id = ". (int) $id.";");
-            $this->cache->set('reserva_tarifa_reserva_'.$id, $tarifa);
+            $this->cache->set(str_replace('{id}',$id,self::CACHE_KEY_SINGLE), $tarifa);
         }
         if($tarifa) {
             return new self($tarifa[0]);
@@ -275,10 +282,10 @@ class tarifa_reserva extends fs_model {
     }
 
     /**
-     * @return array
+     * @return tarifa_reserva[]
      */
     public function fetchAll() {
-        $tarifalist = $this->cache->get_array('m_tarifa_all');
+        $tarifalist = $this->cache->get_array(self::CACHE_KEY_ALL);
         if(!$tarifalist) {
             $tarifas = $this->db->select("SELECT * FROM ".$this->table_name." WHERE fecha_fin is NULL");
             if($tarifas) {
@@ -286,7 +293,7 @@ class tarifa_reserva extends fs_model {
                     $tarifalist[] = new tarifa_reserva($tarifa);
                 }
             }
-            $this->cache->set('m_tarifa_all', $tarifalist);
+            $this->cache->set(self::CACHE_KEY_ALL, $tarifalist);
         }
         return $tarifalist;
     }
@@ -298,6 +305,7 @@ class tarifa_reserva extends fs_model {
      * @return bool|tarifa_reserva
      */
     public function fetchByCategoriaYTipoPasajero($idcategoria = 0, $codgrupo = '', $trigger_error = true) {
+        //TODO: Add cache for this query
         $tarifa = $this->db->select("SELECT * FROM ".$this->table_name.
                                      " WHERE
                                          idcategoria = $idcategoria AND
@@ -313,7 +321,13 @@ class tarifa_reserva extends fs_model {
         }
     }
 
+    /**
+     * @param int $idcategoria
+     *
+     * @return array
+     */
     public function fetchByCategoria($idcategoria = 0) {
+        //TODO: Add cache for this query
         $tarifalist = array();
         $tarifas = $this->db->select("SELECT * FROM ".$this->table_name.
                                      " WHERE
@@ -428,7 +442,8 @@ class tarifa_reserva extends fs_model {
      * @return void
      */
     private function clean_cache() {
-        $this->cache->delete('m_tarifa_all');
+        $this->cache->delete(str_replace('{id}',$this->getId(),self::CACHE_KEY_SINGLE));
+        $this->cache->delete(self::CACHE_KEY_ALL);
     }
 
     /**
@@ -460,13 +475,12 @@ class tarifa_reserva extends fs_model {
         return $tarifalist;
     }
 
-
     /**
      * @param $id
      *
      * @return categoria_habitacion
      */
-    public function get_categoria($id) {
+    private function get_categoria($id) {
         if($id) {
             return categoria_habitacion::get($id);
         }
@@ -491,6 +505,5 @@ class tarifa_reserva extends fs_model {
             'codgrupo' => $this->getCodGrupoCliente()
         );
     }
-
 
 }

@@ -35,6 +35,7 @@ class pasajero_por_reserva extends fs_model {
      * @var string
      */
     protected $fecha_nacimiento = null;
+
     /**
      * @var int
      */
@@ -58,8 +59,10 @@ class pasajero_por_reserva extends fs_model {
     const DATE_FORMAT = 'Y-m-d';
 
     const EDAD_MAX_MENOR = 5;
-
     const EDAD_MIN_MENOR = 2;
+
+    const CACHE_KEY_ALL = 'reserva_pasajero_por_reserva_all';
+    const CACHE_KEY_SINGLE = 'reserva_pasajero_por_reserva_{id}';
 
     /**
      * @param array $data
@@ -99,7 +102,7 @@ class pasajero_por_reserva extends fs_model {
     /**
      * @param int|array $id
      *
-     * @return pabellon
+     * @return pasajero_por_reserva
      */
     public function setId($id) {
         // This is an ugly thing use an Hydrator insted
@@ -329,10 +332,10 @@ class pasajero_por_reserva extends fs_model {
      * @return bool|pasajero_por_reserva
      */
     public function fetch($id) {
-        $pasajero_por_reserva = $this->cache->get('reserva_pasajero_por_reserva_'.$id);
+        $pasajero_por_reserva = $this->cache->get(str_replace('{id}',$id,self::CACHE_KEY_SINGLE));
         if($id && !$pasajero_por_reserva) {
             $pasajero_por_reserva = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE id = " . (int)$id . ";");
-            $this->cache->set('reserva_pasajero_por_reserva_'.$id, $pasajero_por_reserva);
+            $this->cache->set(str_replace('{id}',$id,self::CACHE_KEY_SINGLE), $pasajero_por_reserva);
         }
         if ($pasajero_por_reserva) {
             return new pasajero_por_reserva($pasajero_por_reserva[0]);
@@ -345,7 +348,7 @@ class pasajero_por_reserva extends fs_model {
      * @return bool|array
      */
     public function fetchAll() {
-        $pasporreslist = $this->cache->get_array('m_pasajeros_por_reserva_all');
+        $pasporreslist = $this->cache->get_array(self::CACHE_KEY_ALL);
         if (!$pasporreslist) {
             $passporres = $this->db->select("SELECT * FROM " . $this->table_name . " ORDER BY id ASC;");
             if ($passporres) {
@@ -353,7 +356,7 @@ class pasajero_por_reserva extends fs_model {
                     $pasporreslist[] = new pasajero_por_reserva($passporre);
                 }
             }
-            $this->cache->set('m_pasajeros_por_reserva_all', $pasporreslist);
+            $this->cache->set(self::CACHE_KEY_ALL, $pasporreslist);
         }
 
         return $pasporreslist;
@@ -365,6 +368,7 @@ class pasajero_por_reserva extends fs_model {
      * @return array
      */
     public function fetchAllByReserva($idreserva) {
+        //TODO: Add cache to this query
         $pasporreslist = array();
         if(intval($idreserva) > 0) {
             $passporres = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE idreserva = " . (int)$idreserva . " ORDER BY id ASC;");
@@ -523,7 +527,8 @@ class pasajero_por_reserva extends fs_model {
      *
      */
     private function clean_cache() {
-        $this->cache->delete('m_pasajeros_por_reserva_all');
+        $this->cache->delete(str_replace('{id}',$this->getId(),self::CACHE_KEY_SINGLE));
+        $this->cache->delete(self::CACHE_KEY_ALL);
     }
 
     public function __toString() {

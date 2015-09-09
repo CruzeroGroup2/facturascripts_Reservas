@@ -32,6 +32,9 @@ class habitacion_por_reserva extends fs_model {
      */
     protected $idreserva = null;
 
+    const CACHE_KEY_ALL = 'reserva_habitacion_por_reserva_all';
+    const CACHE_KEY_SINGLE = 'reserva_habitacion_por_reserva_{id}';
+
     function __construct($data = array()) {
         parent::__construct('habitacion_por_reserva','plugins/reservas/');
 
@@ -57,7 +60,7 @@ class habitacion_por_reserva extends fs_model {
     /**
      * @param int|array $id
      *
-     * @return pabellon
+     * @return habitacion_por_reserva
      */
     public function setId($id) {
         // This is an ugly thing use an Hydrator insted
@@ -148,10 +151,10 @@ class habitacion_por_reserva extends fs_model {
      * @return bool|pabellon
      */
     public function fetch($id) {
-        $habitacion_por_reserva = $this->cache->get('reserva_habitacion_por_reserva_'.$id);
+        $habitacion_por_reserva = $this->cache->get(str_replace('{id}',$id,self::CACHE_KEY_SINGLE));
         if($id && !$habitacion_por_reserva) {
             $habitacion_por_reserva = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE id = " . (int)$id . ";");
-            $this->cache->set('reserva_habitacion_por_reserva_'.$id, $habitacion_por_reserva);
+            $this->cache->set(str_replace('{id}',$id,self::CACHE_KEY_SINGLE), $habitacion_por_reserva);
         }
         if ($habitacion_por_reserva) {
             return new habitacion_por_reserva($habitacion_por_reserva[0]);
@@ -164,7 +167,7 @@ class habitacion_por_reserva extends fs_model {
      * @return bool|array
      */
     public function fetchAll() {
-        $habporreslist = $this->cache->get_array('m_habitacion_por_reserva_all');
+        $habporreslist = $this->cache->get_array(self::CACHE_KEY_ALL);
         if (!$habporreslist) {
             $habsporres = $this->db->select("SELECT * FROM " . $this->table_name . " ORDER BY id ASC;");
             if ($habsporres) {
@@ -172,7 +175,7 @@ class habitacion_por_reserva extends fs_model {
                     $habporreslist[] = new habitacion_por_reserva($habsporre);
                 }
             }
-            $this->cache->set('m_habitacion_por_reserva_all', $habporreslist);
+            $this->cache->set(self::CACHE_KEY_ALL, $habporreslist);
         }
 
         return $habporreslist;
@@ -184,14 +187,14 @@ class habitacion_por_reserva extends fs_model {
      * @return array
      */
     public function fetchAllByReserva($idreserva) {
-        $habporreslist = $this->cache->get_array('reserva_habitacion_por_reserva_'.$idreserva);
+        $habporreslist = $this->cache->get_array(str_replace('{id}','r'.$idreserva,self::CACHE_KEY_SINGLE));
         if(!$idreserva || !$habporreslist) {
             $habsporres = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE idreserva = " . (int)$idreserva . " ORDER BY id ASC;");
             if ($habsporres) {
                 foreach ($habsporres as $habsporre) {
                     $habporreslist[] = new habitacion_por_reserva($habsporre);
                 }
-                $this->cache->set('reserva_habitacion_por_reserva_'.$idreserva, $habporreslist);
+                $this->cache->set(str_replace('{id}','r'.$idreserva,self::CACHE_KEY_SINGLE), $habporreslist);
             }
         }
         return $habporreslist;
@@ -273,7 +276,9 @@ class habitacion_por_reserva extends fs_model {
      *
      */
     private function clean_cache() {
-        $this->cache->delete('m_habitacion_por_reserva_all');
+        $this->cache->delete(str_replace('{id}',$this->getId(),self::CACHE_KEY_SINGLE));
+        $this->cache->delete(str_replace('{id}','r'.$this->getIdReserva(),self::CACHE_KEY_SINGLE));
+        $this->cache->delete(self::CACHE_KEY_ALL);
     }
 
     private function get_habitacion($idhabitacion) {

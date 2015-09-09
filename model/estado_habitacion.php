@@ -22,6 +22,9 @@ class estado_habitacion extends fs_model {
      */
     protected $descripcion;
 
+    const CACHE_KEY_ALL = 'reserva_estado_habitacion_all';
+    const CACHE_KEY_SINGLE = 'reserva_estado_habitacion_{id}';
+
     function __construct($data = array()) {
         parent::__construct('estado_habitacion', 'plugins/reservas/');
 
@@ -119,10 +122,10 @@ SQL;
      * @return bool|estado_habitacion
      */
     public function fetch($id) {
-        $estado = $this->cache->get('reserva_estado_habitacion_'.$id);
+        $estado = $this->cache->get(str_replace('{id}',$id,self::CACHE_KEY_SINGLE));
         if($id && !$estado) {
             $estado = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE id = " . (int)$id . ";");
-            $this->cache->set('reserva_estado_habitacion_'.$id, $estado);
+            $this->cache->set(str_replace('{id}',$id,self::CACHE_KEY_SINGLE), $estado);
         }
         if ($estado) {
             return new estado_habitacion($estado[0]);
@@ -135,7 +138,7 @@ SQL;
      * @return bool|array
      */
     public function fetchAll() {
-        $estadolist = $this->cache->get_array('m_estado_all');
+        $estadolist = $this->cache->get_array(self::CACHE_KEY_ALL);
         if (!$estadolist) {
             $estados = $this->db->select("SELECT * FROM " . $this->table_name . " ORDER BY descripcion ASC;");
             if ($estados) {
@@ -143,7 +146,7 @@ SQL;
                     $estadolist[] = new estado_habitacion($estado);
                 }
             }
-            $this->cache->set('m_estado_all', $estadolist);
+            $this->cache->set(self::CACHE_KEY_ALL, $estadolist);
         }
 
         return $estadolist;
@@ -210,7 +213,8 @@ SQL;
      *
      */
     private function clean_cache() {
-        $this->cache->delete('m_estado_all');
+        $this->cache->delete(str_replace('{id}',$this->getId(),self::CACHE_KEY_SINGLE));
+        $this->cache->delete(self::CACHE_KEY_ALL);
     }
 
     /**

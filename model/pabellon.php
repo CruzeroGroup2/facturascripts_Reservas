@@ -17,6 +17,9 @@ class pabellon extends fs_model {
      */
     protected $descripcion;
 
+    const CACHE_KEY_ALL = 'reserva_pabellon_all';
+    const CACHE_KEY_SINGLE = 'reserva_pabellon_{id}';
+
     function __construct($data = array()) {
         parent::__construct('pabellon', 'plugins/reservas/');
 
@@ -122,10 +125,10 @@ SQL;
      * @return bool|pabellon
      */
     public function fetch($id) {
-        $pabellon = $this->cache->get('reserva_pabellon_'.$id);
+        $pabellon = $this->cache->get(str_replace('{id}',$id,self::CACHE_KEY_SINGLE));
         if($id && !$pabellon) {
             $pabellon = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE id = " . (int)$id . ";");
-            $this->cache->set('reserva_pabellon_'.$id, $pabellon);
+            $this->cache->set(str_replace('{id}',$id,self::CACHE_KEY_SINGLE), $pabellon);
         }
         if ($pabellon) {
             return new pabellon($pabellon[0]);
@@ -138,7 +141,7 @@ SQL;
      * @return pabellon[]
      */
     public function fetchAll() {
-        $pabellonlist = $this->cache->get_array('m_pabellon_all');
+        $pabellonlist = $this->cache->get_array(self::CACHE_KEY_ALL);
         if (!$pabellonlist) {
             $pabellones = $this->db->select("SELECT * FROM " . $this->table_name . " ORDER BY descripcion ASC;");
             if ($pabellones) {
@@ -146,7 +149,7 @@ SQL;
                     $pabellonlist[] = new pabellon($pabellon);
                 }
             }
-            $this->cache->set('m_pabellon_all', $pabellonlist);
+            $this->cache->set(self::CACHE_KEY_ALL, $pabellonlist);
         }
 
         return $pabellonlist;
@@ -225,7 +228,8 @@ SQL;
      *
      */
     private function clean_cache() {
-        $this->cache->delete('m_pabellon_all');
+        $this->cache->delete(str_replace('{id}',$this->getId(),self::CACHE_KEY_SINGLE));
+        $this->cache->delete(self::CACHE_KEY_ALL);
     }
 
     /**

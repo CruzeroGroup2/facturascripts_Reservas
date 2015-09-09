@@ -75,6 +75,9 @@ class habitacion extends fs_model {
     const OCUPADA = 4;
     const NO_DISPONIBLE = 5;
 
+    const CACHE_KEY_ALL = 'reserva_habitacion_all';
+    const CACHE_KEY_SINGLE = 'reserva_habitacion_{id}';
+
     function __construct($data = array()) {
         parent::__construct('habitacion','plugins/reservas/');
         $this->setValues($data);
@@ -297,10 +300,10 @@ class habitacion extends fs_model {
      * @return bool|habitacion
      */
     public function fetch($id) {
-        $habitacion = $this->cache->get('reserva_habitacion_'.$id);
+        $habitacion = $this->cache->get(str_replace('{id}',$id,self::CACHE_KEY_SINGLE));
         if($id && !$habitacion) {
             $habitacion = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE id = " . (int)$id . ";");
-            $this->cache->set('reserva_habitacion_'.$id, $habitacion);
+            $this->cache->set(str_replace('{id}',$id,self::CACHE_KEY_SINGLE), $habitacion);
         }
         if ($habitacion) {
             return new habitacion($habitacion[0]);
@@ -313,7 +316,7 @@ class habitacion extends fs_model {
      * @return habitacion[]
      */
     public function fetchAll() {
-        $habitacionlist = $this->cache->get_array('m_habitacion_all');
+        $habitacionlist = $this->cache->get_array(self::CACHE_KEY_ALL);
         if (!$habitacionlist) {
             $habitaciones = $this->db->select("SELECT * FROM " . $this->table_name . " ORDER BY numero ASC;");
             if ($habitaciones) {
@@ -321,7 +324,7 @@ class habitacion extends fs_model {
                     $habitacionlist[] = new habitacion($habitacion);
                 }
             }
-            $this->cache->set('m_habitacion_all', $habitacionlist);
+            $this->cache->set(self::CACHE_KEY_ALL, $habitacionlist);
         }
 
         return $habitacionlist;
@@ -353,10 +356,10 @@ class habitacion extends fs_model {
     }
 
     /**
-     * @param null $minGuestPorHab
-     * @param null $arrival
-     * @param null $departure
-     * @param null $categoria
+     * @param int $minGuestPorHab
+     * @param string $arrival
+     * @param string $departure
+     * @param int $categoria
      *
      * @return array
      */
@@ -430,7 +433,7 @@ ORDER BY plaza_maxima ASC;';
         if ($this->test()) {
             $this->clean_cache();
             if ($this->exists()) {
-                $sql = 'UPDATE'. $this->table_name .
+                $sql = 'UPDATE '. $this->table_name .
                        ' SET ' .
                            'numero = '. $this->getNumero() . ',' .
                            'idpabellon = ' . $this->getIdPabellon() . ',' .
@@ -463,7 +466,8 @@ ORDER BY plaza_maxima ASC;';
     }
 
     private function clean_cache() {
-        $this->cache->delete('m_tipo_cliente_all');
+        $this->cache->delete(str_replace('{id}',$this->getId(),self::CACHE_KEY_SINGLE));
+        $this->cache->delete(self::CACHE_KEY_ALL);
     }
 
 

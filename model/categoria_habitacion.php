@@ -15,6 +15,9 @@ class categoria_habitacion extends fs_model {
      */
     public $nombre;
 
+    const CACHE_KEY_ALL = 'reserva_categoria_habitacion_all';
+    const CACHE_KEY_SINGLE = 'reserva_categoria_habitacion_{id}';
+
     function __construct($data = array()) {
         parent::__construct('categoria_habitacion', 'plugins/reservas/');
         $this->setValues($data);
@@ -104,10 +107,10 @@ SQL;
      * @return bool|categoria_habitacion
      */
     public function fetch($id) {
-        $categoria = $this->cache->get('reserva_categoria_habitacion_'.$id);
+        $categoria = $this->cache->get(str_replace('{id}',$id,self::CACHE_KEY_SINGLE));
         if($id && !$categoria) {
             $categoria = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE id = " . (int)$id . ";");
-            $this->cache->set('reserva_categoria_habitacion_'.$id, $categoria);
+            $this->cache->set(str_replace('{id}',$id,self::CACHE_KEY_SINGLE), $categoria);
         }
         if ($categoria) {
             return new categoria_habitacion($categoria[0]);
@@ -120,7 +123,7 @@ SQL;
      * @return bool|categoria_habitacion
      */
     public function fetchAll() {
-        $categorialist = $this->cache->get_array('m_categoria_habitacion_all');
+        $categorialist = $this->cache->get_array(self::CACHE_KEY_ALL);
         if (!$categorialist) {
             $categorias = $this->db->select("SELECT * FROM " . $this->table_name . " ORDER BY nombre ASC;");
             if ($categorias) {
@@ -128,7 +131,7 @@ SQL;
                     $categorialist[] = new categoria_habitacion($c);
                 }
             }
-            $this->cache->set('m_categoria_habitacion_all', $categorialist);
+            $this->cache->set(self::CACHE_KEY_ALL, $categorialist);
         }
 
         return $categorialist;
@@ -180,7 +183,8 @@ SQL;
     }
 
     private function clean_cache() {
-        $this->cache->delete('m_categoria_habitacion_all');
+        $this->cache->delete(str_replace('{id}',$this->getId(),self::CACHE_KEY_SINGLE));
+        $this->cache->delete(self::CACHE_KEY_ALL);
     }
 
     public function search($query, $offset = 0) {

@@ -126,7 +126,7 @@ class reserva extends fs_model {
     protected $comentario;
 
     /**
-     *
+     * @var string
      */
     protected $cancel_date;
 
@@ -146,17 +146,90 @@ class reserva extends fs_model {
     private $remover_pasajeros;
 
     const DATE_FORMAT = 'd-m-Y';
-
     const DATE_FORMAT_FULL = 'd-m-Y H:i:s';
 
     // Fecha de cancelacion <= 7 días no refund
     const CANCEL_NO_REFUND = -7;
-
     // Fecha de cancelacion >=8 && <= 15 30% de refund - gastos de envio
     const CANCEL_PART_REFUND = -15;
-
     // Fecha de cancelacion >= 16 días 100% de refund menos gastos de envios
     const CANCEL_FULL_REFUND = -16;
+
+    const CACHE_KEY_ALL = 'reserva_reserva_all';
+    const CACHE_KEY_SINGLE = 'reserva_reserva_{id}';
+
+    public function __construct($data = array()) {
+        parent::__construct('reserva', 'plugins/reservas/');
+
+        $this->refundPercentages = array(
+            reserva::CANCEL_FULL_REFUND => 100,
+            reserva::CANCEL_PART_REFUND => 30,
+            reserva::CANCEL_NO_REFUND => 0
+        );
+
+        $this->setValues($data);
+    }
+
+    public function setValues($data = array()) {
+        $tarifa = new tarifa_reserva();
+        $this->setId($data);
+        //Datos básicos de la reserva
+        //Obtener informacion relacionada al cliente
+        $this->codcliente = (isset($data['codcliente'])) ? $data['codcliente'] : null;
+
+        //Fecha ingreso
+        if(isset($data['fecha_in'])) {
+            $this->setFechaIn($data['fecha_in']);
+        }
+        //Fecha egreso
+        if(isset($data['fecha_out'])) {
+            $this->setFechaOut($data['fecha_out']);
+        }
+
+        $this->cantidad_adultos = (isset($data['cantidad_adultos'])) ? $data['cantidad_adultos'] : null;
+        $this->cantidad_menores = (isset($data['cantidad_menores'])) ? $data['cantidad_menores'] : null;
+        $this->descuento = (isset($data['descuento'])) ? $data['descuento'] : 0;
+
+        $this->remover_pasajeros = (isset($data['remover_pasajeros'])) ? $data['remover_pasajeros'] : array();
+        //Habitaciones
+        if(isset($data['idsHabitaciones']) && $data['idsHabitaciones']) {
+            $this->setHabitaciones(explode(',', $data['idsHabitaciones']));
+        }
+
+        //Tarifa
+        $this->idtarifa = (isset($data['idtarifa'])) ? $data['idtarifa'] : null;
+        //Media pension
+        $this->media_pension = (isset($data['media_pension']) && $data['media_pension']) ? true : false;
+
+        if(isset($data['idcategoria'])) {
+            $this->idcategoriahabitacion = $data['idcategoria'];
+            $this->setTarifa($tarifa->fetchByCategoriaYTipoPasajero(
+                $this->getCategoriaHabitacion(),
+                $this->getCodGrupoCliente()
+            ));
+        }
+
+        if($this->getGrupoCliente() && $this->getGrupoCliente()->nombre == 'Invitado' && $this->media_pension ) {
+            // OJO CON ESTO ES UNA NEGRADA PERO NO HAY OTRA FS NO ME DEJA BUSCAR GRUPO CLIENTES POR NOMBRE POR LO QUE
+            // LA CATEGORÍA ACTIVO SIMEPRE DEBE SER LA 1
+            $this->setTarifa($tarifa->fetchByCategoriaYTipoPasajero(
+                $this->getCategoriaHabitacion(),
+                $this->grupo_clientes->get('1')->codgrupo
+            ));
+        }
+
+        //Obtener el estado de la reserva
+        $this->idestado = (isset($data['idestado'])) ? (int) $data['idestado'] : null;
+
+        //Factura de la reserva
+        $this->idfactura = (isset($data['idfactura'])) ? $data['idfactura'] : null;
+
+        if(isset($data['pasajeros'])) {
+            $this->setPasajeros($data['pasajeros']);
+        }
+
+        $this->comentario = (isset($data['comentario'])) ? $data['comentario'] : null;
+    }
 
     /**
      * @return int
@@ -392,7 +465,7 @@ class reserva extends fs_model {
     /**
      * @param tarifa_reserva $tarifa
      *
-     * @return tarifa_reserva
+     * @return reserva
      */
     public function setTarifa(tarifa_reserva $tarifa) {
         $this->tarifa = $tarifa;
@@ -518,7 +591,6 @@ class reserva extends fs_model {
     public function getCantidadAdultos() {
         if($this->cantidad_adultos === null && is_array($this->pasajeros)) {
             $result = 0;
-            /* @var pasajero_por_reserva $huesped */
             foreach($this->pasajeros as $huesped) {
                 if($huesped->esAdulto()) {
                     $result ++;
@@ -547,7 +619,6 @@ class reserva extends fs_model {
     public function getCantidadMenores() {
         if($this->cantidad_menores === null && is_array($this->pasajeros)) {
             $result = 0;
-            /* @var pasajero_por_reserva $huesped */
             foreach($this->pasajeros as $huesped) {
                 if($huesped->esMenor()) {
                     $result ++;
@@ -751,7 +822,6 @@ class reserva extends fs_model {
         return $this->pagos;
     }
 
-
     /**
      * @return string
      */
@@ -780,7 +850,6 @@ class reserva extends fs_model {
 
         return $this;
     }
-
 
     /**
      * @return string
@@ -847,81 +916,6 @@ class reserva extends fs_model {
 
         return $msg;
 
-    }
-
-    public function __construct($data = array()) {
-        parent::__construct('reserva', 'plugins/reservas/');
-
-        $this->refundPercentages = array(
-            reserva::CANCEL_FULL_REFUND => 100,
-            reserva::CANCEL_PART_REFUND => 30,
-            reserva::CANCEL_NO_REFUND => 0
-        );
-
-        $this->setValues($data);
-    }
-
-    public function setValues($data = array()) {
-        $tarifa = new tarifa_reserva();
-        $this->setId($data);
-        //Datos básicos de la reserva
-        //Obtener informacion relacionada al cliente
-        $this->codcliente = (isset($data['codcliente'])) ? $data['codcliente'] : null;
-
-        //Fecha ingreso
-        if(isset($data['fecha_in'])) {
-            $this->setFechaIn($data['fecha_in']);
-        }
-        //Fecha egreso
-        if(isset($data['fecha_out'])) {
-            $this->setFechaOut($data['fecha_out']);
-        }
-
-        $this->cantidad_adultos = (isset($data['cantidad_adultos'])) ? $data['cantidad_adultos'] : null;
-        $this->cantidad_menores = (isset($data['cantidad_menores'])) ? $data['cantidad_menores'] : null;
-        $this->descuento = (isset($data['descuento'])) ? $data['descuento'] : 0;
-
-        $this->remover_pasajeros = (isset($data['remover_pasajeros'])) ? $data['remover_pasajeros'] : array();
-        //Habitaciones
-        if(isset($data['idsHabitaciones']) && $data['idsHabitaciones']) {
-            $this->setHabitaciones(explode(',', $data['idsHabitaciones']));
-        }
-
-        //Tarifa
-        $this->idtarifa = (isset($data['idtarifa'])) ? $data['idtarifa'] : null;
-        //Media pension
-        $this->media_pension = (isset($data['media_pension']) && $data['media_pension']) ? true : false;
-
-        if(isset($data['idcategoria'])) {
-            $this->idcategoriahabitacion = $data['idcategoria'];
-            $this->setTarifa($tarifa->fetchByCategoriaYTipoPasajero(
-                $this->getCategoriaHabitacion(),
-                $this->getCodGrupoCliente()
-            ));
-        }
-
-        if($this->getGrupoCliente() && $this->getGrupoCliente()->nombre == 'Invitado' &&
-           $this->media_pension
-        ) {
-            // OJO CON ESTO ES UNA NEGRADA PERO NO HAY OTRA FS NO ME DEJA BUSCAR GRUPO CLIENTES POR NOMBRE POR LO QUE
-            // LA CATEGORÍA ACTIVO SIMEPRE DEBE SER LA 1
-            $this->setTarifa($tarifa->fetchByCategoriaYTipoPasajero(
-                $this->getCategoriaHabitacion(),
-                $this->grupo_clientes->get('1')->codgrupo
-            ));
-        }
-
-        //Obtener el estado de la reserva
-        $this->idestado = (isset($data['idestado'])) ? (int) $data['idestado'] : null;
-
-        //Factura de la reserva
-        $this->idfactura = (isset($data['idfactura'])) ? $data['idfactura'] : null;
-
-        if(isset($data['pasajeros'])) {
-            $this->setPasajeros($data['pasajeros']);
-        }
-
-        $this->comentario = (isset($data['comentario'])) ? $data['comentario'] : null;
     }
 
     public function getStep() {
@@ -1023,10 +1017,10 @@ class reserva extends fs_model {
      * @return bool|reserva
      */
     public function fetch($id) {
-        $reserva = $this->cache->get('reserva_reserva_' . $id);
+        $reserva = $this->cache->get(str_replace('{id}',$id,self::CACHE_KEY_SINGLE));
         if($id && !$reserva) {
             $reserva = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE id = " . (int) $id . ";");
-            $this->cache->set('reserva_reserva_' . $id, $reserva);
+            $this->cache->set(str_replace('{id}',$id,self::CACHE_KEY_SINGLE), $reserva);
         }
         if($reserva) {
             return new reserva($reserva[0]);
@@ -1040,10 +1034,10 @@ class reserva extends fs_model {
      */
     public function fetchAll() {
         $reservalist = array();
-        $reservas = $this->cache->get('m_reserva_all');
+        $reservas = $this->cache->get(self::CACHE_KEY_ALL);
         if(!$reservas) {
             $reservas = $this->db->select("SELECT * FROM " . $this->table_name . " ORDER BY fecha_in ASC;");
-            $this->cache->set('m_reserva_all', $reservas);
+            $this->cache->set(self::CACHE_KEY_ALL, $reservas);
         }
         foreach($reservas as $reserva) {
             $reservalist[] = new reserva($reserva);
@@ -1059,6 +1053,7 @@ class reserva extends fs_model {
      * @return reserva[]
      */
     public function findByHabitacionYFecha($idhabitacion, $fecha, $limit = 1) {
+        //TODO: Add cache for this query
         $sql = "SELECT
 $this->table_name.*
 FROM " . $this->table_name . "
@@ -1080,7 +1075,14 @@ LIMIT $limit";
         return $reservalist;
     }
 
+    /**
+     * @param $idestado
+     * @param $fecha
+     *
+     * @return array
+     */
     public function findByEstadoYFecha($idestado, $fecha) {
+        //TODO: Add cache for this query
         $reservalist = array();
         $reservas = $this->db->select('SELECT * FROM ' . $this->table_name . ' WHERE idestado = ' . $idestado . ' AND fecha_in >= ' . $this->var2str($fecha));
         if($reservas) {
@@ -1092,6 +1094,11 @@ LIMIT $limit";
         return $reservalist;
     }
 
+    /**
+     * @param $idestado
+     *
+     * @return array
+     */
     public function findByEstado($idestado) {
         return $this->findByEstadoYFecha($idestado, date('Y-m-d'));
     }
@@ -1224,7 +1231,8 @@ LIMIT $limit";
      * @return void
      */
     private function clean_cache() {
-        $this->cache->delete('m_reserva_all');
+        $this->cache->delete(str_replace('{id}',$this->getId(),self::CACHE_KEY_SINGLE));
+        $this->cache->delete(self::CACHE_KEY_ALL);
     }
 
     /**
