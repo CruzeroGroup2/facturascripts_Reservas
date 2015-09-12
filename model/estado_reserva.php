@@ -149,13 +149,21 @@ SQL;
         }
     }
 
+    /**
+     * @param string $descripcion
+     *
+     * @return bool|estado_reserva
+     */
     public function fetchByDesc($descripcion = '') {
-        //TODO: Add cache to this query
         if(empty($descripcion)) {
             $descripcion = self::INCOMPLETA;
         }
-        $sql = "SELECT * FROM " . $this->table_name . " WHERE descripcion = " . $this->var2str($descripcion);
-        $estado = $this->db->select($sql);
+        $estado = $this->cache->get(str_replace('{id}','d'.$descripcion,self::CACHE_KEY_SINGLE));
+        if(!$estado) {
+            $sql = "SELECT * FROM " . $this->table_name . " WHERE descripcion = " . $this->var2str($descripcion);
+            $estado = $this->db->select($sql);
+            $this->cache->set(str_replace('{id}','d'.$descripcion,self::CACHE_KEY_SINGLE), $estado);
+        }
         if ($estado) {
             return new estado_reserva($estado[0]);
         } else {
@@ -242,6 +250,7 @@ SQL;
      *
      */
     private function clean_cache() {
+        $this->cache->delete(str_replace('{id}','d'.$this->getDescripcion(),self::CACHE_KEY_SINGLE));
         $this->cache->delete(str_replace('{id}',$this->getId(),self::CACHE_KEY_SINGLE));
         $this->cache->delete(self::CACHE_KEY_ALL);
     }

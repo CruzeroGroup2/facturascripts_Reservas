@@ -43,9 +43,9 @@ class reserva_habitacion extends reserva_controller {
         $this->pabellon = new pabellon();
         $this->categoria_habitacion = new categoria_habitacion();
         $this->estado = new estado_habitacion();
-        $action = (string) isset($_GET['action']) ? $_GET['action']: 'list';
+        $this->action = (string) isset($_GET['action']) ? $_GET['action']: 'list';
 
-        switch($action) {
+        switch($this->action) {
             default:
             case 'list':
                 $this->indexAction();

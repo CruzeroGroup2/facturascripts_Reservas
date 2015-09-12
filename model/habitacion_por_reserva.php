@@ -126,7 +126,7 @@ class habitacion_por_reserva extends fs_model {
      */
     protected function install() {
         $habitacion = new habitacion();
-        $reserva = new reserva();
+        //$reserva = new reserva();
         return '';
     }
 

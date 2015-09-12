@@ -5,7 +5,6 @@ require_once 'base/fs_model.php';
 require_model('categoria_habitacion.php');
 require_model('grupo_clientes.php');
 
-
 class tarifa_reserva extends fs_model {
 
     /**
@@ -305,12 +304,14 @@ class tarifa_reserva extends fs_model {
      * @return bool|tarifa_reserva
      */
     public function fetchByCategoriaYTipoPasajero($idcategoria = 0, $codgrupo = '', $trigger_error = true) {
-        //TODO: Add cache for this query
-        $tarifa = $this->db->select("SELECT * FROM ".$this->table_name.
-                                     " WHERE
+        $tarifa = $this->cache->get(str_replace('{id}','c'.$idcategoria.'-g'.$codgrupo,self::CACHE_KEY_SINGLE));
+        if(!$tarifa) {
+            $tarifa = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE
                                          idcategoria = $idcategoria AND
-                                         codgrupo = " . $this->var2str($codgrupo) ." AND
+                                         codgrupo = " . $this->var2str($codgrupo) . " AND
                                          fecha_fin is NULL");
+            $this->cache->set(str_replace('{id}','c'.$idcategoria.'-g'.$codgrupo,self::CACHE_KEY_SINGLE), $tarifa);
+        }
         if($tarifa) {
             return new self($tarifa[0]);
         } else {
@@ -327,12 +328,14 @@ class tarifa_reserva extends fs_model {
      * @return array
      */
     public function fetchByCategoria($idcategoria = 0) {
-        //TODO: Add cache for this query
         $tarifalist = array();
-        $tarifas = $this->db->select("SELECT * FROM ".$this->table_name.
-                                     " WHERE
-                                         idcategoria = $idcategoria AND
-                                         fecha_fin is NULL");
+        $tarifas = $this->cache->get_array(str_replace('{id}','c'.$idcategoria,self::CACHE_KEY_SINGLE));
+        if(!$tarifas) {
+            $tarifas = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE
+                                             idcategoria = $idcategoria AND
+                                             fecha_fin is NULL");
+            $this->cache->set(str_replace('{id}','c'.$idcategoria,self::CACHE_KEY_SINGLE), $tarifas);
+        }
         if($tarifas) {
             foreach ($tarifas as $tarifa) {
                 $tarifalist[] = new tarifa_reserva($tarifa);

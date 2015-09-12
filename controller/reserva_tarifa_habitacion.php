@@ -32,12 +32,12 @@ class reserva_tarifa_habitacion extends reserva_controller {
     }
 
     protected function process() {
-        $action = (string) isset($_GET['action']) ? $_GET['action']: 'list';
+        $this->action = (string) isset($_GET['action']) ? $_GET['action']: 'list';
         $this->tarifa = new tarifa_reserva();
         $this->grupo_clientes = new grupo_clientes();
         $this->categoria_habitacion = new categoria_habitacion();
 
-        switch($action) {
+        switch($this->action) {
             default:
             case 'list':
                 $this->indexAction();

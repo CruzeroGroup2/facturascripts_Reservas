@@ -11,6 +11,7 @@ require_once 'base/fs_model.php';
 require_model('pabellon.php');
 require_model('categoria_habitacion.php');
 require_model('estado_habitacion.php');
+require_model('habitacion_por_reserva.php');
 
 class habitacion extends fs_model {
 
@@ -364,6 +365,7 @@ class habitacion extends fs_model {
      * @return array
      */
     public function findByAmount($minGuestPorHab = null, $arrival = null, $departure = null, $categoria = null) {
+        //TODO: Agregar Ordenar por piso
         $sql = "SELECT
   count(id) AS cantidadHabitaciones,
   plaza_maxima,

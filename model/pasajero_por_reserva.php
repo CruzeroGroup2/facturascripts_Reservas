@@ -368,14 +368,15 @@ class pasajero_por_reserva extends fs_model {
      * @return array
      */
     public function fetchAllByReserva($idreserva) {
-        //TODO: Add cache to this query
         $pasporreslist = array();
-        if(intval($idreserva) > 0) {
+        $passporres = $this->cache->get_array(str_replace('{id}','r'.$idreserva,self::CACHE_KEY_SINGLE));
+        if( ((int) $idreserva) > 0 && !$passporres) {
             $passporres = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE idreserva = " . (int)$idreserva . " ORDER BY id ASC;");
-            if ($passporres) {
-                foreach ($passporres as $passporre) {
-                    $pasporreslist[] = new pasajero_por_reserva($passporre);
-                }
+            $this->cache->set(str_replace('{id}','r'.$idreserva,self::CACHE_KEY_SINGLE), $pasporreslist);
+        }
+        if ($passporres) {
+            foreach ($passporres as $passporre) {
+                $pasporreslist[] = new pasajero_por_reserva($passporre);
             }
         }
         return $pasporreslist;

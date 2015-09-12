@@ -1082,7 +1082,6 @@ LIMIT $limit";
      * @return array
      */
     public function findByEstadoYFecha($idestado, $fecha) {
-        //TODO: Add cache for this query
         $reservalist = array();
         $reservas = $this->db->select('SELECT * FROM ' . $this->table_name . ' WHERE idestado = ' . $idestado . ' AND fecha_in >= ' . $this->var2str($fecha));
         if($reservas) {

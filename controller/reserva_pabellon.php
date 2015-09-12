@@ -19,9 +19,9 @@ class reserva_pabellon extends reserva_controller {
     }
 
     protected function process() {
-        $action = (string)isset($_GET['action']) ? $_GET['action'] : 'list';
+        $this->action = (string)isset($_GET['action']) ? $_GET['action'] : 'list';
 
-        switch ($action) {
+        switch ($this->action) {
             default:
             case 'list':
                 $this->indexAction();

@@ -442,7 +442,6 @@ class reserva_home extends reserva_controller {
         }
     }
 
-
     private function _setTemplate() {
         $this->step = $this->reserva->getStep();
         switch($this->step) {
@@ -518,11 +517,26 @@ class reserva_home extends reserva_controller {
         return $max_pass;
     }
 
+    private $cacheReservasDisponibilidad = array();
+
     public function getHabitacionCell(habitacion $habitacion, DateTime $fecha) {
         $reserva = false;
-        $reservas = $this->reserva->findByHabitacionYFecha($habitacion->getId(), $fecha->format('Y-m-d'));
-        if(isset($reservas[0])) {
-            $reserva = $reservas[0];
+        if(!isset($this->cacheReservasDisponibilidad[$fecha->format('Y-m-d')])) {
+            $reservas = $this->reserva->findByHabitacionYFecha($habitacion->getId(), $fecha->format('Y-m-d'));
+            if(isset($reservas[0])) {
+                $reserva = $reservas[0];
+                $fechasReserva = new DatePeriod(
+                    new DateTime($reserva->getFechaIn()),
+                    DateInterval::createFromDateString('+1 day'),
+                    //Ugly hack to include the frist day
+                    new DateTime($reserva->getFechaOut() . ' 23:59:59')
+                );
+                foreach($fechasReserva as $fecha) {
+                    $this->cacheReservasDisponibilidad[$fecha->format('Y-m-d')] = $reserva;
+                }
+            }
+        } else {
+            $reserva = $this->cacheReservasDisponibilidad[$fecha->format('Y-m-d')];
         }
 
         //Si hay reserva y no hay seña

@@ -7,6 +7,7 @@
  */
 
 require_model('categoria_habitacion.php');
+require_model('habitacion.php');
 
 require_once 'reserva_controller.php';
 
@@ -19,9 +20,9 @@ class reserva_categoria_habitacion extends reserva_controller {
     }
 
     protected function process() {
-        $action = (string) isset($_GET['action']) ? $_GET['action']: 'list';
+        $this->action = (string) isset($_GET['action']) ? $_GET['action']: 'list';
 
-        switch($action) {
+        switch($this->action) {
             default:
             case 'list':
                 $this->indexAction();
@@ -104,7 +105,8 @@ class reserva_categoria_habitacion extends reserva_controller {
         $this->page->extra_url = '&action=delete';
         $id = (int) isset($_GET['id']) ? $_GET['id'] : 0;
         $this->categoria_habitacion = categoria_habitacion::get($id);
-        if($this->categoria_habitacion && $this->categoria_habitacion->delete()) {
+        $habitacion = new habitacion();
+        if($this->categoria_habitacion && !&& $this->categoria_habitacion->delete()) {
             $this->new_message("Categoría Habitacion eliminado correctamente!.");
         } else {
             $this->new_error_msg("¡Imposible eliminar Categoría Habitacion!");
