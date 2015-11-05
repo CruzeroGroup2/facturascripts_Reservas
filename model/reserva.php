@@ -145,6 +145,11 @@ class reserva extends fs_model {
      */
     private $remover_pasajeros;
 
+    /**
+     * @var string[]
+     */
+    private $remover_habitaciones;
+
     const DATE_FORMAT = 'd-m-Y';
     const DATE_FORMAT_FULL = 'd-m-Y H:i:s';
 
@@ -191,6 +196,7 @@ class reserva extends fs_model {
         $this->descuento = (isset($data['descuento'])) ? $data['descuento'] : 0;
 
         $this->remover_pasajeros = (isset($data['remover_pasajeros'])) ? $data['remover_pasajeros'] : array();
+        $this->remover_habitaciones = (isset($data['remover_habitaciones'])) ? $data['remover_habitaciones'] : array();
         //Habitaciones
         if(isset($data['idsHabitaciones']) && $data['idsHabitaciones']) {
             $this->setHabitaciones(explode(',', $data['idsHabitaciones']));
@@ -381,23 +387,36 @@ class reserva extends fs_model {
     public function setHabitaciones($habitaciones = array()) {
         $this->habitaciones = array();
         foreach($habitaciones as $habitacion) {
-            $datos_habitacion = explode(':', $habitacion);
-            //Si no está el idreserva
-            if(!isset($datos_habitacion[1])) {
-                $datos_habitacion[1] = $this->getId();
+            if(is_a($habitacion, 'habitacion_por_reserva')) {
+                $this->habitaciones[] = $habitacion;
+            } else {
+                $this->habitaciones[] = $this->__parseHabitacion($habitacion);
             }
-            //Si no está el id
-            if(!isset($datos_habitacion[2])) {
-                $datos_habitacion[2] = null;
-            }
-            $this->habitaciones[] = new habitacion_por_reserva(array(
-                'idhabitacion' => $datos_habitacion[0],
-                'idreserva' => $datos_habitacion[1],
-                'id' => $datos_habitacion[2]
-            ));
         }
 
         return $this;
+    }
+
+    /**
+     * @param $string
+     *
+     * @return habitacion_por_reserva
+     */
+    private function __parseHabitacion($string) {
+        $datos_habitacion = explode(':', $string);
+        //Si no está el idreserva
+        if(!isset($datos_habitacion[1])) {
+            $datos_habitacion[1] = $this->getId();
+        }
+        //Si no está el idhabitacionporreserva
+        if(!isset($datos_habitacion[2])) {
+            $datos_habitacion[2] = null;
+        }
+        return new habitacion_por_reserva(array(
+            'idhabitacion' => $datos_habitacion[0],
+            'idreserva' => $datos_habitacion[1],
+            'id' => $datos_habitacion[2]
+        ));
     }
 
     public function getNumerosHabitaciones() {
@@ -918,17 +937,20 @@ class reserva extends fs_model {
 
     }
 
+    /**
+     * @return int
+     */
     public function getStep() {
         if(!$this->getFechaOut()) {
-            return '1';
+            return 1;
         }
 
         if(!$this->getHabitaciones()) {
-            return '2';
+            return 2;
         }
 
         if($this->getHabitaciones() && $this->getCliente()) {
-            return '3';
+            return 3;
         }
 
     }
@@ -1385,6 +1407,12 @@ LIMIT $limit";
         if($this->habitaciones) {
             foreach($this->habitaciones as $habitaciones) {
                 $habitaciones->save();
+            }
+        }
+        if($this->remover_habitaciones) {
+            foreach($this->remover_habitaciones as $habitacion) {
+                $objHab = $this->__parseHabitacion($habitacion);
+                $objHab->delete();
             }
         }
     }

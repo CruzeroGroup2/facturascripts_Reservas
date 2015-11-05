@@ -38,6 +38,7 @@ class reserva_habitacion extends reserva_controller {
     public function __construct() {
         parent::__construct(__CLASS__, "Habitacion", "Reserva");
     }
+
     protected function process() {
         $this->habitacion = new habitacion();
         $this->pabellon = new pabellon();
@@ -61,6 +62,9 @@ class reserva_habitacion extends reserva_controller {
                 break;
             case 'find':
                 $this->findAction();
+                break;
+            case 'suggest':
+                $this->suggestAction();
                 break;
         }
     }
@@ -127,6 +131,24 @@ class reserva_habitacion extends reserva_controller {
     }
 
     public function findAction() {
+        $arrival = isset($_POST['fecha_in']) ? $_POST['fecha_in'] : date('Y-m-d');
+        $departure = isset($_POST['fecha_out']) ? $_POST['fecha_out'] : date('Y-m-d');
+        $idpabellon = isset($_POST['idpabellon']) ? intval($_POST['idpabellon']) : 0;
+        $numeroHab = isset($_POST['query']) ? intval($_POST['query']) : 0;
+        $this->template = false;
+        header('Content-Type: application/json');
+        $habitaciones = $this->habitacion->fetchAvailableByPabellonAndParcialNumber($arrival, $departure, $idpabellon, $numeroHab);
+        $data = [];
+        foreach($habitaciones as $habitacion) {
+            $data[] = array(
+                'value' => $habitacion->getNumero() . ':' . $habitacion->getPlazaMaxima(),
+                'data' => $habitacion->getId()
+            );
+        }
+        echo json_encode( array('query' => $_POST['query'], 'suggestions' => $data) );
+    }
+
+    public function suggestAction() {
         $adultos = isset($_POST['cantidad_adultos']) ? intval($_POST['cantidad_adultos']) : 0;
         $menores = isset($_POST['cantidad_menores']) ? intval($_POST['cantidad_menores']) : 0;
         $minGuest = isset($_POST['cantidad_por_habitacion']) ? intval($_POST['cantidad_por_habitacion']) : 2;

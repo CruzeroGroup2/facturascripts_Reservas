@@ -24,7 +24,7 @@
     <h2>Disponibilidad</h2>
     <div class="row bottom-buffer">
         <div class="col-md-offset-5 col-md-7">
-            <form action="{$fsc->list_url()}" method="post" class="form-inline">
+            <form id="disponibilidad" action="{$fsc->list_url()}" method="post" class="form-inline">
                 <div class="form-group">
                     <label for="fecha_desde">Fecha Desde:</label>
                     <input type="text" id="fecha_desde" name="fecha_desde" class="form-control input-sm datepicker" placeholder="Ingresar fecha Desde" value="{$fsc->getFechaDesde()}">
@@ -43,7 +43,7 @@
             <tr>
                 <th>Habitacion</th>
                 {loop="$fsc->rango_fechas"}
-                <th>{$value->format('d/m')}</th>
+                <th>{$value->format('d')}</th>
                 {/loop}
             </tr>
         </thead>
@@ -64,6 +64,13 @@
         </tbody>
     </table>
 </div>
+
+<script type="text/javascript">
+    $('#disponibilidad').validate({
+        errorLabelContainer: "#errors",
+        errorElement: 'li'
+        });
+</script>
 
 
 {include="footer"}

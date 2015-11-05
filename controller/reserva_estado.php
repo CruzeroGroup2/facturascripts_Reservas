@@ -15,7 +15,7 @@ class reserva_estado extends reserva_controller {
     protected $estado;
 
     public function __construct() {
-        parent::__construct(__CLASS__, "Estado", "Reserva");
+        parent::__construct(__CLASS__, "Estado", "Reserva", false, false);
     }
 
     protected function process() {

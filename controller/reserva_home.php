@@ -127,8 +127,12 @@ class reserva_home extends reserva_controller {
         return $this->url();
     }
 
-    public function edit_url(reserva $reserva) {
+    public function edit_url(reserva $reserva, $prev_step = false) {
         $this->page->extra_url = '&action=edit&id=' . (int) $reserva->getId();
+
+        if($prev_step) {
+            $this->page->extra_url .= '&step='.($reserva->getStep()-1);
+        }
 
         return $this->url();
     }
@@ -179,8 +183,14 @@ class reserva_home extends reserva_controller {
 
     private function indexAction() {
         $this->page->extra_url = '';
+        $mes = (int) date('n') + 1;
+        if($mes > 12) {
+            $mes = 1;
+        }
+        $mes = str_pad($mes, 2, 0);
+
         $this->fecha_desde = (isset($_POST['fecha_desde'])) ? $_POST['fecha_desde'] : date('d-m-Y');
-        $this->fecha_hasta = (isset($_POST['fecha_hasta'])) ? $_POST['fecha_hasta'] : date('d-m-Y');
+        $this->fecha_hasta = (isset($_POST['fecha_hasta'])) ? $_POST['fecha_hasta'] : date('d-' . $mes .'-Y');
         $this->rango_fechas = new DatePeriod(
             new DateTime($this->fecha_desde),
             DateInterval::createFromDateString('+1 day'),
@@ -238,12 +248,13 @@ class reserva_home extends reserva_controller {
     private function editAction() {
         $this->page->extra_url = '&action=edit';
         $id = (int) isset($_GET['id']) ? $_GET['id'] : 0;
+        $step = (int) isset($_GET['step']) ? (int) $_GET['step'] : false;
         $this->reserva = reserva::get($id);
         if(!$this->reserva) {
             $this->reserva = new reserva();
             $this->indexAction();
         } else {
-            $this->_setTemplate();
+            $this->_setTemplate($step);
         }
     }
 
@@ -442,8 +453,12 @@ class reserva_home extends reserva_controller {
         }
     }
 
-    private function _setTemplate() {
-        $this->step = $this->reserva->getStep();
+    private function _setTemplate($step=false) {
+        if(is_int($step)) {
+            $this->step = $step;
+        } else {
+            $this->step = $this->reserva->getStep();
+        }
         switch($this->step) {
             default:
             case 1:
@@ -472,6 +487,10 @@ class reserva_home extends reserva_controller {
     }
 
     //Métodos para los templates
+
+    public function getPabellon() {
+        return $this->pabellon;
+    }
 
     public function getHabitacion() {
         return $this->habitacion;
@@ -521,7 +540,7 @@ class reserva_home extends reserva_controller {
 
     public function getHabitacionCell(habitacion $habitacion, DateTime $fecha) {
         $reserva = false;
-        if(!isset($this->cacheReservasDisponibilidad[$fecha->format('Y-m-d')])) {
+        if(!isset($this->cacheReservasDisponibilidad[$habitacion->getId()][$fecha->format('Y-m-d')])) {
             $reservas = $this->reserva->findByHabitacionYFecha($habitacion->getId(), $fecha->format('Y-m-d'));
             if(isset($reservas[0])) {
                 $reserva = $reservas[0];
@@ -531,12 +550,12 @@ class reserva_home extends reserva_controller {
                     //Ugly hack to include the frist day
                     new DateTime($reserva->getFechaOut() . ' 23:59:59')
                 );
-                foreach($fechasReserva as $fecha) {
-                    $this->cacheReservasDisponibilidad[$fecha->format('Y-m-d')] = $reserva;
+                foreach($fechasReserva as $fechaTmp) {
+                    $this->cacheReservasDisponibilidad[$habitacion->getId()][$fechaTmp->format('Y-m-d')] = $reserva;
                 }
             }
         } else {
-            $reserva = $this->cacheReservasDisponibilidad[$fecha->format('Y-m-d')];
+            $reserva = $this->cacheReservasDisponibilidad[$habitacion->getId()][$fecha->format('Y-m-d')];
         }
 
         //Si hay reserva y no hay seña

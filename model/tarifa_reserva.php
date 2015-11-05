@@ -500,6 +500,10 @@ class tarifa_reserva extends fs_model {
         return $grupo_cliente->get($codgrupo);
     }
 
+    public function __toString() {
+        return (string) $this->getId();
+    }
+
     public function __toArray() {
         return array(
             'idtarifa' => $this->getId(),

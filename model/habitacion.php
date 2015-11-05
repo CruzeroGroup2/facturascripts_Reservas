@@ -349,6 +349,38 @@ class habitacion extends fs_model {
 
         return $habitacionlist;
     }
+    /**
+     * @param string $arrival
+     * @param string $departure
+     * @param int $idpabellon
+     * @param string $number
+     *
+     * @return habitacion[]
+     */
+    public function fetchAvailableByPabellonAndParcialNumber($arrival, $departure, $idpabellon = 0, $number = '') {
+        $habitacionlist = array();
+        if (!$habitacionlist) {
+            $sql = "SELECT * FROM " . $this->table_name . " WHERE
+    idpabellon = $idpabellon AND
+    numero like '$number%' AND
+    id NOT IN (
+      SELECT habitacion_por_reserva.idhabitacion
+      FROM habitacion_por_reserva
+        LEFT JOIN reserva ON (reserva.id = habitacion_por_reserva.idreserva)
+      WHERE fecha_in <= " . $this->var2str($arrival . ' 12:00:00') . " AND fecha_out >= " . $this->var2str($departure . ' 10:00:00') ."
+      AND reserva.idestado NOT IN (6,7) -- Except for canceled reservs
+    )
+ORDER BY numero ASC;";
+            $habitaciones = $this->db->select($sql);
+            if ($habitaciones) {
+                foreach ($habitaciones as $habitacion) {
+                    $habitacionlist[] = new habitacion($habitacion);
+                }
+            }
+        }
+
+        return $habitacionlist;
+    }
 
     public function fetchCountPlazasDisponiblesByFecha($date) {
         $cant = $this->db->select('SELECT SUM(plaza_maxima) as plazas_disponibles  FROM ' . $this->table_name . ' WHERE idestado = 1');

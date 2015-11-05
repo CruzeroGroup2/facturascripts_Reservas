@@ -41,6 +41,16 @@
     margin-top: 15px;
 }
 
+.habitacion {
+    border: 1px solid #ccc;
+    display: inline-block;
+    padding: 6px 12px;
+    cursor: default;
+    text-align: center;
+    vertical-align: middle;
+    border-radius: 4px;
+}
+
 .defecto {
     background-color: #D8D8D8; }
 

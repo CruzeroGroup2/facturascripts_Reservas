@@ -15,6 +15,7 @@
                 <div class="container-fluid">
                     <div id="errors" class="alert alert-danger hidden"></div>
                         <input type="hidden" name="codcliente" id="codcliente" value="{$fsc->getReserva()->getCodCliente()}" />
+                        <input type="hidden" name="idtarifa" id="idtarifa" value="{$fsc->getReserva()->getTarifa()}" />
                         <input type="hidden" name="codgrupo" id="codgrupo" value="{$fsc->getReserva()->getCodGrupoCliente()}" />
                         <input type="hidden" name="idsHabitaciones" id="idsHabitaciones" value="{function="implode(',', $fsc->getReserva()->getHabitaciones(true))"}" />
                         <div class="row form-group">
@@ -134,13 +135,15 @@
                     var fechaIn = parseDate($('#fecha_in').val()),
                         fechaOut = parseDate($('#fecha_out').val()),
                         dias = (fechaOut > fechaIn) ? daydiff(fechaIn, fechaOut) : 1,
-                        cantAdultos = parseInt($('#cantidad_adultos').val()),
-                        cantMenores = parseInt($('#cantidad_menores').val()),
+                        cantAdultos = Number($('#cantidad_adultos').val()),
+                        cantMenores = Number($('#cantidad_menores').val()),
                         cantPass=cantAdultos+cantMenores,
                         totales = calculate_totals(data, dias, 0, cantAdultos, cantMenores);
                     if(confirm("Está a punto de crear una reserva por '"+dias+"' noches y para '"+cantPass+"' pasajeros " +
                                     "con un costo de $"+totales.total_final.toFixed(2)+", está seguro que desea continuar?")) {
                         form.submit();
+                    } else {
+                        $('#generar_presupuesto').prop('disabled', false);
                     }
                 });
             }

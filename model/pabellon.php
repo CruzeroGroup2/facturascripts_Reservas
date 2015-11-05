@@ -155,6 +155,19 @@ SQL;
         return $pabellonlist;
     }
 
+    public function fetchAllByIdCategoria($idcategoria=0) {
+        $pabellonlist = $this->cache->get(str_replace('{id}', 'c'.$idcategoria, self::CACHE_KEY_SINGLE));
+        if (!$pabellonlist) {
+            $pabellones = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE id IN (SELECT DISTINCT idpabellon FROM `habitacion` WHERE idcategoria = $idcategoria) ORDER BY descripcion ASC;");
+            if($pabellones) {
+                foreach($pabellones as $pabellon) {
+                    $pabellonlist[] = new pabellon($pabellon);
+                }
+            }
+        }
+        return $pabellonlist;
+    }
+
     /**
      * @param int $id
      *

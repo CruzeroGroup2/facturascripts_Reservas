@@ -88,17 +88,59 @@
             <div class="col-md-1">
                 <input id="cantidad_menores" class="form-control" name="cantidad_menores" value="{$fsc->getReserva()->getCantidadMenores()}" />
             </div>
-            <div class="col-md-1">
-                <label><span>Cant. Huesp x Hab</span></label>
+        </div>
+        <div class="row form-group">
+            <div class="col-md-3">
+                Cantidad de Noches: {$fsc->getReserva()->getCantidadDias()}
             </div>
-            <div class="col-md-1">
-                    <input type="number" min="2" max="6" name="cantidad_por_habitacion" id="cantidad_por_habitacion" value="2" />
+            <div class="col-md-4">
+                Monto Tarifa: {$fsc->show_precio($fsc->getReserva()->getTarifa()->getMonto())}
+            </div>
+            <div class="col-md-2">
+                Capacidad: <span id="capacidad_habitaciones">0</span>
             </div>
         </div>
         <div class="row form-group">
-            <h2>Habitaciones Disponibles:</h2>
+            <h2>Habitaciones:</h2>
             <div id="habitacionesResult" class="has-spinner">
-
+                <ul class="list-group">
+                    <li class="habitacionItem list-group-item">
+                        {loop="$fsc->getReserva()->getHabitaciones()"}
+                            <span style="color:black;" class="habitacion disponible" data-id="{$value->getHabitacion()->getId()}">
+                                 {$value->getHabitacion()->getNumero()}: {$value->getHabitacion()->getPlazaMaxima()}
+                                <a class="text-right" onclick="return remove_habitacion(this)"><span class="glyphicon glyphicon-remove"></span></a>
+                            </span>
+                        {/loop}
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="row">
+            <div class="container">
+                <input type="hidden" name="idhabitacion" id="idhabitacion" value="" />
+                <h3>Agregar Habitacion:</h3>
+                <div class="col-md-1">
+                    <label for="idpabellon">Pabellón</label>
+                </div>
+                <div class="col-md-2">
+                    <select id="idpabellon" name="idpabellon" class="form-control input-sm">
+                        <option value="">Seleccione...</option>
+                        {loop="$fsc->getPabellon()->fetchAllByIdCategoria($fsc->getReserva()->getCategoriaHabitacion())"}
+                        <option value="{$value->getId()}">{$value->getDescripcion()}</option>
+                        {/loop}
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <label for="numeroHab">Habitación</label>
+                </div>
+                <div class="col-md-2">
+                    <input type="text" id="numeroHab" name="numeroHab" />
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" id="agregarHabitacion" name="agregarHabitacion" disabled="disabled">
+                        <span class="glyphicon glyphicon-plus"></span>
+                    </button>
+                </div>
             </div>
         </div>
         <div class="row">
@@ -109,7 +151,7 @@
                         <label for="total">Total</label>
                     </div>
                     <div class="col-md-2">
-                        <input id="total" class="form-control" name="total" type="text" value="{$fsc->show_precio($fsc->getReserva()->getTotal())}">
+                        <span id="total">{$fsc->show_precio($fsc->getReserva()->getTotal())}</span>
                     </div>
                     <div class="col-md-2">
                         <input type="submit" value="Grabar Reserva" id="guardar" class="form-control btn-primary">
@@ -128,7 +170,7 @@
                         <label for="total_final">Total Reserva</label>
                     </div>
                     <div class="col-md-2">
-                        <input id="total_final" class="form-control" name="total_final" type="text" value="{$fsc->show_precio($fsc->getReserva()->getTotal())}">
+                        <span id="total_final">{$fsc->show_precio($fsc->getReserva()->getTotal())}</span>
                     </div>
                     <div class="col-md-2">
                         <button type="submit" name="cancelar" id="cancelar" class="form-control btn-danger" formaction="{$fsc->cancel_url($fsc->getReserva())}">Cancelar</button>

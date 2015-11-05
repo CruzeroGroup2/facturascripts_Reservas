@@ -41,6 +41,7 @@ function get_tarifa(options, done_func) {
 /**
  *
  * @param tarifa
+ * @param dias
  * @param descuento
  * @param cantAdultos
  * @param cantMenores
@@ -48,8 +49,8 @@ function get_tarifa(options, done_func) {
  */
 function calculate_totals(tarifa, dias, descuento, cantAdultos, cantMenores) {
     var monto = parseFloat(tarifa.monto),
-        cantAdultos = parseInt(cantAdultos),
-        cantMenores = parseInt(cantMenores),
+        cantAdultos = Number(cantAdultos),
+        cantMenores = Number(cantMenores),
         cantPasajeros = cantAdultos + cantMenores;
 
     if (cantPasajeros == 1) {
@@ -78,14 +79,20 @@ function calculate_amount() {
         fechaOut = parseDate($('#fecha_out').val()),
         dias = (fechaOut > fechaIn) ? daydiff(fechaIn, fechaOut) : 1,
         tarifa = $('#idtarifa').val(),
-        cantAdultos = parseInt($('#cantidad_adultos').val()),
-        cantMenores = parseInt($('#cantidad_menores').val()),
-        descuento = parseInt($('#descuento').val());
+        cantAdultos = Number($('#cantidad_adultos').val()),
+        cantMenores = Number($('#cantidad_menores').val()),
+        descuento = Number($('#descuento').val());
     get_tarifa({idtarifa: tarifa}, function(data) {
         var totales = calculate_totals(data, dias, descuento, cantAdultos, cantMenores);
         $('#total').val(totales.total);
         $('#total_final').val(totales.total_final);
     });
+}
+
+function get_pasajeros_count() {
+    var cantAdultos = Number($('#cantidad_adultos').val()),
+    cantMenores = Number($('#cantidad_menores').val());
+    return cantAdultos+cantMenores;
 }
 
 function clear_pasajero_fields() {
@@ -102,9 +109,7 @@ var agregar_pasajero = function(event) {
         tipoDocumento = $('input[name="documento_pasajero_tipo"]:checked').val(),
         documento = $('#documento_pasajero').val(),
         fechaNac = $('#fechanac_pasajero').val(),
-        cantAdultos = parseInt($('#cantidad_adultos').val()),
-        cantMenores = parseInt($('#cantidad_menores').val()),
-        cantPasajeros = cantAdultos+cantMenores;
+        cantPasajeros = get_pasajeros_count();
 
     if($('input[name="pasajeros[]"]').length >= cantPasajeros) {
         alert('No puedes agregar más pasajeros a la reserva');
@@ -134,14 +139,14 @@ var autcomplete_select = function(suggestion) {
     if(client_id != 0) {
         $.ajax('index.php?page=nueva_venta&datoscliente='+client_id, {
             success: function(data) {
-                $('#codcliente').data(data);
+                $('#codcliente').val(client_id)
+                                .data(data);
                 $('#codgrupo').val(data.codgrupo);
             },
             complete: function() {
                 $('#cliente_loading').addClass('hidden');
             }
         });
-        $('#codcliente').val(client_id);
     } else {
         $('#myModal').modal('show');
     }
@@ -158,42 +163,6 @@ var autocomplete_response = function(query, suggestions) {
         });
     }
     return false;
-};
-
-var find_habitacion = function() {
-    var habitaciones = $('#habitaciones');
-    if(habitaciones.length === 0) {
-        return ;
-    }
-
-    var baseUrl = 'index.php?page=reserva_habitacion&action=find';
-    var formValues = {};
-    $.each(habitaciones.serializeArray(), function(i, field) {
-        formValues[field.name] = field.value;
-    });
-    $('#habitacionesResult').html('<span id="loading" class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>');
-    $.post(
-        baseUrl,
-        formValues
-    ).done(function (html) {
-            $('#habitacionesResult').html(html);
-            calculate_amount();
-    });
-};
-
-var select_habitacion = function(event) {
-    var clickedElementId = event.target.id;
-    if(clickedElementId.indexOf('solucion') != -1) {
-        var clickedElement = $('#'+clickedElementId);
-        var catHabs = clickedElement.data('categorias').toString();
-        var idsHabs = clickedElement.data('habitaciones').toString();
-        $('.habitacionItem').removeClass('active');
-        clickedElement.addClass('active');
-        $('#idsHabitaciones').val(idsHabs);
-        $('#idcategoriahab').val(catHabs);
-        calculate_amount();
-    }
-
 };
 
 function edit_huesped(element) {
@@ -221,15 +190,96 @@ function remove_huesped(element, force) {
     //update_huesped_count();
 }
 
+function add_habitacion(habitacion) {
+    var habPart = habitacion.value.split(":"),
+        cantMaxHab = Number(habPart[1]),
+        cap = Number($('#capacidad_habitaciones').text()),
+        cant;
+    if(cap+cantMaxHab <= get_pasajeros_count() && confirm("Desea a gregar la habitacion "+habPart[0]+"?")) {
+        $('#idsHabitaciones').val(function(i, val) {
+            var ids = [];
+            if(val != '') {
+                ids = val.split(',');
+            }
+            ids.push(habitacion.data);
+            return ids.join(',');
+        });
+        $('#habitacionesResult ul li').append(
+            '<span style="color:black;" class="habitacion disponible" data-id="'+habitacion.data+'">' +
+                 habitacion.value +
+                '<a href="#" class="text-right" onclick="return remove_habitacion(this)"><span class="glyphicon glyphicon-remove"></span></a>' +
+            '</span>'
+        );
+        $("#numeroHab").removeData('suggestion').val('');
+        update_capacidad();
+    } else {
+        alert("El número de pasajeros es menor a la cantidad de habitaciones seleccionadas");
+    }
+}
+
+function remove_habitacion(element, force) {
+    var parent = $(element.parentNode),
+        form = parent.closest('form'),
+        idHabitacion = parent.data('id');
+        force = typeof force !== 'undefined' ? force : confirm("Desea eliminar la habitacion?");
+
+    $('#idsHabitaciones').val(function(i, val) {
+        var ids = val.split(',');
+        $.each(ids, function(i, value) {
+            var habPart = value.split(':');
+            if (habPart[0].indexOf(idHabitacion.toString()) > -1 && force) {
+                ids.splice(i, 1);
+                form.append('<input type="hidden" name="remover_habitaciones[]" value="'+value+'" />');
+                parent.remove();
+                update_capacidad();
+            }
+        });
+        return ids.join(',');
+    });
+    return false;
+}
+
+function update_capacidad() {
+    var capacidad = $('#capacidad_habitaciones'),
+        cap = Number(capacidad.text()),
+        tmp = 0;
+    $('#habitacionesResult ul li span.habitacion').each(function (i, value) {
+        var habParts = $(value).text().split(':');
+        tmp = Number(tmp) + Number(habParts[1]);
+    });
+    capacidad.text(tmp);
+
+}
+
 $(document).ready(function() {
-    $('#habitacionesResult').on('click', select_habitacion);
+    $('#idpabellon').on('change', function() {
+        $("#numeroHab").val('')
+                       .autocomplete({
+            serviceUrl: 'index.php?page=reserva_habitacion&action=find',
+            type: 'POST',
+            params: {
+                fecha_in: $('#fecha_in').val(),
+                fecha_out: $('#fecha_out').val(),
+                idpabellon: $('#idpabellon').val()
+            },
+            showNoSuggestionNotice: true,
+            noSuggestionNotice: "Habitacion no disponible",
+            onSelect: function(suggestion) {
+                $("#numeroHab").data('suggestion',suggestion);
+                $('#agregarHabitacion').prop('disabled', false);
+            }
+        });
+    });
+    $('#agregarHabitacion').on('click', function() {
+        $('#agregarHabitacion').prop('disabled', true);
+        add_habitacion($("#numeroHab").data('suggestion'));
+    });
     $('#agregar_pasajero').on('click', agregar_pasajero);
     $('#habitaciones').on('change', function() {
-        find_habitacion();
         calculate_amount();
     });
     $('#pasajeros').on('change', function() {
-        //calculate_amount();
+        calculate_amount();
     });
-    find_habitacion();
+    update_capacidad();
 });

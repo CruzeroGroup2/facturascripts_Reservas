@@ -106,7 +106,8 @@ class reserva_categoria_habitacion extends reserva_controller {
         $id = (int) isset($_GET['id']) ? $_GET['id'] : 0;
         $this->categoria_habitacion = categoria_habitacion::get($id);
         $habitacion = new habitacion();
-        if($this->categoria_habitacion && !&& $this->categoria_habitacion->delete()) {
+        //TODO: Agregar mensaje de error cuando una serie de habitaciones está usando una categoría
+        if($this->categoria_habitacion && $this->categoria_habitacion->delete()) {
             $this->new_message("Categoría Habitacion eliminado correctamente!.");
         } else {
             $this->new_error_msg("¡Imposible eliminar Categoría Habitacion!");
