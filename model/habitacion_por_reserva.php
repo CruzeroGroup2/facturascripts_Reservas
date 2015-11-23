@@ -32,6 +32,8 @@ class habitacion_por_reserva extends fs_model {
      */
     protected $idreserva = null;
 
+    private $edit = false;
+
     const CACHE_KEY_ALL = 'reserva_habitacion_por_reserva_all';
     const CACHE_KEY_SINGLE = 'reserva_habitacion_por_reserva_{id}';
 
@@ -48,6 +50,16 @@ class habitacion_por_reserva extends fs_model {
         $this->setId($data);
         $this->idhabitacion = (isset($data['idhabitacion'])) ? $data['idhabitacion'] : null;
         $this->idreserva = (isset($data['idreserva'])) ? $data['idreserva'] : null;
+    }
+
+    /**
+     * @param bool|true $value
+     *
+     * @return habitacion_por_reserva
+     */
+    public function setEdit($value = true) {
+        $this->edit = $value;
+        return $this;
     }
 
     /**
@@ -215,14 +227,21 @@ class habitacion_por_reserva extends fs_model {
      * @return bool
      */
     public function test() {
+        $reserva = reserva::get($this->idreserva);
         $status = false;
         $this->id = (int)$this->id;
         $this->idhabitacion = intval($this->no_html($this->idhabitacion));
         $this->idreserva = intval($this->no_html($this->idreserva));
 
         if (!is_a($this->getHabitacion(), 'habitacion') && !$this->getHabitacion()->exists()) {
-            $this->new_error_msg("habitacion no válida.");
-        } else {
+            $this->new_error_msg("Habitacion no válida.");
+        }
+
+        if (!$this->exists() && !$this->getHabitacion()->isAvailable($reserva->getFechaIn(), $reserva->getFechaOut())) {
+            $this->new_error_msg("Ya existe una reserva para la habitacion ". $this->getHabitacion()->getNumero());
+        }
+
+        if(!$this->get_errors()) {
             $status = true;
         }
 

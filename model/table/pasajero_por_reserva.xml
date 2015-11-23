@@ -31,6 +31,16 @@
         <nulo>NO</nulo>
     </columna>
     <columna>
+        <nombre>codgrupo</nombre>
+        <tipo>character varying(6)</tipo>
+        <nulo>NO</nulo>
+    </columna>
+    <columna>
+        <nombre>codcliente</nombre>
+        <tipo>character varying(6)</tipo>
+        <nulo>NO</nulo>
+    </columna>
+    <columna>
         <nombre>idreserva</nombre>
         <tipo>integer</tipo>
         <nulo>NO</nulo>

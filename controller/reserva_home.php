@@ -55,7 +55,6 @@ class reserva_home extends reserva_controller {
      */
     protected $max_pass = 0;
 
-
     public function __construct() {
         parent::__construct(__CLASS__, "Reserva", "Reserva");
     }
@@ -70,6 +69,7 @@ class reserva_home extends reserva_controller {
         $this->grupos_cliente = new grupo_clientes();
         $this->tarifa = new tarifa_reserva();
         $this->estado = new estado_reserva();
+        $this->share_extensions();
         switch($action) {
             default:
             case 'list':
@@ -92,6 +92,9 @@ class reserva_home extends reserva_controller {
                 break;
             case 'checkout':
                 $this->checkoutAction();
+                break;
+            case 'find':
+                $this->findAction();
                 break;
             //            case 'delete':
             //                $this->deleteAction();
@@ -130,7 +133,7 @@ class reserva_home extends reserva_controller {
     public function edit_url(reserva $reserva, $prev_step = false) {
         $this->page->extra_url = '&action=edit&id=' . (int) $reserva->getId();
 
-        if($prev_step) {
+        if($prev_step && $reserva->getStep() != 1) {
             $this->page->extra_url .= '&step='.($reserva->getStep()-1);
         }
 
@@ -230,6 +233,7 @@ class reserva_home extends reserva_controller {
             $this->reserva->setValues($_POST);
             if($this->reserva->save()) {
                 if($this->reserva->getStep() > 2) {
+                    $this->reserva->setEdit(true);
                     $this->new_message($this->reserva->getSuccesMessage());
                 }
 
@@ -237,7 +241,7 @@ class reserva_home extends reserva_controller {
                     $this->new_advice('La reserva no tiene ninguna habitacion asociada!');
                 }
             } else {
-                $this->new_error_msg("¡Error en Reserva!");
+                $this->new_error_msg("¡Error al actualizar la reserva!");
             }
         }
 
@@ -270,18 +274,27 @@ class reserva_home extends reserva_controller {
 
         /** @var direccion_cliente[] $direcciones */
         $direcciones = $this->reserva->getCliente()->get_direcciones();
+        if(!isset($direcciones[0]) || !is_a($direcciones[0], 'direccion_cliente')) {
+            $direcciones[0] = new direccion_cliente();
+            $direcciones[0]->direccion = '';
+            $direcciones[0]->ciudad = '';
+            $direcciones[0]->codpostal = '';
+            $direcciones[0]->provincia = '';
+        }
         $voucher->setValue('codigoReserva', htmlspecialchars($this->reserva->getId()));
         $voucher->setValue('nombreReserva', htmlspecialchars($this->reserva->getCliente()->nombre));
         $voucher->setValue('documento', htmlspecialchars($this->reserva->getCliente()->cifnif));
         $voucher->setValue('categoría', htmlspecialchars($this->reserva->getGrupoCliente()->nombre));
         $voucher->setValue('montoTarifa', htmlspecialchars(number_format($this->reserva->getTarifa()->getMonto(), FS_NF0, FS_NF1, FS_NF2)));
         $voucher->setValue('email', htmlspecialchars($this->reserva->getCliente()->email));
-        $voucher->setValue('domicilio', htmlspecialchars($direcciones[0]->direccion));
         $voucher->setValue('telefono', htmlspecialchars($this->reserva->getCliente()->telefono1));
         $voucher->setValue('telefono2', htmlspecialchars($this->reserva->getCliente()->telefono2));
+
+        $voucher->setValue('domicilio', htmlspecialchars($direcciones[0]->direccion));
         $voucher->setValue('localidad', htmlspecialchars($direcciones[0]->ciudad));
         $voucher->setValue('codigoPostal', htmlspecialchars($direcciones[0]->codpostal));
         $voucher->setValue('provincia', htmlspecialchars($direcciones[0]->provincia));
+
         $voucher->setValue('fechaIn', htmlspecialchars($this->reserva->getFechaIn()));
         $voucher->setValue('fechaOut', htmlspecialchars($this->reserva->getFechaOut()));
         $voucher->setValue('habitaciones', htmlspecialchars(implode(', ', $this->reserva->getNumerosHabitaciones())));
@@ -416,6 +429,21 @@ class reserva_home extends reserva_controller {
         }
 
 
+    }
+
+    private function findAction() {
+        $cod = isset($_GET['cod']) ? $_GET['cod'] : null;
+        if($cod) {
+            $cli = new cliente();
+            $this->cliente = $cli->get($cod);
+        }
+        $from_cliente = isset($_GET['from_client']) ? boolval($_GET['from_client']) : false;
+        $this->reservas = $this->reserva->find(array(
+            'codcliente' => $cod,
+            'order_by' => 'reserva.fecha_in DESC'
+        ));
+        $this->from_client = $from_cliente;
+        $this->template = 'reserva_find';
     }
 
     private function deleteAction() {
@@ -597,6 +625,27 @@ class reserva_home extends reserva_controller {
         $cell .= '</td>';
 
         return $cell;
+    }
+
+    private function share_extensions() {
+        $extensiones = array(
+            array(
+                'name' => 'reservas_cliente',
+                'page_from' => 'reserva_home',
+                'page_to' => 'ventas_cliente',
+                'type' => 'tab',
+                'text' => '<span class="glyphicon glyphicon-list-alt" aria-hidden="true"></span><span class="hidden-xs">&nbsp; Reservas</span>',
+                'params' => '&action=find&from_client=true'
+            )
+        );
+        foreach($extensiones as $ext)
+        {
+            $fsext = new fs_extension($ext);
+            if( !$fsext->save() )
+            {
+                $this->new_error_msg('Imposible guardar los datos de la extensión '.$ext['name'].'.');
+            }
+        }
     }
 
 }

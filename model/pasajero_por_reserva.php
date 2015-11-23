@@ -37,6 +37,21 @@ class pasajero_por_reserva extends fs_model {
     protected $fecha_nacimiento = null;
 
     /**
+     * @var string
+     */
+    protected $codgrupo = null;
+
+    /**
+     * @var string
+     */
+    protected $codcliente = null;
+
+    /**
+     * @var cliente
+     */
+    protected $cliente = null;
+
+    /**
      * @var int
      */
     protected $idreserva = null;
@@ -58,7 +73,7 @@ class pasajero_por_reserva extends fs_model {
 
     const DATE_FORMAT = 'Y-m-d';
 
-    const EDAD_MAX_MENOR = 5;
+    const EDAD_MAX_MENOR = 6;
     const EDAD_MIN_MENOR = 2;
 
     const CACHE_KEY_ALL = 'reserva_pasajero_por_reserva_all';
@@ -84,12 +99,38 @@ class pasajero_por_reserva extends fs_model {
         if(isset($data['fecha_nacimiento'])) {
             $this->setFechaNacimiento($data['fecha_nacimiento']);
         }
+        $this->codgrupo = (isset($data['codgrupo'])) ? $data['codgrupo'] : null;
+        $this->codcliente = (isset($data['codcliente'])) ? $data['codcliente'] : null;
         $this->idreserva = (isset($data['idreserva'])) ? $data['idreserva'] : null;
 
         //Datos correspondientes al checkin
         $this->idhabitacion = (isset($data['idhabitacion'])) ? $data['idhabitacion'] : null;
         $this->fecha_in = (isset($data['fecha_in'])) ? $data['fecha_in'] : null;
         $this->fecha_out = (isset($data['fecha_out'])) ? $data['fecha_out'] : null;
+
+        if($this->nombre_completo &&
+           $this->documento &&
+           $this->codcliente &&
+           !$this->codcliente) {
+            $cliente = new cliente();
+            $tmpcli = $cliente->get_by_cifnif($this->documento);
+            if(!$tmpcli) {
+                $cliente->codcliente = $cliente->get_new_codigo();
+                $cliente->nombre = $this->nombre_completo;
+                $cliente->razonsocial = $this->nombre_completo;
+                $cliente->cifnif = $this->documento;
+                $cliente->codgrupo = $this->codgrupo;
+                if($cliente->save()) {
+                    $this->codcliente = $cliente->codcliente;
+                } else {
+                    $this->new_error_msg("Error al agregar al pasajero " . $cliente->nombre . " como futuro cliente");
+                }
+            } else {
+                $this->codcliente = $tmpcli->codcliente;
+                $this->codgrupo = $tmpcli->codgrupo;
+                $this->nombre_completo = $tmpcli->nombre;
+            }
+        }
     }
 
     /**
@@ -135,7 +176,7 @@ class pasajero_por_reserva extends fs_model {
      *
      * @return pasajero_por_reserva
      */
-    public function setNombreCompleto( $nombre_completo ) {
+    public function setNombreCompleto($nombre_completo) {
         $this->nombre_completo = $nombre_completo;
 
         return $this;
@@ -153,7 +194,7 @@ class pasajero_por_reserva extends fs_model {
      *
      * @return pasajero_por_reserva
      */
-    public function setTipoDocumento( $tipo_documento ) {
+    public function setTipoDocumento($tipo_documento) {
         $this->tipo_documento = $tipo_documento;
 
         return $this;
@@ -171,7 +212,7 @@ class pasajero_por_reserva extends fs_model {
      *
      * @return pasajero_por_reserva
      */
-    public function setDocumento( $documento ) {
+    public function setDocumento($documento) {
         $this->documento = $documento;
 
         return $this;
@@ -189,11 +230,68 @@ class pasajero_por_reserva extends fs_model {
      *
      * @return pasajero_por_reserva
      */
-    public function setFechaNacimiento( $fecha_nacimiento ) {
+    public function setFechaNacimiento($fecha_nacimiento) {
         $date = new DateTime($fecha_nacimiento);
         $this->fecha_nacimiento = $date->format(self::DATE_FORMAT);
 
         return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getCodCliente() {
+        return $this->codcliente;
+    }
+
+    /**
+     * @param string $codcliente
+     *
+     * @return pasajero_por_reserva
+     */
+    public function setCodCliente($codcliente = '') {
+        $this->codcliente = $codcliente;
+
+        return $this;
+    }
+
+    /**
+     * @return cliente
+     */
+    public function getCliente() {
+        if($this->codcliente && !$this->cliente) {
+            $this->cliente = $this->get_cliente($this->codcliente);
+            $this->codgrupo = $this->cliente->codgrupo;
+        }
+
+        return $this->cliente;
+    }
+
+    /**
+     * @param string $codgrupo
+     *
+     * @return habitacion_por_reserva
+     */
+    public function setCodGrupo($codgrupo = '') {
+        $this->codgrupo = $codgrupo;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getCodGrupo() {
+        return $this->codgrupo;
+    }
+
+    /**
+     * @return bool|grupo_clientes
+     */
+    public function getTipoPasajero() {
+        $grupo = new grupo_clientes();
+
+        return $grupo->get($this->codgrupo);
     }
 
     /**
@@ -225,9 +323,10 @@ class pasajero_por_reserva extends fs_model {
      * @return bool
      */
     public function esMenor() {
+        $edad = $this->getEdad();
         return (
-            $this->getEdad() >= self::EDAD_MIN_MENOR &&
-            $this->getEdad() <= self::EDAD_MAX_MENOR
+            $edad >= self::EDAD_MIN_MENOR &&
+            $edad < self::EDAD_MAX_MENOR
         );
     }
 
@@ -236,6 +335,16 @@ class pasajero_por_reserva extends fs_model {
      */
     public function getEdad() {
         return date_diff(date_create($this->getFechaNacimiento()), date_create('today'))->y;
+    }
+
+    public function getEdadCateg() {
+        if($this->esAdulto()) {
+            return 'adulto';
+        } elseif ($this->esMenor()) {
+            return 'menor_6';
+        } else {
+            return 'menor_2';
+        }
     }
 
     /**
@@ -290,6 +399,16 @@ class pasajero_por_reserva extends fs_model {
         $this->fecha_out = $fecha_out;
 
         return $this;
+    }
+
+    public function asAdult() {
+        $ts = strtotime('-18 years');
+        $this->setFechaNacimiento("@$ts");
+    }
+
+    public function asMenor() {
+        $ts = strtotime('-' . (self::EDAD_MIN_MENOR+1) . ' years');
+        $this->setFechaNacimiento("@$ts");
     }
 
     /**
@@ -371,7 +490,7 @@ class pasajero_por_reserva extends fs_model {
         $pasporreslist = array();
         $passporres = $this->cache->get_array(str_replace('{id}','r'.$idreserva,self::CACHE_KEY_SINGLE));
         if( ((int) $idreserva) > 0 && !$passporres) {
-            $passporres = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE idreserva = " . (int)$idreserva . " ORDER BY id ASC;");
+            $passporres = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE idreserva = " . (int)$idreserva . " ORDER BY fecha_nacimiento ASC;");
             $this->cache->set(str_replace('{id}','r'.$idreserva,self::CACHE_KEY_SINGLE), $pasporreslist);
         }
         if ($passporres) {
@@ -422,6 +541,8 @@ class pasajero_por_reserva extends fs_model {
         $this->tipo_documento = $this->no_html($this->tipo_documento);
         $this->documento = $this->no_html($this->documento);
         $this->fecha_nacimiento = $this->no_html($this->fecha_nacimiento);
+        $this->codgrupo = $this->no_html($this->codgrupo);
+        $this->codcliente = $this->no_html($this->codcliente);
 
         if(strlen($this->nombre_completo) < 1 || strlen($this->nombre_completo) > 250) {
             $this->new_error_msg( "Nombre de pasajero no válido." );
@@ -435,10 +556,14 @@ class pasajero_por_reserva extends fs_model {
             $this->new_error_msg("Documento no válido");
         }
 
-        $now = strtotime('today');
+        if(!$this->getTipoPasajero()->exists()) {
+            $this->new_error_msg("Tipo de Pasajero Inválido");
+        }
+
+        /*$now = strtotime('today');
         if (strtotime($this->fecha_nacimiento) >= $now) {
             $this->new_error_msg("Fecha de nacimiento no válida");
-        }
+        }*/
 
         if (!$this->get_errors()) {
             $status = true;
@@ -454,6 +579,8 @@ class pasajero_por_reserva extends fs_model {
                'tipo_documento = ' . $this->var2str($this->tipo_documento) . ',' .
                'documento = ' . $this->var2str($this->documento) . ',' .
                'fecha_nacimiento = ' . $this->var2str($this->fecha_nacimiento) . ',' .
+               'codgrupo = ' . $this->var2str($this->codgrupo) . ',' .
+               'codcliente = ' . $this->var2str($this->codcliente) . ',' .
                'idreserva = ' . $this->idreserva;
         if($this->fecha_in) {
             $sql .= ', fecha_in = ' . $this->var2str($this->fecha_in);
@@ -468,7 +595,7 @@ class pasajero_por_reserva extends fs_model {
 
         }
         $sql .= ';';
-        $ret = $this->db->exec( $sql );
+        $ret = $this->db->exec($sql);
         return $ret;
     }
 
@@ -479,6 +606,8 @@ class pasajero_por_reserva extends fs_model {
                'tipo_documento = ' . $this->var2str($this->tipo_documento) . ',' .
                'documento = ' . $this->var2str($this->documento) . ',' .
                'fecha_nacimiento = ' . $this->var2str($this->fecha_nacimiento) . ',' .
+               'codgrupo = ' . $this->var2str($this->codgrupo) . ',' .
+               'codcliente = ' . $this->var2str($this->codcliente) . ',' .
                'idreserva = ' . $this->idreserva;
         if($this->fecha_in) {
             $sql .= ', fecha_in = ' . $this->var2str($this->fecha_in);
@@ -493,7 +622,7 @@ class pasajero_por_reserva extends fs_model {
 
         }
         $sql .= ' WHERE id = ' . (int)$this->id . ';';
-        $ret = $this->db->exec( $sql );
+        $ret = $this->db->exec($sql);
         return $ret;
     }
 
@@ -532,14 +661,27 @@ class pasajero_por_reserva extends fs_model {
         $this->cache->delete(self::CACHE_KEY_ALL);
     }
 
+    /**
+     * @param $codcliente
+     *
+     * @return bool|cliente
+     */
+    private function get_cliente($codcliente) {
+        $cliente = new cliente();
+
+        return $cliente->get($codcliente);
+    }
+
     public function __toString() {
         return
             $this->nombre_completo . ':' .
             $this->tipo_documento . ':' .
             $this->documento . ':' .
-            $this->fecha_nacimiento . ':'.
+            $this->fecha_nacimiento . ':' .
+            $this->codgrupo . ':' .
             $this->idreserva . ':' .
-            $this->id;
+            $this->id . ':' .
+            $this->codcliente;
     }
 
 }

@@ -5,6 +5,49 @@
 /**
  *
  * @param str
+ * @returns {string}
+ */
+function ucfirst(str) {
+    //  discuss at: http://phpjs.org/functions/ucfirst/
+    // original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+    // bugfixed by: Onno Marsman
+    // improved by: Brett Zamir (http://brett-zamir.me)
+    //   example 1: ucfirst('kevin van zonneveld');
+    //   returns 1: 'Kevin van zonneveld'
+
+    str += '';
+    var f = str.charAt(0)
+        .toUpperCase();
+    return f + str.substr(1);
+}
+
+/**
+ *
+ * @param str
+ * @returns {string}
+ */
+function ucwords(str) {
+    //  discuss at: http://phpjs.org/functions/ucwords/
+    // original by: Jonas Raoni Soares Silva (http://www.jsfromhell.com)
+    // improved by: Waldo Malqui Silva
+    // improved by: Robin
+    // improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+    // bugfixed by: Onno Marsman
+    //    input by: James (http://www.james-bell.co.uk/)
+    //   example 1: ucwords('kevin van  zonneveld');
+    //   returns 1: 'Kevin Van  Zonneveld'
+    //   example 2: ucwords('HELLO WORLD');
+    //   returns 2: 'HELLO WORLD'
+
+    return (str + '')
+        .replace(/^([a-z\u00E0-\u00FC])|\s+([a-z\u00E0-\u00FC])/g, function($1) {
+            return $1.toUpperCase();
+        });
+}
+
+/**
+ *
+ * @param str
  * @returns {Date}
  */
 function parseDate(str) {
@@ -21,7 +64,7 @@ function parseDate(str) {
  */
 function daydiff(first, second) {
     first.setHours(0, 0, 0);
-    second.setHours(23, 59, 59);
+    second.setHours(0, 0, 0);
     return Math.ceil((second-first)/(1000*60*60*24));
 }
 
@@ -73,7 +116,9 @@ function calculate_totals(tarifa, dias, descuento, cantAdultos, cantMenores) {
     };
 }
 
-
+/**
+ *
+ */
 function calculate_amount() {
     var fechaIn = parseDate($('#fecha_in').val()),
         fechaOut = parseDate($('#fecha_out').val()),
@@ -84,55 +129,82 @@ function calculate_amount() {
         descuento = Number($('#descuento').val());
     get_tarifa({idtarifa: tarifa}, function(data) {
         var totales = calculate_totals(data, dias, descuento, cantAdultos, cantMenores);
-        $('#total').val(totales.total);
-        $('#total_final').val(totales.total_final);
+        $('#monto_tarifa').text(show_precio(data.monto));
+        $('#total').text(show_precio(totales.total));
+        $('#total_final').text(show_precio(totales.total_final));
     });
 }
 
+/**
+ *
+ * @returns {number}
+ */
 function get_pasajeros_count() {
     var cantAdultos = Number($('#cantidad_adultos').val()),
     cantMenores = Number($('#cantidad_menores').val());
     return cantAdultos+cantMenores;
 }
 
+/**
+ *
+ */
 function clear_pasajero_fields() {
     $('#id_pasajero').val('');
     $('#nombre_pasajero').val('');
     $('#documento_pasajero').val('');
     $('input[name="documento_pasajero_tipo"]:checked').removeAttr('checked');
-    $('#fechanac_pasajero').val('');
+    $('#codgrupo_pasajero option:selected').removeAttr('selected');
+    $('input[name="edad_pasajero"]:checked').removeAttr('checked');
 }
+
+/**
+ *
+ * @param event
+ * @returns {boolean}
+ */
 var agregar_pasajero = function(event) {
     var idreserva = $('#idreserva').val(),
         idpasajero = $('#id_pasajero').val(),
-        nombre = $('#nombre_pasajero').val(),
+        nombre = ucwords($('#nombre_pasajero').val().toLowerCase()),
         tipoDocumento = $('input[name="documento_pasajero_tipo"]:checked').val(),
         documento = $('#documento_pasajero').val(),
-        fechaNac = $('#fechanac_pasajero').val(),
-        cantPasajeros = get_pasajeros_count();
+        codgrupo = $('#codgrupo_pasajero').val(),
+        edad = $('input[name="edad_pasajero"]:checked').val().toLowerCase(),
+        cantPasajeros = get_pasajeros_count(),
+        pasajeros = $('tr.'+edad+' input[name="pasajeros[]"]');
 
-    if($('input[name="pasajeros[]"]').length >= cantPasajeros) {
-        alert('No puedes agregar más pasajeros a la reserva');
+    if(edad == 'adulto' && pasajeros.length >= Number($('#cantidad_adultos').val())) {
+        alert('No puedes agregar más pasajeros adultos a la reserva');
+        clear_pasajero_fields();
+        return false;
+    }
+    if(edad == 'menor_6' && pasajeros.length >= Number($('#cantidad_menores').val())) {
+        alert('No puedes agregar más pasajeros menorees de 6 a la reserva');
         clear_pasajero_fields();
         return false;
     }
 
-    if(nombre && documento && fechaNac) {
+    if(nombre && documento && codgrupo) {
         clear_pasajero_fields();
-        $('#lista_pasajeros tbody').append('<tr>'+
+        $('#lista_pasajeros tbody').append('<tr class="'+edad.toLowerCase()+'">'+
             '<td>' + nombre + '</td>' +
             '<td>' + documento + '</td>' +
-            '<td>' + fechaNac + '</td>'+
+            '<td>' + ucfirst(edad) + '</td>' +
+            '<td>' + $('#codgrupo_pasajero option[value='+codgrupo+']').text() + '</td>'+
             '<td>' +
-                '<input type="hidden" name="pasajeros[]" value="'+nombre+':'+tipoDocumento+':'+documento+':'+fechaNac+':'+idreserva+':'+idpasajero+'">'+
+                '<input type="hidden" name="pasajeros[]" value="'+nombre+':'+tipoDocumento+':'+documento+':'+edad+':'+codgrupo+':'+idreserva+':'+idpasajero+':">'+
                 '<button class="text-right" onclick="return edit_huesped(this)"><span class="glyphicon glyphicon-pencil"></span></button>' +
                 '<button class="text-right" onclick="return remove_huesped(this)"><span class="glyphicon glyphicon-trash"></span></button>' +
             '</td>' +
         +'</tr>');
     }
-}
+};
 
-
+/**
+ *
+ * @param suggestion
+ * @returns {boolean}
+ */
 var autcomplete_select = function(suggestion) {
     var client_id = suggestion.data;
 
@@ -154,6 +226,12 @@ var autcomplete_select = function(suggestion) {
     return false;
 };
 
+/**
+ *
+ * @param query
+ * @param suggestions
+ * @returns {boolean}
+ */
 var autocomplete_response = function(query, suggestions) {
     // suggestions is the array that's about to be sent to the response callback.
     if (suggestions.length === 0) {
@@ -165,6 +243,11 @@ var autocomplete_response = function(query, suggestions) {
     return false;
 };
 
+/**
+ *
+ * @param element
+ * @returns {boolean}
+ */
 function edit_huesped(element) {
     var parent = $(element.parentNode),
         huespedInfo = parent.find('input[type="hidden"]').val().split(':');
@@ -172,11 +255,18 @@ function edit_huesped(element) {
     $('#nombre_pasajero').val(huespedInfo[0]);
     $('input[value="'+huespedInfo[1]+'"]').attr('checked','checked');
     $('#documento_pasajero').val(huespedInfo[2]);
-    $('#fechanac_pasajero').val(huespedInfo[3]);
+    $('input[value="'+huespedInfo[3]+'"]').attr('checked','checked');
+    $('#codgrupo_pasajero').find('option[value="'+huespedInfo[4]+'"]').attr("selected",true);
     $('#id_pasajero').val(huespedInfo[5]);
     return false;
 }
 
+/**
+ *
+ * @param element
+ * @param force
+ * @returns {boolean}
+ */
 function remove_huesped(element, force) {
     var parent = $(element.parentNode),
         form = parent.closest('form'),
@@ -187,15 +277,15 @@ function remove_huesped(element, force) {
         parent.parent().remove();
     }
     return false;
-    //update_huesped_count();
 }
 
+/**
+ *
+ * @param habitacion
+ */
 function add_habitacion(habitacion) {
-    var habPart = habitacion.value.split(":"),
-        cantMaxHab = Number(habPart[1]),
-        cap = Number($('#capacidad_habitaciones').text()),
-        cant;
-    if(cap+cantMaxHab <= get_pasajeros_count() && confirm("Desea a gregar la habitacion "+habPart[0]+"?")) {
+    var habPart = habitacion.value.split(":");
+    if(confirm("Desea a gregar la habitacion "+habPart[0]+"?")) {
         $('#idsHabitaciones').val(function(i, val) {
             var ids = [];
             if(val != '') {
@@ -212,11 +302,15 @@ function add_habitacion(habitacion) {
         );
         $("#numeroHab").removeData('suggestion').val('');
         update_capacidad();
-    } else {
-        alert("El número de pasajeros es menor a la cantidad de habitaciones seleccionadas");
     }
 }
 
+/**
+ *
+ * @param element
+ * @param force
+ * @returns {boolean}
+ */
 function remove_habitacion(element, force) {
     var parent = $(element.parentNode),
         form = parent.closest('form'),
@@ -239,9 +333,11 @@ function remove_habitacion(element, force) {
     return false;
 }
 
+/**
+ *
+ */
 function update_capacidad() {
     var capacidad = $('#capacidad_habitaciones'),
-        cap = Number(capacidad.text()),
         tmp = 0;
     $('#habitacionesResult ul li span.habitacion').each(function (i, value) {
         var habParts = $(value).text().split(':');
@@ -252,6 +348,30 @@ function update_capacidad() {
 }
 
 $(document).ready(function() {
+    var nowTemp = new Date();
+    var now = new Date(nowTemp.getFullYear(), nowTemp.getMonth(), nowTemp.getDate(), 0, 0, 0, 0);
+    var checkin = $('#fecha_in').datepicker({
+        format: 'dd-mm-yyyy',
+        onRender: function(date) {
+            return date.valueOf() < now.valueOf() ? 'disabled' : '';
+        }
+    }).on('changeDate', function(ev) {
+        if (ev.date.valueOf() > checkout.date.valueOf()) {
+            var newDate = new Date(ev.date);
+            newDate.setDate(newDate.getDate() + 1);
+            checkout.setValue(newDate);
+        }
+        checkin.hide();
+        $('#fecha_out')[0].focus();
+    }).data('datepicker');
+    var checkout = $('#fecha_out').datepicker({
+        format: 'dd-mm-yyyy',
+        onRender: function(date) {
+            return date.valueOf() <= checkin.date.valueOf() ? 'disabled' : '';
+        }
+    }).on('changeDate', function(ev) {
+        checkout.hide();
+    }).data('datepicker');
     $('#idpabellon').on('change', function() {
         $("#numeroHab").val('')
                        .autocomplete({
@@ -262,11 +382,25 @@ $(document).ready(function() {
                 fecha_out: $('#fecha_out').val(),
                 idpabellon: $('#idpabellon').val()
             },
+            noCache: true,
             showNoSuggestionNotice: true,
             noSuggestionNotice: "Habitacion no disponible",
             onSelect: function(suggestion) {
                 $("#numeroHab").data('suggestion',suggestion);
                 $('#agregarHabitacion').prop('disabled', false);
+            },
+            transformResult: function (response) {
+                var ret = typeof response === 'string' ? $.parseJSON(response) : response;
+                var suggestions = ret.suggestions;
+                var tmpSugg = [];
+                $.each(suggestions, function (index, value){
+                    var selec = '.habitacion.disponible[data-id='+value.data+']';
+                    if($(selec).length != 1) {
+                        tmpSugg.push(value)
+                    }
+                });
+                ret.suggestions = tmpSugg;
+                return ret;
             }
         });
     });
@@ -275,11 +409,13 @@ $(document).ready(function() {
         add_habitacion($("#numeroHab").data('suggestion'));
     });
     $('#agregar_pasajero').on('click', agregar_pasajero);
+    update_capacidad();
     $('#habitaciones').on('change', function() {
         calculate_amount();
     });
-    $('#pasajeros').on('change', function() {
-        calculate_amount();
+    $('#fecha_in, #fecha_out').on('blur', function() {
+        $('#habitacionesResult ul li span.habitacion a').each(function (i, value) {
+            remove_habitacion(value, true);
+        });
     });
-    update_capacidad();
 });

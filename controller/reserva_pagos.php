@@ -108,11 +108,28 @@ class reserva_pagos extends reserva_controller {
             $this->divisa = new divisa();
             $this->factura = new factura_cliente();
             $this->forma_pago = new forma_pago();
-            foreach($this->cliente->get_direcciones() as $dir) {
-                if($dir->domfacturacion) {
-                    $this->direccion = $dir;
-                    break;
+            $direcciones = $this->cliente->get_direcciones();
+            if($direcciones) {
+                foreach($direcciones as $dir) {
+                    if($dir->domfacturacion) {
+                        $this->direccion = $dir;
+                        break;
+                    }
                 }
+            } else {
+                $this->direccion = new direccion_cliente(array(
+                    'id' => '',
+                    'codcliente' => $this->cliente->codcliente,
+                    'codpais' => $this->empresa->codpais,
+                    'direccion' => $this->empresa->direccion,
+                    'ciudad' => $this->empresa->ciudad,
+                    'codpostal' => $this->empresa->codpostal,
+                    'provincia' => $this->empresa->provincia,
+                    'apartado' => $this->empresa->apartado,
+                    'domenvio' => 0,
+                    'domfacturacion' => 1,
+                    'descripcion' => ''
+                ));
             }
             //Agente
             $this->agente = $this->user->get_agente();

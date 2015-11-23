@@ -38,7 +38,7 @@
             {if="$fsc->tarifas"}
             {loop="$fsc->tarifas"}
             <tr>
-                <td>{$value->getCategoriaHabitacion()->getNombre()}</td>
+                <td>{if="$value->getCategoriaHabitacion()"}{$value->getCategoriaHabitacion()->getNombre()}{/if}</td>
                 <td>{$value->getGrupoCliente()->nombre}</td>
                 <td>{$fsc->show_precio($value->getMonto())}</td>
                 <td>{$value->getFechaInicio()}</td>

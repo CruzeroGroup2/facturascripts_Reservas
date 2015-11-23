@@ -281,6 +281,19 @@ class habitacion extends fs_model {
         return $this->idestado;
     }
 
+    public function isAvailable($arrival, $departure) {
+        $sql = "SELECT count(habitacion_por_reserva.idreserva) as cantidad_reservas FROM reserva
+LEFT JOIN `habitacion_por_reserva` ON (reserva.id = habitacion_por_reserva.idreserva)
+WHERE (
+  (fecha_in BETWEEN " . $this->var2str($arrival . ' 12:00:00') . " AND " . $this->var2str($departure . ' 10:00:00') . ") OR
+  (fecha_out BETWEEN " . $this->var2str($arrival . ' 12:00:00') . " AND " . $this->var2str($departure . ' 10:00:00') . ")
+)
+AND reserva.idestado NOT IN (6,7) -- Except for canceled reservs
+AND habitacion_por_reserva.idhabitacion = " . $this->getId();
+        $result = $this->db->select($sql);
+        return ! $result[0]['cantidad_reservas'];
+    }
+
     protected function install() {
         $pabellon = new pabellon();
         $categoria_habitacion = new categoria_habitacion();
@@ -349,6 +362,7 @@ class habitacion extends fs_model {
 
         return $habitacionlist;
     }
+
     /**
      * @param string $arrival
      * @param string $departure
@@ -367,7 +381,10 @@ class habitacion extends fs_model {
       SELECT habitacion_por_reserva.idhabitacion
       FROM habitacion_por_reserva
         LEFT JOIN reserva ON (reserva.id = habitacion_por_reserva.idreserva)
-      WHERE fecha_in <= " . $this->var2str($arrival . ' 12:00:00') . " AND fecha_out >= " . $this->var2str($departure . ' 10:00:00') ."
+      WHERE (
+        (fecha_in BETWEEN " . $this->var2str($arrival . ' 12:00:00') . " AND " . $this->var2str($departure . ' 10:00:00') . ") OR
+        (fecha_out BETWEEN " . $this->var2str($arrival . ' 12:00:00') . " AND " . $this->var2str($departure . ' 10:00:00') . ")
+      )
       AND reserva.idestado NOT IN (6,7) -- Except for canceled reservs
     )
 ORDER BY numero ASC;";
@@ -409,7 +426,10 @@ WHERE id NOT IN (
   SELECT habitacion_por_reserva.idhabitacion
   FROM habitacion_por_reserva
     LEFT JOIN reserva ON (reserva.id = habitacion_por_reserva.idreserva)
-  WHERE fecha_in <= " . $this->var2str($arrival . ' 12:00:00') . " AND fecha_out >= " . $this->var2str($departure . ' 10:00:00') ."
+  WHERE (
+    (fecha_in BETWEEN " . $this->var2str($arrival . ' 12:00:00') . " AND " . $this->var2str($departure . ' 10:00:00') . ") OR
+    (fecha_out BETWEEN " . $this->var2str($arrival . ' 12:00:00') . " AND " . $this->var2str($departure . ' 10:00:00') . ")
+  )
   AND reserva.idestado NOT IN (6,7) -- Except for canceled reservs
 )";
 
@@ -504,7 +524,12 @@ ORDER BY plaza_maxima ASC;';
         $this->cache->delete(self::CACHE_KEY_ALL);
     }
 
-
+    /**
+     * @param $query
+     * @param int $offset
+     *
+     * @return habitacion[]
+     */
     public function search($query, $offset = 0) {
         $habitacionlist = array();
         $query = strtolower($this->no_html($query));
@@ -528,27 +553,48 @@ ORDER BY plaza_maxima ASC;';
         return $habitacionlist;
     }
 
+    /**
+     * @param $idpabellon
+     *
+     * @return bool|pabellon
+     */
     private function get_pabellon($idpabellon) {
         if($idpabellon) {
             return pabellon::get($idpabellon);
         }
     }
 
+    /**
+     * @param $id_tipohabitacion
+     */
     private function get_tipohabitacion($id_tipohabitacion) {
     }
 
+    /**
+     * @param $idcategoria
+     *
+     * @return bool|categoria_habitacion
+     */
     private function get_categoria($idcategoria) {
         if($idcategoria) {
             return categoria_habitacion::get($idcategoria);
         }
     }
 
+    /**
+     * @param $idestado
+     *
+     * @return bool|estado_habitacion
+     */
     private function get_estado($idestado) {
         if($idestado) {
             return estado_habitacion::get($idestado);
         }
     }
 
+    /**
+     * @return string
+     */
     public function __toString() {
         return (string) $this->numero;
     }
