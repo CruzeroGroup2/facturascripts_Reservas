@@ -242,7 +242,8 @@
                                 <span id="total">{$fsc->show_precio($fsc->getReserva()->getTotal())}</span>
                             </div>
                             <div class="col-md-2">
-                                <input type="submit" value="Grabar Reserva" id="guardar" class="form-control btn-primary">
+                                <input type="submit" value="Grabar Reserva" id="guardar" class="form-control btn-primary bottom-buffer">
+                                <button type="submit" class="form-control btn-primary" formaction="{$fsc->voucher_url($fsc->getReserva())}">Generar Voucher</button>
                             </div>
                         </div>
                         <div class="row form-group">
@@ -251,6 +252,9 @@
                             </div>
                             <div class="col-md-2">
                                 <input id="descuento" class="form-control" name="descuento" type="text" value="{$fsc->getReserva()->getDescuento()}">
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" id="pago" class="form-control btn-success" formaction="{$fsc->pago_url($fsc->getReserva())}">Generar Pago</button>
                             </div>
                         </div>
                         <div class="row form-group">
