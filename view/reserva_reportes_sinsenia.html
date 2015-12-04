@@ -26,7 +26,7 @@
             {if="$fsc->reservas"}
                 {loop="$fsc->reservas"}
                 <tr>
-                    <td>{$value->getId()}</td>
+                    <td><a href="{$value->url()}">{$value->getId()}</a></td>
                     <td>{$value->getFechaIn(true)}</td>
                     <td>{$value->getFechaOut(true)}</td>
                     <td>{$value->getCliente()->nombre}</td>

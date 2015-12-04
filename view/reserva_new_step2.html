@@ -163,6 +163,7 @@
                     </div>
                     <div class="col-md-2">
                         <input id="descuento" class="form-control" name="descuento" type="text" value="{$fsc->getReserva()->getDescuento()}">
+                        <br><span id="montoDescuento">{$fsc->show_precio($fsc->getReserva()->getMontoDescuento())}</span>
                     </div>
                 </div>
                 <div class="row form-group">
@@ -170,7 +171,7 @@
                         <label for="total_final">Total Reserva</label>
                     </div>
                     <div class="col-md-2">
-                        <span id="total_final">{$fsc->show_precio($fsc->getReserva()->getTotal())}</span>
+                        <span id="total_final">{$fsc->show_precio($fsc->getReserva()->getTotalFinal())}</span>
                     </div>
                     <div class="col-md-2">
                         <button type="submit" name="cancelar" id="cancelar" class="form-control btn-danger" formaction="{$fsc->cancel_url($fsc->getReserva())}">Cancelar</button>

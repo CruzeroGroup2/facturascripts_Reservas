@@ -107,7 +107,7 @@ function calculate_totals(tarifa, dias, descuento, cantAdultos, cantMenores) {
     }
 
     var total = dias * totalPorDia,
-        montoDescuento = descuento > 0 ? total * (1 / descuento) : 0,
+        montoDescuento = descuento > 0 ? total * (descuento/100) : 0,
         total_final = total - montoDescuento;
     return {
         "total": total,
@@ -131,6 +131,7 @@ function calculate_amount() {
         var totales = calculate_totals(data, dias, descuento, cantAdultos, cantMenores);
         $('#monto_tarifa').text(show_precio(data.monto));
         $('#total').text(show_precio(totales.total));
+        $('#montoDescuento').text(show_precio(totales.montoDescuento));
         $('#total_final').text(show_precio(totales.total_final));
     });
 }
@@ -178,8 +179,8 @@ var agregar_pasajero = function(event) {
         clear_pasajero_fields();
         return false;
     }
-    if(edad == 'menor_6' && pasajeros.length >= Number($('#cantidad_menores').val())) {
-        alert('No puedes agregar más pasajeros menorees de 6 a la reserva');
+    if(edad == 'menor_7' && pasajeros.length >= Number($('#cantidad_menores').val())) {
+        alert('No puedes agregar más pasajeros menorees de 7 a la reserva');
         clear_pasajero_fields();
         return false;
     }
@@ -410,7 +411,7 @@ $(document).ready(function() {
     });
     $('#agregar_pasajero').on('click', agregar_pasajero);
     update_capacidad();
-    $('#habitaciones').on('change', function() {
+    $('#habitaciones, #descuento').on('change', function() {
         calculate_amount();
     });
     $('#fecha_in, #fecha_out').on('blur', function() {

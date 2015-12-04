@@ -47,7 +47,7 @@
                     <button type="submit" class="form-control btn btn-primary" formaction="{$fsc->edit_url($fsc->getReserva(),true)}">Editar Reserva</button>
                 </div>
                 <div class="row bottom-buffer">
-                    <button type="submit" {if="!$fsc->getReserva()->getCheckIn()"}disabled="disabled"{/if}
+                    <button type="submit" {if="$fsc->getReserva()->allPassangersCheckedIn()"}disabled="disabled"{/if}
                     class="form-control btn btn-primary" formaction="{$fsc->checkin_url($fsc->getReserva())}">Check In</button>
                 </div>
                 <div class="row">
@@ -151,7 +151,7 @@
                         <tr>
                             <th>Nombre</th>
                             <th>Documento</th>
-                            <th>Edad</th>
+                            <th>Cat. Edad</th>
                             <th>Tipo Pasajero</th>
                             <th>Opciones</th>
                         </tr>
@@ -162,8 +162,8 @@
                         <tr class="{$value->getEdadCateg()}">
                             <td>{$value->getNombreCompleto()}</td>
                             <td>{$value->getDocumento()}</td>
-                            <td>{$value->getEdad()}</td>
-                            <td>{$value->getTipoPasajero()->nombre}</td>
+                            <td>{function="ucfirst(str_replace('_', ' ', $value->getEdadCateg()))"}</td>
+                            <td>{if="$value->getTipoPasajero()"}{$value->getTipoPasajero()->nombre}{else}{$fsc->getReserva()->getTarifa()->getGrupoCliente()->nombre}{/if}</td>
                             <td>
                                 {if="!$fsc->getReserva()->isCheckedIn()"}
                                 <input type="hidden" name="pasajeros[]" value="{$value}">
@@ -207,11 +207,11 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <input type="radio" value="MENOR_2" id="edad_pasajero_menor_2" name="edad_pasajero">
-                    <label for="edad_pasajero_menor_2">Menor 2 años</label>
+                    <input type="radio" value="MENOR_3" id="edad_pasajero_menor_3" name="edad_pasajero">
+                    <label for="edad_pasajero_menor_3">Menor 3 años</label>
                     <br>
-                    <input type="radio" value="MENOR_6" id="edad_pasajero_menor_6" name="edad_pasajero">
-                    <label for="edad_pasajero_menor_6">Menor 6 años</label>
+                    <input type="radio" value="MENOR_7" id="edad_pasajero_menor_7" name="edad_pasajero">
+                    <label for="edad_pasajero_menor_7">Menor 7 años</label>
                     <br>
                     <input type="radio" value="ADULTO" id="edad_pasajero_adulto" name="edad_pasajero" checked="checked">
                     <label for="edad_pasajero_adulto">Adulto</label>
@@ -252,6 +252,7 @@
                             </div>
                             <div class="col-md-2">
                                 <input id="descuento" class="form-control" name="descuento" type="text" value="{$fsc->getReserva()->getDescuento()}">
+                                <br><span id="montoDescuento">{$fsc->show_precio($fsc->getReserva()->getMontoDescuento())}</span>
                             </div>
                             <div class="col-md-2">
                                 <button type="submit" id="pago" class="form-control btn-success" formaction="{$fsc->pago_url($fsc->getReserva())}">Generar Pago</button>
@@ -262,7 +263,7 @@
                                 <label for="total_final">Total Reserva</label>
                             </div>
                             <div class="col-md-2">
-                                <span id="total_final">{$fsc->show_precio($fsc->getReserva()->getTotal())}</span>
+                                <span id="total_final">{$fsc->show_precio($fsc->getReserva()->getTotalFinal())}</span>
                             </div>
                             <div class="col-md-2">
                                 <button type="submit" name="cancelar" id="cancelar" class="form-control btn-danger" formaction="{$fsc->cancel_url($fsc->getReserva())}">Cancelar</button>

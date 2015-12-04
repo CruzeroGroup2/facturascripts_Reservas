@@ -186,14 +186,11 @@ class reserva_home extends reserva_controller {
 
     private function indexAction() {
         $this->page->extra_url = '';
-        $mes = (int) date('n') + 1;
-        if($mes > 12) {
-            $mes = 1;
-        }
-        $mes = str_pad($mes, 2, 0);
-
+        $this->pabellon = isset($_POST['idpabellon']) ? pabellon::get($_POST['idpabellon']) : null;
+        $this->habitacion = isset($_POST['numeroHab']) ? habitacion::getByNumero($_POST['numeroHab']) : null;
+        $fecha_hasta = new DateTime('now + 15 days');
         $this->fecha_desde = (isset($_POST['fecha_desde'])) ? $_POST['fecha_desde'] : date('d-m-Y');
-        $this->fecha_hasta = (isset($_POST['fecha_hasta'])) ? $_POST['fecha_hasta'] : date('d-' . $mes .'-Y');
+        $this->fecha_hasta = (isset($_POST['fecha_hasta'])) ? $_POST['fecha_hasta'] : $fecha_hasta->format('d-m-Y');
         $this->rango_fechas = new DatePeriod(
             new DateTime($this->fecha_desde),
             DateInterval::createFromDateString('+1 day'),
@@ -206,7 +203,12 @@ class reserva_home extends reserva_controller {
             $this->cantidad_dias ++;
         }
 
-        $this->pabellones = $this->pabellon->fetchAll();
+        if($this->pabellon) {
+            $this->pabellones = array($this->pabellon);
+        } else {
+            $this->pabellon = new pabellon();
+            $this->pabellones = $this->pabellon->fetchAll();
+        }
         //$this->reservas = $this->reserva->fetchAll();
         $this->template = 'reserva_home_index';
     }
@@ -342,6 +344,10 @@ class reserva_home extends reserva_controller {
             $this->template = 'reserva_checkin_form';
         }
 
+        if(!$this->reserva->getCheckIn()){
+            $this->new_advice("Haciendo checkin the pasajeros en una fecha distinta a la de la reserva!");
+        }
+
         $pasajeros = array();
         $pasajero_por_reserva = new pasajero_por_reserva();
         if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
@@ -351,15 +357,18 @@ class reserva_home extends reserva_controller {
                         $pasajero_por_reserva = pasajero_por_reserva::get($pasajero['id']);
                     }
                     $pasajero_por_reserva->setValues($pasajero);
-                    $pasajero_por_reserva->setFechaIn(date('Y-m-d H:i:s'));
+                    if(!$pasajero_por_reserva->getFechaIn()) {
+                        $pasajero_por_reserva->setFechaIn(date('Y-m-d H:i:s'));
+                    }
                     $pasajeros[] = clone $pasajero_por_reserva;
                 }
             }
             $this->reserva->setPasajeros($pasajeros);
             $this->reserva->setEstado(estado_reserva::get(estado_reserva::CHECKIN));
-            if($this->reserva->save()) {
+
+            if(!$this->get_errors() && $this->reserva->save()) {
                 $this->new_message($this->reserva->getSuccesMessage());
-                header('Refresh: 3;url='.$this->reserva->url());
+                header('Refresh: 1;url='.$this->reserva->url());
             } else {
                 $this->new_error_msg("¡Error en Reserva!");
             }
@@ -382,16 +391,24 @@ class reserva_home extends reserva_controller {
         $pasajero_por_reserva = new pasajero_por_reserva();
         if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
             foreach($_POST['pasajero'] as $pasajero) {
-                if(isset($pasajero['id']) && $pasajero['id']) {
-                    $pasajero_por_reserva = pasajero_por_reserva::get($pasajero['id']);
+                if(isset($pasajero['checkin']) && $pasajero['checkin']) {
+                    if (isset($pasajero['id']) && $pasajero['id']) {
+                        $pasajero_por_reserva = pasajero_por_reserva::get($pasajero['id']);
+                    }
+                    $pasajero_por_reserva->setValues($pasajero);
+                    if ($pasajero_por_reserva->getFechaIn() && !$pasajero_por_reserva->getFechaOut()) {
+                        $pasajero_por_reserva->setFechaOut(date('Y-m-d H:i:s'));
+                    } else {
+                        $this->new_error_msg("El pasajero " . $pasajero_por_reserva->getNombreCompleto() .
+                                             " no tiene checkin!");
+                    }
+                    $pasajeros[] = clone $pasajero_por_reserva;
                 }
-                $pasajero_por_reserva->setValues($pasajero);
-                $pasajero_por_reserva->setFechaOut(date('Y-m-d H:i:s'));
-                $pasajeros[] = clone $pasajero_por_reserva;
             }
             $this->reserva->setPasajeros($pasajeros);
             $this->reserva->setEstado(estado_reserva::get(estado_reserva::FINALIZADA));
             if($this->reserva->save()) {
+                header('Refresh: 1;url='.$this->reserva->url());
                 $this->new_message($this->reserva->getSuccesMessage());
             } else {
                 $this->new_error_msg("¡Error en Reserva!");
@@ -487,34 +504,21 @@ class reserva_home extends reserva_controller {
         } else {
             $this->step = $this->reserva->getStep();
         }
+
         switch($this->step) {
             default:
             case 1:
                 $this->template = 'reserva_new_step1';
                 break;
             case 2:
-                if(!$this->get_errors()) {
-                    $this->template = 'reserva_new_step2';
-                } else {
-                    //Volvemos al paso 1
-                    $this->template = 'reserva_new_step1';
-                }
+                $this->template = 'reserva_new_step2';
                 break;
             case 3:
-                if(!$this->get_errors()) {
-                    $this->template = 'reserva_new_step3';
-                } else {
-                    //Volvemos al paso 2
-                    $this->template = 'reserva_new_step2';
-                }
-                break;
             case 4:
                 $this->template = 'reserva_new_step3';
                 break;
         }
     }
-
-    //Métodos para los templates
 
     public function getPabellon() {
         return $this->pabellon;
@@ -569,9 +573,9 @@ class reserva_home extends reserva_controller {
     public function getHabitacionCell(habitacion $habitacion, DateTime $fecha) {
         $reserva = false;
         if(!isset($this->cacheReservasDisponibilidad[$habitacion->getId()][$fecha->format('Y-m-d')])) {
+            $this->cacheReservasDisponibilidad[$habitacion->getId()][$fecha->format('Y-m-d')] = array();
             $reservas = $this->reserva->findByHabitacionYFecha($habitacion->getId(), $fecha->format('Y-m-d'));
-            if(isset($reservas[0])) {
-                $reserva = $reservas[0];
+            foreach($reservas as $reserva) {
                 $fechasReserva = new DatePeriod(
                     new DateTime($reserva->getFechaIn()),
                     DateInterval::createFromDateString('+1 day'),
@@ -579,52 +583,50 @@ class reserva_home extends reserva_controller {
                     new DateTime($reserva->getFechaOut() . ' 23:59:59')
                 );
                 foreach($fechasReserva as $fechaTmp) {
-                    $this->cacheReservasDisponibilidad[$habitacion->getId()][$fechaTmp->format('Y-m-d')] = $reserva;
+                    foreach($reserva->getHabitaciones() as $rHab) {
+                        $this->cacheReservasDisponibilidad[$rHab->getHabitacion()->getId()][$fechaTmp->format('Y-m-d')][] = $reserva;
+                    }
                 }
             }
         } else {
-            $reserva = $this->cacheReservasDisponibilidad[$habitacion->getId()][$fecha->format('Y-m-d')];
-        }
-
-        //Si hay reserva y no hay seña
-        if($reserva) {
-            $texto = $reserva->getIncialesCliente();
-            $estado = (string) $reserva->getEstado();
-            if(($estado === estado_reserva::INCOMPLETA ||
-               $estado === estado_reserva::SINSENA) &&
-               !$reserva->getIdFactura()
-            ) {
-                $cssClass = "reservada";
-            } elseif(($estado === estado_reserva::SENADO ||
-                     $estado === estado_reserva::PAGO) ||
-                     $reserva->getIdFactura() &&
-                     $estado !== estado_reserva::CHECKIN
-            ) {
-                $cssClass = "reservada_senia";
-                //Si hay check_in está ocupada
-            } elseif($reserva->isCheckedIn()) {
-                $cssClass = "ocupada";
-            }
-        } else {
-            //Si no hay reserva la habitacion está
-            $cssClass = "disponible";
-            $texto = '&nbsp';
+            $reservas = $this->cacheReservasDisponibilidad[$habitacion->getId()][$fecha->format('Y-m-d')];
         }
 
         $cell = '<td>';
-        if($reserva) {
-            $href = $this->edit_url($reserva);
+        if($reservas) {
+            foreach($reservas as $reserva) {
+                $cell .= '<a href="' . $this->edit_url($reserva) . '" class="btn ' . $this->getCssClass($reserva) . '">' . $reserva->getIncialesCliente() .'</a>';
+            }
+            if($reserva->getFechaOut() == $fecha->format('d-m-Y') && count($reservas) == 1) {
+                $cell .= '<a href="' . $this->new_url($habitacion, $fecha) . '" style="width: 100%;" class="btn disponible">&nbsp;</a>';
+            }
         } else {
-            $href = $this->new_url($habitacion, $fecha);
-        }
-        $cell .= '<a href="' . $href . '" class="btn ' . $cssClass . '">'.$texto.'</a>';
-        if($reserva && $reserva->getFechaOut() == $fecha->format('d-m-Y')) {
             $cell .= '<a href="' . $this->new_url($habitacion, $fecha) . '" style="width: 100%;" class="btn disponible">&nbsp;</a>';
         }
 
         $cell .= '</td>';
 
         return $cell;
+    }
+
+    private function getCssClass(reserva $reserva) {
+        $estado = (string) $reserva->getEstado();
+        if(($estado === estado_reserva::INCOMPLETA ||
+            $estado === estado_reserva::SINSENA) &&
+           !$reserva->getIdFactura()
+        ) {
+            $cssClass = "reservada";
+        } elseif(($estado === estado_reserva::SENADO ||
+                  $estado === estado_reserva::PAGO) ||
+                 $reserva->getIdFactura() &&
+                 $estado !== estado_reserva::CHECKIN
+        ) {
+            $cssClass = "reservada_senia";
+            //Si hay check_in está ocupada
+        } elseif($reserva->isCheckedIn()) {
+            $cssClass = "ocupada";
+        }
+        return $cssClass;
     }
 
     private function share_extensions() {

@@ -308,6 +308,12 @@ AND habitacion_por_reserva.idhabitacion = " . $this->getId();
         return $habitacion->fetch($id);
     }
 
+    public static function getByNumero($numero) {
+        $habitacion = new self();
+
+        return $habitacion->fetchByNumero($numero);
+    }
+
     /**
      * @param $id
      *
@@ -318,6 +324,24 @@ AND habitacion_por_reserva.idhabitacion = " . $this->getId();
         if($id && !$habitacion) {
             $habitacion = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE id = " . (int)$id . ";");
             $this->cache->set(str_replace('{id}',$id,self::CACHE_KEY_SINGLE), $habitacion);
+        }
+        if ($habitacion) {
+            return new habitacion($habitacion[0]);
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * @param $numero
+     *
+     * @return bool|habitacion
+     */
+    public function fetchByNumero($numero) {
+        $habitacion = $this->cache->get(str_replace('{id}',$numero,self::CACHE_KEY_SINGLE));
+        if($numero && !$habitacion) {
+            $habitacion = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE numero = " . (int)$numero. ";");
+            $this->cache->set(str_replace('{id}',$numero,self::CACHE_KEY_SINGLE), $habitacion);
         }
         if ($habitacion) {
             return new habitacion($habitacion[0]);

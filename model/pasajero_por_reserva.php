@@ -73,8 +73,8 @@ class pasajero_por_reserva extends fs_model {
 
     const DATE_FORMAT = 'Y-m-d';
 
-    const EDAD_MAX_MENOR = 6;
-    const EDAD_MIN_MENOR = 2;
+    const EDAD_MAX_MENOR = 7;
+    const EDAD_MIN_MENOR = 3;
 
     const CACHE_KEY_ALL = 'reserva_pasajero_por_reserva_all';
     const CACHE_KEY_SINGLE = 'reserva_pasajero_por_reserva_{id}';
@@ -90,6 +90,8 @@ class pasajero_por_reserva extends fs_model {
 
     /**
      * @param array $data
+     *
+     * @return pasajero_por_reserva
      */
     public function setValues($data = array()) {
         $this->setId($data);
@@ -131,6 +133,13 @@ class pasajero_por_reserva extends fs_model {
                 $this->nombre_completo = $tmpcli->nombre;
             }
         }
+
+        return $this;
+    }
+
+    public static function getCountPassagerosCheckInPorRes($idreserva) {
+        $obj = new self();
+        return $obj->fecthCheckInCountByReserva($idreserva);
     }
 
     /**
@@ -331,19 +340,29 @@ class pasajero_por_reserva extends fs_model {
     }
 
     /**
+     * @return bool
+     */
+    public function esBebe() {
+        return $this->getEdad() < self::EDAD_MIN_MENOR;
+    }
+
+    /**
      * @return int
      */
     public function getEdad() {
         return date_diff(date_create($this->getFechaNacimiento()), date_create('today'))->y;
     }
 
+    /**
+     * @return string
+     */
     public function getEdadCateg() {
-        if($this->esAdulto()) {
+        if($this->esAdulto() && !$this->esMenor()) {
             return 'adulto';
-        } elseif ($this->esMenor()) {
-            return 'menor_6';
+        } elseif (!$this->esAdulto() && $this->esMenor()) {
+            return 'menor_7';
         } else {
-            return 'menor_2';
+            return 'menor_3';
         }
     }
 
@@ -408,6 +427,11 @@ class pasajero_por_reserva extends fs_model {
 
     public function asMenor() {
         $ts = strtotime('-' . (self::EDAD_MIN_MENOR+1) . ' years');
+        $this->setFechaNacimiento("@$ts");
+    }
+
+    public function asBebe() {
+        $ts = strtotime('-1  years');
         $this->setFechaNacimiento("@$ts");
     }
 
@@ -515,7 +539,8 @@ class pasajero_por_reserva extends fs_model {
 
     public function fetchCantCheckInByFecha($fecha) {
         $fecha = new DateTime($fecha);
-        $cant = $this->db->select('SELECT COUNT(id) as cant_pasajeros FROM '. $this->table_name .' WHERE fecha_in >= '. $this->var2str($fecha->format('Y-m-d')) .' AND fecha_out IS NULL');
+        $cant = $this->db->select('SELECT COUNT(id) as cant_pasajeros FROM '. $this->table_name .' WHERE
+    fecha_in >= '. $this->var2str($fecha->format('Y-m-d')) .' AND fecha_out IS NULL');
 
         return $cant[0]['cant_pasajeros'];
     }
@@ -556,7 +581,7 @@ class pasajero_por_reserva extends fs_model {
             $this->new_error_msg("Documento no válido");
         }
 
-        if(!$this->getTipoPasajero()->exists()) {
+        if(!$this->getTipoPasajero() || !$this->getTipoPasajero()->exists()) {
             $this->new_error_msg("Tipo de Pasajero Inválido");
         }
 

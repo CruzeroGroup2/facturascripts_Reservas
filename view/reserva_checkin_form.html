@@ -5,7 +5,7 @@
 <div class="container">
     <h2>Check In de Pasajeros:</h2>
     <form id="checkin" method="post" action="{$fsc->url()}">
-        <div class="row">
+        <td class="row">
             <div id="errors" class="alert alert-danger hidden"></div>
             <table id="lista_pasajeros" class="table table-bordered">
                 <thead>
@@ -14,6 +14,7 @@
                     <th>Documento</th>
                     <th>Tipo de Documento</th>
                     <th>Fecha de Nacimiento</th>
+                    <th>Tipo de Convenio</th>
                     <th>Habitacion</th>
                     <th>Check In</th>
                 </tr>
@@ -24,6 +25,8 @@
                     <td>
                         <input type="hidden" name="pasajero[{$value}][id]" value="{$pasajero->getId()}" />
                         <input type="hidden" name="pasajero[{$value}][idreserva]" value="{$pasajero->getIdReserva()}" />
+                        <input type="hidden" name="pasajero[{$value}][codcliente]" value="{$pasajero->getCodCliente()}" />
+                        <input type="hidden" name="pasajero[{$value}][idhabitacion]" value="{$pasajero->getIdReserva()}" />
                         <input type="text" class="form-control input-sm" name="pasajero[{$value}][nombre_completo]" value="{$pasajero->getNombreCompleto()}" required />
                     </td>
                     <td>
@@ -40,6 +43,14 @@
                         <input type="text" class="form-control input-sm datepicker" name="pasajero[{$value}][fecha_nacimiento]" value="{$pasajero->getFechaNacimiento()}" required data-msg="No ha ingresado fecha de nacimiento" />
                     </td>
                     <td>
+                        <select class="form-control input-sm" name="pasajero[{$value}][codgrupo]" required data-msg="Seleccione el tipo de pasagero" >
+                            <option value="">Seleccione...</option>
+                            {loop="$fsc->getGruposCliente()->all()"}
+                            <option value="{$value->codgrupo}"{if="$pasajero->getCodGrupo() == $value->codgrupo"} selected="selected"{/if}>{$value->nombre}</option>
+                            {/loop}
+                        </select>
+                    </td>
+                    <td>
                         <select class="form-control input-sm" name="pasajero[{$value}][idhabitacion]">
                             <option value="">Seleccione una habitacion</option>
                             {loop="$fsc->getReserva()->getHabitaciones()"}
@@ -48,7 +59,10 @@
                         </select>
                     </td>
                     <td>
-                        <input type="checkbox" id="pasajero_checkin_{$value}" name="pasajero[{$value}][checkin]" checked="checked" value="true" />
+                        <input type="checkbox" id="pasajero_checkin_{$value}" name="pasajero[{$value}][checkin]" value="true"
+                               {if="$pasajero->getFechaIn()"}checked="checked"{/if}
+                               {if="$pasajero->getFechaOut()"}readonly="readonly"{/if}
+                    />
                     </td>
                     {/loop}
                 </tbody>
