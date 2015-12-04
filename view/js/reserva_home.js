@@ -18,7 +18,9 @@ $(document).ready(function() {
     var fecha_desde = $('#fecha_desde').datepicker({
         format: 'dd-mm-yyyy'
     }).on('changeDate', function(ev) {
-        fecha_hasta.hide();
+        fecha_hasta.setValue(addDays(ev.date, 15));
+        fecha_desde.hide();
+        fecha_hasta.show();
     }).data('datepicker');
     var fecha_hasta = $('#fecha_hasta').datepicker({
         format: 'dd-mm-yyyy',
@@ -26,7 +28,7 @@ $(document).ready(function() {
             return (date.valueOf() <= fecha_desde.date.valueOf() || date.valueOf() >= addDays(fecha_desde.date, 15).valueOf()) ? 'disabled' : '';
         }
     }).on('changeDate', function(ev) {
-        fecha_desde.hide();
+        fecha_hasta.hide();
     }).data('datepicker');
     $('#botonBuscar').on('click', function() {
         //var banco= idBancoPorCliente.;
