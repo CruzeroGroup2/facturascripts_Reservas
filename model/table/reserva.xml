@@ -68,6 +68,21 @@
       <nulo>YES</nulo>
    </columna>
    <columna>
+      <nombre>codagente</nombre>
+      <tipo>character varying(10)</tipo>
+      <nulo>NO</nulo>
+   </columna>
+   <columna>
+      <nombre>create_date</nombre>
+      <tipo>timestamp</tipo>
+      <nulo>NO</nulo>
+   </columna>
+   <columna>
+      <nombre>update_date</nombre>
+      <tipo>timestamp</tipo>
+      <nulo>NO</nulo>
+   </columna>
+   <columna>
       <nombre>cancel_date</nombre>
       <tipo>timestamp</tipo>
       <nulo>NO</nulo>
@@ -75,6 +90,12 @@
    <restriccion>
       <nombre>reserva_pkey</nombre>
       <consulta>PRIMARY KEY (id)</consulta>
+   </restriccion>
+   <restriccion>
+      <nombre>reserva_codagente_fk</nombre>
+      <consulta>FOREIGN KEY (codagente)
+         REFERENCES agentes (codagente)
+         ON DELETE RESTRICT ON UPDATE CASCADE</consulta>
    </restriccion>
    <restriccion>
       <nombre>reserva_codcliente_fk</nombre>

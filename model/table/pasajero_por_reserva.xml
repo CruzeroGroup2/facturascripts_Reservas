@@ -41,6 +41,11 @@
         <nulo>NO</nulo>
     </columna>
     <columna>
+        <nombre>idtarifa</nombre>
+        <tipo>integer</tipo>
+        <nulo>NO</nulo>
+    </columna>
+    <columna>
         <nombre>idreserva</nombre>
         <tipo>integer</tipo>
         <nulo>NO</nulo>
@@ -53,16 +58,32 @@
     <columna>
         <nombre>fecha_in</nombre>
         <tipo>timestamp</tipo>
+        <nulo>NO</nulo>
+    </columna>
+    <columna>
+        <nombre>check_in</nombre>
+        <tipo>timestamp</tipo>
         <nulo>YES</nulo>
     </columna>
     <columna>
         <nombre>fecha_out</nombre>
+        <tipo>timestamp</tipo>
+        <nulo>NO</nulo>
+    </columna>
+    <columna>
+        <nombre>check_out</nombre>
         <tipo>timestamp</tipo>
         <nulo>YES</nulo>
     </columna>
     <restriccion>
         <nombre>pasajero_por_reserva_pkey</nombre>
         <consulta>PRIMARY KEY (id)</consulta>
+    </restriccion>
+    <restriccion>
+        <nombre>pasajero_por_reserva_idtarifa_fk</nombre>
+        <consulta>FOREIGN KEY (idtarifa)
+            REFERENCES tarifa (id)
+            ON DELETE CASCADE ON UPDATE CASCADE</consulta>
     </restriccion>
     <restriccion>
         <nombre>pasajero_por_reserva_idreserva_fk</nombre>

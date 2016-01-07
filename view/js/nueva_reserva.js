@@ -53,7 +53,7 @@ function ucwords(str) {
 function parseDate(str) {
     var tmp = str.split(' ');
     var tmp2 = tmp[0].split('-');
-    return new Date(tmp2[2],tmp2[1],tmp2[0]);
+    return new Date(tmp2[2],Number(tmp2[1])-1,tmp2[0], 0, 0, 0);
 }
 
 /**
@@ -166,11 +166,14 @@ function clear_pasajero_fields() {
 var agregar_pasajero = function(event) {
     var idreserva = $('#idreserva').val(),
         idpasajero = $('#id_pasajero').val(),
+        codclientepax = $('#codcliente_pasajero').val(),
         nombre = ucwords($('#nombre_pasajero').val().toLowerCase()),
         tipoDocumento = $('input[name="documento_pasajero_tipo"]:checked').val(),
         documento = $('#documento_pasajero').val(),
         codgrupo = $('#codgrupo_pasajero').val(),
         edad = $('input[name="edad_pasajero"]:checked').val().toLowerCase(),
+        fecha_in = $('#pasajero_fecha_in').val(),
+        fecha_out = $('#pasajero_fecha_out').val(),
         cantPasajeros = get_pasajeros_count(),
         pasajeros = $('tr.'+edad+' input[name="pasajeros[]"]');
 
@@ -191,15 +194,69 @@ var agregar_pasajero = function(event) {
             '<td>' + nombre + '</td>' +
             '<td>' + documento + '</td>' +
             '<td>' + ucfirst(edad) + '</td>' +
+            '<td>' + fecha_in + '</td>'+
+            '<td>' + fecha_out + '</td>'+
             '<td>' + $('#codgrupo_pasajero option[value='+codgrupo+']').text() + '</td>'+
             '<td>' +
-                '<input type="hidden" name="pasajeros[]" value="'+nombre+':'+tipoDocumento+':'+documento+':'+edad+':'+codgrupo+':'+idreserva+':'+idpasajero+':">'+
+                '<input type="hidden" name="pasajeros[]" value="'+
+                    nombre+':'+
+                    tipoDocumento+':'+
+                    documento+':'+
+                    edad+':'+
+                    fecha_in+':'+
+                    fecha_out+':'+
+                    codgrupo+':'+
+                    idreserva+':'+
+                    idpasajero+':'+
+                    codclientepax+':">'+
                 '<button class="text-right" onclick="return edit_huesped(this)"><span class="glyphicon glyphicon-pencil"></span></button>' +
                 '<button class="text-right" onclick="return remove_huesped(this)"><span class="glyphicon glyphicon-trash"></span></button>' +
             '</td>' +
         +'</tr>');
     }
 };
+
+/**
+ *
+ * @param element
+ * @returns {boolean}
+ */
+function edit_huesped(element) {
+    var parent = $(element.parentNode),
+        huespedInfo = parent.find('input[type="hidden"]').val().split(':');
+    remove_huesped(element, true);
+    $('#nombre_pasajero').val(huespedInfo[0]);
+    $('input[value="'+huespedInfo[1]+'"]').attr('checked','checked');
+    $('#documento_pasajero').val(huespedInfo[2]);
+    $('input[value="'+huespedInfo[3]+'"]').attr('checked','checked');
+    $('#pasajero_fecha_in').datepicker('setValue', huespedInfo[4]);
+    $('#pasajero_fecha_out').datepicker('setValue', huespedInfo[5]);
+    $('#codgrupo_pasajero').find('option[value="'+huespedInfo[6]+'"]').attr("selected",true);
+    //IdReserva: huespedInfo[7]
+    $('#id_pasajero').val(huespedInfo[8]);
+    $('#codcliente_pasajero').val(huespedInfo[9]);
+    return false;
+}
+
+/**
+ *
+ * @param element
+ * @param force
+ * @returns {boolean}
+ */
+function remove_huesped(element, force) {
+    var parent = $(element.parentNode),
+        form = parent.closest('form'),
+        huespedInfo = parent.find('input[type="hidden"]').val().split(':'),
+        force = typeof force !== 'undefined' ? force : confirm("Desea eliminar al pasajero "+huespedInfo[0]);
+    if(force) {
+        if(huespedInfo[8] !== 'undefined' && huespedInfo[8] != '') {
+            form.append('<input type="hidden" name="remover_pasajeros[]" value="'+huespedInfo.join(":")+'" />');
+        }
+        parent.parent().remove();
+    }
+    return false;
+}
 
 /**
  *
@@ -243,42 +300,6 @@ var autocomplete_response = function(query, suggestions) {
     }
     return false;
 };
-
-/**
- *
- * @param element
- * @returns {boolean}
- */
-function edit_huesped(element) {
-    var parent = $(element.parentNode),
-        huespedInfo = parent.find('input[type="hidden"]').val().split(':');
-    remove_huesped(element, true);
-    $('#nombre_pasajero').val(huespedInfo[0]);
-    $('input[value="'+huespedInfo[1]+'"]').attr('checked','checked');
-    $('#documento_pasajero').val(huespedInfo[2]);
-    $('input[value="'+huespedInfo[3]+'"]').attr('checked','checked');
-    $('#codgrupo_pasajero').find('option[value="'+huespedInfo[4]+'"]').attr("selected",true);
-    $('#id_pasajero').val(huespedInfo[5]);
-    return false;
-}
-
-/**
- *
- * @param element
- * @param force
- * @returns {boolean}
- */
-function remove_huesped(element, force) {
-    var parent = $(element.parentNode),
-        form = parent.closest('form'),
-        huespedInfo = parent.find('input[type="hidden"]').val().split(':'),
-        force = typeof force !== 'undefined' ? force : confirm("Desea eliminar al pasajero "+huespedInfo[0]);
-    if(force) {
-        form.append('<input type="hidden" name="remover_pasajeros[]" value="'+huespedInfo.join(":")+'" />');
-        parent.parent().remove();
-    }
-    return false;
-}
 
 /**
  *
@@ -351,6 +372,8 @@ function update_capacidad() {
 $(document).ready(function() {
     var nowTemp = new Date();
     var now = new Date(nowTemp.getFullYear(), nowTemp.getMonth(), nowTemp.getDate(), 0, 0, 0, 0);
+    var fecha_in_res = parseDate($('#fecha_in').val());
+    var fecha_out_res = parseDate($('#fecha_out').val());
     var checkin = $('#fecha_in').datepicker({
         format: 'dd-mm-yyyy',
         onRender: function(date) {
@@ -373,6 +396,56 @@ $(document).ready(function() {
     }).on('changeDate', function(ev) {
         checkout.hide();
     }).data('datepicker');
+    var pax_checkin = $('#pasajero_fecha_in').datepicker({
+        format: 'dd-mm-yyyy',
+        onRender: function(pdate) {
+            var test = pdate.valueOf() < fecha_in_res.valueOf() ||
+                       pdate.valueOf() > fecha_out_res.valueOf();
+            return test ? 'disabled' : '';
+        }
+    }).on('changeDate', function(ev) {
+        if (ev.date.valueOf() > checkout.date.valueOf()) {
+            var newDate = new Date(ev.date);
+            newDate.setDate(newDate.getDate() + 1);
+            pax_checkout.setValue(newDate);
+        }
+        pax_checkin.hide();
+        $('#pasajero_fecha_out')[0].focus();
+    }).data('datepicker');
+    var pax_checkout = $('#pasajero_fecha_out').datepicker({
+        format: 'dd-mm-yyyy',
+        onRender: function(pcdate) {
+            var test = pcdate.valueOf() < fecha_in_res.valueOf() ||
+                       pcdate.valueOf() <= pax_checkin.date.valueOf() ||
+                       pcdate.valueOf() > fecha_out_res.valueOf();
+            return test ? 'disabled' : '';
+        }
+    }).on('changeDate', function(ev) {
+        pax_checkout.hide();
+    }).data('datepicker');
+    $('#idcategoria').on('change', function() {
+        $('#idpabellon').attr('disabled',true);
+        $.ajax('index.php?page=reserva_pabellon&action=find&by=idcategoria',{
+            data: {
+                value: $('#idcategoria').val()
+            },
+            success: function (data) {
+                $('#idpabellon')
+                        .find('option')
+                        .remove()
+                        .end()
+                        .append('<option value="">Seleccione...</option>');
+                $.each(data, function(i, value) {
+                    console.log(i);
+                    console.log(value);
+                    $('#idpabellon').append(
+                        $('<option></option>').val(value.id).html(value.descripcion)
+                    );
+                    $('#idpabellon').attr('disabled',false);
+                });
+            }
+        });
+    });
     $('#idpabellon').on('change', function() {
         $("#numeroHab").val('')
                        .autocomplete({

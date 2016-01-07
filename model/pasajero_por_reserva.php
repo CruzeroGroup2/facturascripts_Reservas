@@ -1,5 +1,8 @@
 <?php
 
+require_once 'plugins/reservas/extras/functions/boolval.php';
+require_once 'plugins/reservas/extras/functions/is_date.php';
+
 require_once 'base/fs_model.php';
 require_model('reserva.php');
 
@@ -57,6 +60,11 @@ class pasajero_por_reserva extends fs_model {
     protected $idreserva = null;
 
     /**
+     * @var reserva
+     */
+    protected $reserva = null;
+
+    /**
      * @var int
      */
     protected $idhabitacion = null;
@@ -70,6 +78,26 @@ class pasajero_por_reserva extends fs_model {
      * @var string
      */
     protected $fecha_out = null;
+
+    /**
+     * @var string
+     */
+    protected $check_in = null;
+
+    /**
+     * @var string
+     */
+    protected $check_out = null;
+
+    /**
+     * @var int
+     */
+    protected $idtarifa = null;
+
+    /**
+     * @var tarifa_reserva
+     */
+    protected $tarifa = null;
 
     const DATE_FORMAT = 'Y-m-d';
 
@@ -104,15 +132,20 @@ class pasajero_por_reserva extends fs_model {
         $this->codgrupo = (isset($data['codgrupo'])) ? $data['codgrupo'] : null;
         $this->codcliente = (isset($data['codcliente'])) ? $data['codcliente'] : null;
         $this->idreserva = (isset($data['idreserva'])) ? $data['idreserva'] : null;
+        //
+        $this->setFechaIn($data);
+        $this->setFechaOut($data);
+        //Tarifa
+        $this->idtarifa = (isset($data['idtarifa'])) ? $data['idtarifa'] : null;
 
         //Datos correspondientes al checkin
         $this->idhabitacion = (isset($data['idhabitacion'])) ? $data['idhabitacion'] : null;
-        $this->fecha_in = (isset($data['fecha_in'])) ? $data['fecha_in'] : null;
-        $this->fecha_out = (isset($data['fecha_out'])) ? $data['fecha_out'] : null;
+        $this->check_in = (isset($data['check_in'])) ? $data['check_in'] : null;
+        $this->check_out = (isset($data['check_out'])) ? $data['check_out'] : null;
 
         if($this->nombre_completo &&
            $this->documento &&
-           $this->codcliente &&
+           $this->codgrupo &&
            !$this->codcliente) {
             $cliente = new cliente();
             $tmpcli = $cliente->get_by_cifnif($this->documento);
@@ -322,6 +355,16 @@ class pasajero_por_reserva extends fs_model {
     }
 
     /**
+     * @return reserva
+     */
+    public function getReserva() {
+        if(!$this->reserva) {
+            $this->reserva = reserva::get($this->idreserva);
+        }
+        return $this->reserva;
+    }
+
+    /**
      * @return bool
      */
     public function esAdulto() {
@@ -392,14 +435,30 @@ class pasajero_por_reserva extends fs_model {
     }
 
     /**
-     * @param string $fecha_in
+     * @param string|array $value
      *
      * @return pasajero_por_reserva
      */
-    public function setFechaIn($fecha_in) {
-        $this->fecha_in = $fecha_in;
+    public function setFechaIn($value) {
+        if(is_array($value) && isset($value['fecha_in']) && is_date($value['fecha_in'])) {
+            $this->fecha_in = $value['fecha_in'];
+        } elseif(is_date($value)) {
+            $this->fecha_in = $value;
+        } elseif($this->idreserva) {
+            $this->fecha_in = $this->getReserva()->getFechaIn();
+        }
 
         return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getCantidadDias() {
+        $date1 = new DateTime($this->getFechaIn());
+        $date2 = new DateTime($this->getFechaOut());
+
+        return (int) $date2->diff($date1)->format("%a");
     }
 
     /**
@@ -410,12 +469,18 @@ class pasajero_por_reserva extends fs_model {
     }
 
     /**
-     * @param string $fecha_out
+     * @param string|array $value
      *
      * @return pasajero_por_reserva
      */
-    public function setFechaOut($fecha_out) {
-        $this->fecha_out = $fecha_out;
+    public function setFechaOut($value) {
+        if(is_array($value) && isset($value['fecha_out']) && is_date($value['fecha_out'])) {
+            $this->fecha_out = $value['fecha_out'];
+        } elseif(is_date($value)) {
+            $this->fecha_out = $value;
+        } elseif($this->idreserva) {
+            $this->fecha_out = $this->getReserva()->getFechaOut();
+        }
 
         return $this;
     }
@@ -433,6 +498,104 @@ class pasajero_por_reserva extends fs_model {
     public function asBebe() {
         $ts = strtotime('-1  years');
         $this->setFechaNacimiento("@$ts");
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isCheckIn() {
+        return $this->check_in;
+    }
+
+    /**
+     * @param boolean $check_in
+     *
+     * @return pasajero_por_reserva
+     */
+    public function setCheckIn($check_in) {
+        $this->check_in = $check_in;
+
+        return $this;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isCheckOut() {
+        return $this->check_out;
+    }
+
+    /**
+     * @param boolean $check_out
+     *
+     * @return pasajero_por_reserva
+     */
+    public function setCheckOut($check_out) {
+        $this->check_out = $check_out;
+
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getIdTarifa() {
+        return $this->idtarifa;
+    }
+
+    /**
+     * @param int $idtarifa
+     *
+     * @return pasajero_por_reserva
+     */
+    public function setIdTarifa($idtarifa) {
+        $this->idtarifa = $idtarifa;
+
+        return $this;
+    }
+
+    /**
+     * @return tarifa_reserva
+     */
+    public function getTarifa() {
+        if($this->tarifa) {
+            $this->tarifa = $this->get_tarifa($this->idtarifa);
+        }
+        return $this->tarifa;
+    }
+
+    /**
+     * @param tarifa_reserva $tarifa
+     *
+     * @return pasajero_por_reserva
+     */
+    public function setTarifa($tarifa) {
+        $this->tarifa = $tarifa;
+        $this->idtarifa = $tarifa->getId();
+
+        return $this;
+    }
+
+    /**
+     * @return float
+     */
+    public function getTotal() {
+        $tarifa = $this->getTarifa();
+        if(!$tarifa && $this->idreserva) {
+            $res = $this->getReserva();
+            $tarifa = (new tarifa_reserva())->fetchByCategoriaYTipoPasajero($res->getCategoriaHabitacion(), $this->getCodGrupo());
+        }
+
+        if($this->esAdulto()) {
+            $monto = $tarifa->getMonto();
+        } elseif($this->esMenor()) {
+            $monto = $tarifa->getMonto() * 0.6;
+        } else {
+            $monto = 0.0;
+        }
+
+        //Agregamos el total del pasajero al monto
+        return $monto * $this->getCantidadDias();
     }
 
     /**
@@ -605,6 +768,7 @@ class pasajero_por_reserva extends fs_model {
                'documento = ' . $this->var2str($this->documento) . ',' .
                'fecha_nacimiento = ' . $this->var2str($this->fecha_nacimiento) . ',' .
                'codgrupo = ' . $this->var2str($this->codgrupo) . ',' .
+               'idtarifa = ' . $this->var2str($this->getIdTarifa()) . ',' .
                'codcliente = ' . $this->var2str($this->codcliente) . ',' .
                'idreserva = ' . $this->idreserva;
         if($this->fecha_in) {
@@ -613,6 +777,14 @@ class pasajero_por_reserva extends fs_model {
 
         if($this->fecha_out) {
             $sql .= ', fecha_out = ' . $this->var2str($this->fecha_out);
+        }
+
+        if($this->check_in) {
+            $sql .= ', check_in = ' . $this->var2str($this->check_in);
+        }
+
+        if($this->check_out) {
+            $sql .= ', check_out = ' . $this->var2str($this->check_out);
         }
 
         if($this->idhabitacion) {
@@ -632,6 +804,7 @@ class pasajero_por_reserva extends fs_model {
                'documento = ' . $this->var2str($this->documento) . ',' .
                'fecha_nacimiento = ' . $this->var2str($this->fecha_nacimiento) . ',' .
                'codgrupo = ' . $this->var2str($this->codgrupo) . ',' .
+               'idtarifa = ' . $this->var2str($this->getIdTarifa()) . ',' .
                'codcliente = ' . $this->var2str($this->codcliente) . ',' .
                'idreserva = ' . $this->idreserva;
         if($this->fecha_in) {
@@ -640,6 +813,14 @@ class pasajero_por_reserva extends fs_model {
 
         if($this->fecha_out) {
             $sql .= ', fecha_out = ' . $this->var2str($this->fecha_out);
+        }
+
+        if($this->check_in) {
+            $sql .= ', check_in = ' . $this->var2str($this->check_in);
+        }
+
+        if($this->check_out) {
+            $sql .= ', check_out = ' . $this->var2str($this->check_out);
         }
 
         if($this->idhabitacion) {
@@ -697,12 +878,92 @@ class pasajero_por_reserva extends fs_model {
         return $cliente->get($codcliente);
     }
 
+    /**
+     * @param $idtarifa
+     *
+     * @return bool|tarifa_reserva
+     */
+    private function get_tarifa($idtarifa) {
+        if($idtarifa) {
+            return tarifa_reserva::get($idtarifa);
+        }
+    }
+
+    /**
+     * @param string $string
+     * @param reserva $reserva
+     *
+     * @return pasajero_por_reserva
+     */
+    public static function parse($string, reserva $reserva) {
+//        $nombre_completo . ':' .
+//        $tipo_documento . ':' .
+//        $documento . ':' .
+//        $fecha_nacimiento . ':' .
+//        $fecha_in . ':' .
+//        $fecha_out . ':' .
+//        $codgrupo . ':' .
+//        $idreserva . ':' .
+//        $id . ':' .
+//        $codcliente;
+        $datos_pasajero = explode(':', $string);
+
+        if(isset($datos_pasajero[3]) && in_array($datos_pasajero[3], array('menor_3', 'menor_7', 'adulto'))) {
+            switch(strtolower($datos_pasajero[3])) {
+                case 'menor_3':
+                    $datos_pasajero[3] = "@" . strtotime('-' . (pasajero_por_reserva::EDAD_MIN_MENOR-1) . ' years');
+                    break;
+                case 'menor_7':
+                    $datos_pasajero[3] = "@" . strtotime('-' . (pasajero_por_reserva::EDAD_MAX_MENOR-1) . ' years');
+                    break;
+                case 'adulto':
+                    $datos_pasajero[3] = "@" . strtotime('-18 years');
+                    break;
+            }
+        }
+
+        //Si no está el idreserva
+        if(!isset($datos_pasajero[7])) {
+            $datos_pasajero[7] = $reserva->getId();
+        }
+        //Si no está el idpasajeroporreserva
+        if(!isset($datos_pasajero[8])) {
+            $datos_pasajero[8] = 0;
+        }
+
+        //Si no está el codcliente
+        if(!isset($datos_pasajero[9])) {
+            $datos_pasajero[9] = 0;
+        }
+
+        $pasj = new pasajero_por_reserva(array(
+                                             'nombre_completo' => $datos_pasajero[0],
+                                             'tipo_documento' => $datos_pasajero[1],
+                                             'documento' => $datos_pasajero[2],
+                                             'fecha_nacimiento' => $datos_pasajero[3],
+                                             'fecha_in' => $datos_pasajero[4],
+                                             'fecha_out' => $datos_pasajero[5],
+                                             'codgrupo' => $datos_pasajero[6],
+                                             'idreserva' => $datos_pasajero[7],
+                                             'id' => $datos_pasajero[8],
+                                             'codcliente' => $datos_pasajero[9]
+                                         ));
+
+        $pasj->setTarifa($reserva->getTarifa());
+
+        return $pasj;
+
+
+    }
+
     public function __toString() {
         return
             $this->nombre_completo . ':' .
             $this->tipo_documento . ':' .
             $this->documento . ':' .
-            $this->fecha_nacimiento . ':' .
+            $this->getEdadCateg() . ':' .
+            $this->fecha_in . ':' .
+            $this->fecha_out . ':' .
             $this->codgrupo . ':' .
             $this->idreserva . ':' .
             $this->id . ':' .

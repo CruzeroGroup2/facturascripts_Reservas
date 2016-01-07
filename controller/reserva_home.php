@@ -1,18 +1,6 @@
 <?php
 
-if( ! function_exists('boolval'))
-{
-    /**
-     * Get the boolean value of a variable
-     *
-     * @param mixed The scalar value being converted to a boolean.
-     * @return boolean The boolean value of var.
-     */
-    function boolval($var)
-    {
-        return !! $var;
-    }
-}
+require_once 'plugins/reservas/extras/functions/boolval.php';
 
 require_model('reserva.php');
 
@@ -95,6 +83,9 @@ class reserva_home extends reserva_controller {
             case 'edit':
                 $this->editAction();
                 break;
+            case 'confirm':
+                $this->confirmAction();
+                break;
             case 'voucher':
                 $this->voucherAction();
                 break;
@@ -156,6 +147,12 @@ class reserva_home extends reserva_controller {
 
     public function delete_url(reserva $reserva) {
         $this->page->extra_url = '&action=delete&id=' . (int) $reserva->getId();
+
+        return $this->url();
+    }
+
+    public function confirm_url(reserva $reserva) {
+        $this->page->extra_url = '&action=confirm&id=' . (int) $reserva->getId();
 
         return $this->url();
     }
@@ -228,6 +225,7 @@ class reserva_home extends reserva_controller {
     }
 
     private function addAction() {
+        var_dump($_POST);
         $this->page->extra_url = '&action=add';
 
         if(isset($_GET['fecha_in'])) {
@@ -243,10 +241,12 @@ class reserva_home extends reserva_controller {
         //Si tengo un request por post levantar la reserva
         // actualizar los datos y guardar, mostrar mensage con respecto a la accion realizada
         if($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if(isset($_POST['idreserva'])) {
+            if(isset($_POST['idreserva']) && $_POST['idreserva']) {
                 $this->reserva = reserva::get($_POST['idreserva']);
             }
             $this->reserva->setValues($_POST);
+            $this->reserva->setCodAgente($this->user->codagente);
+
             if($this->reserva->save()) {
                 if($this->reserva->getStep() > 2) {
                     $this->reserva->setEdit(true);
@@ -276,6 +276,56 @@ class reserva_home extends reserva_controller {
         } else {
             $this->_setTemplate($step);
         }
+    }
+
+    private function confirmAction() {
+        $this->page->extra_url = '&action=confirm';
+        $id = (int) isset($_GET['id']) ? $_GET['id'] : 0;
+        $this->reserva = reserva::get($id);
+
+        require_once 'plugins/reservas/extras/PhpWord/Autoloader.php';
+        PhpOffice\PhpWord\Autoloader::register();
+
+        $voucher = new \PhpOffice\PhpWord\TemplateProcessor('plugins/reservas/extras/voucher/template_confirm.docx');
+
+        /** @var direccion_cliente[] $direcciones */
+        $direcciones = $this->reserva->getCliente()->get_direcciones();
+        if(!isset($direcciones[0]) || !is_a($direcciones[0], 'direccion_cliente')) {
+            $direcciones[0] = new direccion_cliente();
+            $direcciones[0]->direccion = '';
+            $direcciones[0]->ciudad = '';
+            $direcciones[0]->codpostal = '';
+            $direcciones[0]->provincia = '';
+        }
+        $voucher->setValue('codigoReserva', htmlspecialchars($this->reserva->getId()));
+        $voucher->setValue('fechaReserva', htmlspecialchars($this->reserva->getCreateDate(true)));
+        $voucher->setValue('nombreReserva', htmlspecialchars($this->reserva->getCliente()->nombre));
+        $voucher->setValue('documento', htmlspecialchars($this->reserva->getCliente()->cifnif));
+        $voucher->setValue('categoría', htmlspecialchars($this->reserva->getGrupoCliente()->nombre));
+        $voucher->setValue('montoTarifa', htmlspecialchars(number_format($this->reserva->getTarifa()->getMonto(), FS_NF0, FS_NF1, FS_NF2)));
+        $voucher->setValue('email', htmlspecialchars($this->reserva->getCliente()->email));
+        $voucher->setValue('telefono', htmlspecialchars($this->reserva->getCliente()->telefono1));
+        $voucher->setValue('telefono2', htmlspecialchars($this->reserva->getCliente()->telefono2));
+
+        $voucher->setValue('domicilio', htmlspecialchars($direcciones[0]->direccion));
+        $voucher->setValue('localidad', htmlspecialchars($direcciones[0]->ciudad));
+        $voucher->setValue('codigoPostal', htmlspecialchars($direcciones[0]->codpostal));
+        $voucher->setValue('provincia', htmlspecialchars($direcciones[0]->provincia));
+
+        $voucher->setValue('fechaIn', htmlspecialchars($this->reserva->getFechaIn()));
+        $voucher->setValue('fechaOut', htmlspecialchars($this->reserva->getFechaOut()));
+        $voucher->setValue('cantNoches', htmlspecialchars($this->reserva->getCantidadDias()));
+        $voucher->setValue('habitaciones', htmlspecialchars(implode(', ', $this->reserva->getNumerosHabitaciones())));
+        $voucher->setValue('adultos', htmlspecialchars($this->reserva->getCantidadAdultos()));
+        $voucher->setValue('menores', htmlspecialchars($this->reserva->getCantidadMenores()));
+        $voucher->setValue('total', htmlspecialchars(number_format($this->reserva->totales['total'], FS_NF0, FS_NF1, FS_NF2)));
+        $voucher->setValue('totalDeposito', htmlspecialchars(number_format($this->reserva->totales['total'] * 0.30, FS_NF0, FS_NF1, FS_NF2)));
+        $voucher->setValue('fechaExpiracion', htmlspecialchars($this->reserva->getExpireDate()));
+
+        $voucher->saveAs('tmp/confirm.' . $this->reserva->getId() . '.docx');
+        $this->template = false;
+        header('Location: tmp/confirm.' . $this->reserva->getId() . '.docx');
+
     }
 
     private function voucherAction() {

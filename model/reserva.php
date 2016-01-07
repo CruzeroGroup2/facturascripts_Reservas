@@ -128,6 +128,19 @@ class reserva extends fs_model {
     /**
      * @var string
      */
+    protected $create_date;
+
+    /**
+     * @var string
+     */
+    protected $update_date;
+
+    /** @var int */
+    protected $codagente;
+
+    /**
+     * @var string
+     */
     protected $cancel_date;
 
     /**
@@ -198,20 +211,49 @@ class reserva extends fs_model {
             $this->setFechaOut($data['fecha_out']);
         }
 
+        $this->remover_habitaciones = (isset($data['remover_habitaciones'])) ? $data['remover_habitaciones'] : array();
+        $this->removeHabitaciones();
         //Habitaciones
         if(isset($data['idsHabitaciones']) && $data['idsHabitaciones']) {
             $this->setHabitaciones(explode(',', $data['idsHabitaciones']));
         }
-        $this->remover_habitaciones = (isset($data['remover_habitaciones'])) ? $data['remover_habitaciones'] : array();
 
         $this->cantidad_adultos = (isset($data['cantidad_adultos'])) ? (int) $data['cantidad_adultos'] : null;
 
         $this->cantidad_menores = (isset($data['cantidad_menores'])) ? (int) $data['cantidad_menores'] : null;
 
+        if(isset($data['create_date']) && !$this->create_date) {
+            $this->setEdit();
+            $this->create_date = $data['create_date'];
+        } elseif (!isset($data['create_date']) && !$this->create_date) {
+            $this->create_date = date('Y-m-d H:i:s');;
+        }
+
+        if(isset($data['update_date'])) {
+            $this->update_date = $data['update_date'];
+        }
+
+        $this->cancel_date = (isset($data['cancel_date'])) ? $data['cancel_date'] : null;
+
+        //CodAgente
+        $this->codagente = (isset($data['codagente'])) ? (int) $data['codagente'] : null;
+
         //Tarifa
         $this->idtarifa = (isset($data['idtarifa'])) ? $data['idtarifa'] : null;
         //Media pension
         $this->media_pension = (isset($data['media_pension']) && $data['media_pension']) ? true : false;
+
+        $this->remover_pasajeros = (isset($data['remover_pasajeros'])) ? $data['remover_pasajeros'] : array();
+        $this->removePasajeros();
+        if(isset($data['pasajeros'])) {
+            $this->setPasajeros($data['pasajeros']);
+        } elseif(isset($data['pasajero'])) {
+            $this->setPasajeros($data['pasajero']);
+        } else {
+            //$this->getPasajeros();
+        }
+
+        $this->descuento = (isset($data['descuento'])) ? $data['descuento'] : 0;
 
         if(isset($data['idcategoria'])) {
             $this->idcategoriahabitacion = $data['idcategoria'];
@@ -220,17 +262,6 @@ class reserva extends fs_model {
                 $this->getCodGrupoCliente()
             ));
         }
-
-        if(isset($data['pasajeros'])) {
-            $this->setPasajeros($data['pasajeros']);
-        } elseif(isset($data['pasajero'])) {
-            $this->setPasajeros($data['pasajero']);
-        } else {
-            $this->getPasajeros();
-        }
-
-        $this->descuento = (isset($data['descuento'])) ? $data['descuento'] : 0;
-
 
         //Obtener el estado de la reserva
         $this->idestado = (isset($data['idestado'])) ? (int) $data['idestado'] : null;
@@ -494,7 +525,7 @@ class reserva extends fs_model {
     public function getTarifa() {
         if($this->idtarifa && !$this->tarifa) {
             $this->tarifa = $this->get_tarifa($this->idtarifa);
-            $this->calcularTotales();
+            //$this->calcularTotales();
         }
 
         return $this->tarifa;
@@ -508,7 +539,7 @@ class reserva extends fs_model {
     public function setTarifa(tarifa_reserva $tarifa) {
         $this->tarifa = $tarifa;
         $this->idtarifa = $tarifa->getId();
-        $this->calcularTotales();
+        $this->calcularTotales(true);
 
         return $this;
     }
@@ -766,6 +797,9 @@ class reserva extends fs_model {
                     $tmpPasajero = new pasajero_por_reserva();
                     $tmpPasajero->asAdult();
                     $tmpPasajero->setCodGrupo($this->getCodGrupoCliente());
+                    $tmpPasajero->setFechaIn($this->getFechaIn());
+                    $tmpPasajero->setFechaOut($this->getFechaOut());
+                    $tmpPasajero->setTarifa($this->getTarifa());
                     $adultos[] = clone $tmpPasajero;
                     unset($tmpPasajero);
                 }
@@ -782,6 +816,9 @@ class reserva extends fs_model {
                     $tmpPasajero = new pasajero_por_reserva();
                     $tmpPasajero->asMenor();
                     $tmpPasajero->setCodGrupo($this->getCodGrupoCliente());
+                    $tmpPasajero->setFechaIn($this->getFechaIn());
+                    $tmpPasajero->setFechaOut($this->getFechaOut());
+                    $tmpPasajero->setTarifa($this->getTarifa());
                     $menores_7[] = clone $tmpPasajero;
                     unset($tmpPasajero);
                 }
@@ -803,49 +840,7 @@ class reserva extends fs_model {
      * @return pasajero_por_reserva
      */
     private function __parsePasajero($string) {
-        $datos_pasajero = explode(':', $string);
-
-        if(isset($datos_pasajero[3]) && in_array($datos_pasajero[3], array('menor_3', 'menor_7', 'adulto'))) {
-            switch(strtolower($datos_pasajero[3])) {
-                case 'menor_3':
-                    $datos_pasajero[3] = "@" . strtotime('-' . (pasajero_por_reserva::EDAD_MIN_MENOR-1) . ' years');
-                    break;
-                case 'menor_7':
-                    $datos_pasajero[3] = "@" . strtotime('-' . (pasajero_por_reserva::EDAD_MAX_MENOR-1) . ' years');
-                    break;
-                case 'adulto':
-                    $datos_pasajero[3] = "@" . strtotime('-18 years');
-                    break;
-            }
-        }
-
-        //Si no está el idreserva
-        if(!isset($datos_pasajero[5])) {
-            $datos_pasajero[5] = $this->getId();
-        }
-        //Si no está el idpasajeroporreserva
-        if(!isset($datos_pasajero[6])) {
-            $datos_pasajero[6] = 0;
-        }
-
-        //Si no está el codcliente
-        if(!isset($datos_pasajero[7])) {
-            $datos_pasajero[7] = 0;
-        }
-
-        $pasj = new pasajero_por_reserva(array(
-            'nombre_completo' => $datos_pasajero[0],
-            'tipo_documento' => $datos_pasajero[1],
-            'documento' => $datos_pasajero[2],
-            'fecha_nacimiento' => $datos_pasajero[3],
-            'codgrupo' => $datos_pasajero[4],
-            'idreserva' => $datos_pasajero[5],
-            'id' => $datos_pasajero[6],
-            'codcliente' => $datos_pasajero[7]
-        ));
-
-        return $pasj;
-
+        return pasajero_por_reserva::parse($string, $this);
     }
 
     /**
@@ -984,6 +979,76 @@ class reserva extends fs_model {
         $ret = null;
         if($this->cancel_date) {
             $fecha = new DateTime($this->cancel_date);
+            $format = self::DATE_FORMAT;
+            if($full_date) {
+                $format = self::DATE_FORMAT_FULL;
+            }
+            $ret = $fecha->format($format);
+        }
+
+        return $ret;
+    }
+
+    /**
+     * @return string
+     */
+    public function getCreateDate($full_date = false) {
+        $ret = null;
+        if($this->create_date) {
+            $fecha = new DateTime($this->create_date);
+            $format = self::DATE_FORMAT;
+            if($full_date) {
+                $format = self::DATE_FORMAT_FULL;
+            }
+            $ret = $fecha->format($format);
+        }
+
+        return $ret;
+    }
+
+    /**
+     * @return string
+     */
+    public function getUpdateDate($full_date = false) {
+        $ret = null;
+        if($this->update_date) {
+            $fecha = new DateTime($this->update_date);
+            $format = self::DATE_FORMAT;
+            if($full_date) {
+                $format = self::DATE_FORMAT_FULL;
+            }
+            $ret = $fecha->format($format);
+        }
+
+        return $ret;
+    }
+
+    /**
+     * @return int
+     */
+    public function getCodAgente() {
+        return $this->codagente;
+    }
+
+    /**
+     * @param int $codagente
+     *
+     * @return reserva
+     */
+    public function setCodAgente($codagente) {
+        $this->codagente = $codagente;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getExpireDate($full_date = false) {
+        $ret = null;
+        if($this->create_date) {
+            $fecha = new DateTime($this->create_date);
+            $fecha->modify("+ 7 days");
             $format = self::DATE_FORMAT;
             if($full_date) {
                 $format = self::DATE_FORMAT_FULL;
@@ -1288,6 +1353,14 @@ WHERE
             $this->new_error_msg("Fecha de reserva no válida.");
         }
 
+        if(!$this->edit && $this->getCreateDate() != date(self::DATE_FORMAT)) {
+            $this->new_error_msg("La fecha de creación es inválida");
+        }
+
+        if(!$this->getCodAgente()) {
+            $this->new_error_msg("El código de agente es requerido");
+        }
+
         if(!$this->get_errors()) {
             $status = true;
         }
@@ -1299,6 +1372,8 @@ WHERE
     protected function insert() {
         $sql = 'INSERT ' . $this->table_name .
                ' SET ' .
+               'codagente = ' . $this->var2str($this->getCodAgente()) . ',' .
+               'create_date = ' . $this->var2str($this->getCreateDate(true)) . ',' .
                'codcliente = ' . $this->var2str($this->getCodCliente()) . ',' .
                'idtarifa = ' . $this->intval($this->getIdTarifa()) . ',' .
                'idestado = ' . $this->intval($this->getEstado()->getId()) . ',' .
@@ -1322,6 +1397,8 @@ WHERE
     protected function update() {
         $sql = 'UPDATE ' . $this->table_name .
                ' SET ' .
+               'codagente = ' . $this->var2str($this->getCodAgente()) . ',' .
+               'update_date = ' . $this->var2str(date('Y-m-d H:i:s')) . ',' .
                'codcliente = ' . $this->var2str($this->getCodCliente()) . ',' .
                'idtarifa = ' . $this->intval($this->getIdTarifa()) . ',' .
                'idestado = ' . $this->intval($this->getEstado()->getId()) . ',' .
@@ -1473,54 +1550,52 @@ WHERE
         return $factura_cliente->get($idfactura);
     }
 
-    public function calcularTotales() {
-        $tarifa = new tarifa_reserva();
-        $cantAdultos = $this->getCantidadAdultos();
-        $cantMenores = $this->getCantidadMenores();
-        $cantPasajeros = (int) ($cantAdultos + $cantMenores);
-        $cantDias = $this->getCantidadDias();
-        $pasajeros = $this->getPasajeros();
-        $total = 0.0;
-        if($pasajeros) {
-            foreach($pasajeros as $i => $pasajero) {
-                $monto = $tarifa->fetchByCategoriaYTipoPasajero(
-                    ($this->getCategoriaHabitacion() ? $this->getCategoriaHabitacion() : $this->tarifa->getCategoriaHabitacion()->getId()),
-                    ($pasajero->getCodGrupo() ? $pasajero->getCodGrupo() : $this->tarifa->getCodGrupoCliente()))->getMonto();
-                //Regla de negocio:
-                //Si la reserva es para una sola persona tarifa+60%
-                if($cantPasajeros === 1) {
-                    $monto += $monto * 0.6;
+    public function calcularTotales($recalc = false) {
+        if(!$this->totales || $recalc) {
+            $cantAdultos = $this->getCantidadAdultos();
+            $cantMenores = $this->getCantidadMenores();
+            $cantPasajeros = (int) ($cantAdultos + $cantMenores);
+            $pasajeros = $this->getPasajeros();
+            $total = 0.0;
+            if($pasajeros) {
+                foreach($pasajeros as $i => $pasajero) {
+                    $total += $pasajero->getTotal();
                 }
-
-                // Si es menor 60% del valor de la tarifa
-                if($pasajero->esMenor()) {
-                    $monto = $monto * 0.6;
-                }
-
-                //Agregamos el total del pasajero al monto
-                $total += $monto * $cantDias;
             }
-        }
 
-        $descuento = (is_numeric($this->descuento) && $this->descuento > 0) ? ($total * ($this->descuento/100)) : 0;
-        $this->totales = array(
-            'monto' => $this->getTarifa()->getMonto(),
-            'total' => $total,
-            'montoDescuento' => $descuento,
-            'descuento' => $this->descuento,
-            'final' => ($total - $descuento)
-        );
+            if($cantPasajeros == 1) {
+                $total += $total*0.6;
+            }
+
+            $descuento = (is_numeric($this->descuento) && $this->descuento > 0) ? ($total * ($this->descuento/100)) : 0;
+            $this->totales = array(
+                'monto' => $this->getTarifa()->getMonto(),
+                'total' => $total,
+                'montoDescuento' => $descuento,
+                'descuento' => $this->descuento,
+                'final' => ($total - $descuento)
+            );
+        }
     }
 
     public function getTotal() {
+        if(!$this->totales) {
+            $this->calcularTotales();
+        }
         return $this->totales['total'];
     }
 
     public function getTotalFinal() {
+        if(!$this->totales) {
+            $this->calcularTotales();
+        }
         return $this->totales['final'];
     }
 
     public function getMontoDescuento() {
+        if(!$this->totales) {
+            $this->calcularTotales();
+        }
         return $this->totales['montoDescuento'];
     }
 
@@ -1534,6 +1609,10 @@ WHERE
                 }
             }
         }
+        $this->removeHabitaciones();
+    }
+
+    private function removeHabitaciones() {
         if($this->remover_habitaciones) {
             foreach($this->remover_habitaciones as $habitacion) {
                 $objHab = $this->__parseHabitacion($habitacion);
@@ -1552,6 +1631,10 @@ WHERE
                 }
             }
         }
+        $this->removePasajeros();
+    }
+
+    private function removePasajeros() {
         if($this->remover_pasajeros) {
             foreach($this->remover_pasajeros as $pasajero) {
                 $objPasa = $this->__parsePasajero($pasajero);

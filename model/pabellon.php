@@ -5,7 +5,7 @@ require_once 'base/fs_model.php';
 require_model('habitacion.php');
 
 
-class pabellon extends fs_model {
+class pabellon extends fs_model implements JsonSerializable {
 
     /**
      * @var int
@@ -158,7 +158,8 @@ SQL;
     public function fetchAllByIdCategoria($idcategoria=0) {
         $pabellonlist = $this->cache->get(str_replace('{id}', 'c'.$idcategoria, self::CACHE_KEY_SINGLE));
         if (!$pabellonlist) {
-            $pabellones = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE id IN (SELECT DISTINCT idpabellon FROM `habitacion` WHERE idcategoria = $idcategoria) ORDER BY descripcion ASC;");
+            $sql = "SELECT * FROM " . $this->table_name . " WHERE id IN (SELECT DISTINCT idpabellon FROM `habitacion` WHERE idcategoria = $idcategoria) ORDER BY descripcion ASC;";
+            $pabellones = $this->db->select($sql);
             if($pabellones) {
                 foreach($pabellones as $pabellon) {
                     $pabellonlist[] = new pabellon($pabellon);
@@ -274,5 +275,10 @@ SQL;
         return $pabellonlist;
     }
 
-
+    public function jsonSerialize() {
+        return array(
+            'id' => $this->getId(),
+            'descripcion' => $this->getDescripcion()
+        );
+    }
 }

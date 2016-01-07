@@ -20,6 +20,7 @@ class reserva_pabellon extends reserva_controller {
 
     protected function process() {
         $this->action = (string)isset($_GET['action']) ? $_GET['action'] : 'list';
+        $this->pabellon = new pabellon();
 
         switch ($this->action) {
             default:
@@ -34,6 +35,9 @@ class reserva_pabellon extends reserva_controller {
                 break;
             case 'delete':
                 $this->deleteAction();
+                break;
+            case 'find':
+                $this->findAction();
                 break;
         }
     }
@@ -65,14 +69,12 @@ class reserva_pabellon extends reserva_controller {
     }
 
     public function indexAction() {
-        $this->pabellon = new pabellon();
         $this->pabellones = $this->pabellon->fetchAll();
         $this->template = 'reserva_pabellon_index';
     }
 
     public function addAction() {
         $this->page->extra_url = '&action=add';
-        $this->pabellon = new pabellon();
         $this->template = 'reserva_pabellon_form';
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->pabellon->setValues($_POST);
@@ -100,7 +102,16 @@ class reserva_pabellon extends reserva_controller {
     }
 
     public function findAction() {
-
+        $by = isset($_GET['by']) ? $_GET['by'] : false;
+        $value = isset($_REQUEST['value']) ? $_REQUEST['value'] : null;
+        switch($by) {
+            case 'idcategoria':
+                $data = $this->pabellon->fetchAllByIdCategoria($value);
+                break;
+        }
+        header('Content-Type: application/json');
+        echo json_encode($data);
+        $this->template = false;
     }
 
     public function deleteAction() {

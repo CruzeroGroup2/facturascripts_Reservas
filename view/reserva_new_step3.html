@@ -70,6 +70,9 @@
             </div>
         </div>
         <div class="row form-group">
+            <p>{$fsc->getReserva()->getExpireDate(true)}</p>
+        </div>
+        <div class="row form-group">
             <div class="col-md-3">
                 Cantidad de Noches: {$fsc->getReserva()->getCantidadDias()}
             </div>
@@ -137,7 +140,7 @@
                     <input id="cantidad_adultos" class="form-control input-sm" type="number" readonly="readonly" name="cantidad_adultos" value="{$fsc->getReserva()->getCantidadAdultos()}" />
                 </div>
                 <div class="col-md-1">
-                    <label>Menores de 5</label>
+                    <label>Menores de 7</label>
                 </div>
                 <div class="col-md-1">
                     <input id="cantidad_menores" class="form-control input-sm" type="number" readonly="readonly" name="cantidad_menores" value="{$fsc->getReserva()->getCantidadMenores()}" />
@@ -152,7 +155,10 @@
                             <th>Nombre</th>
                             <th>Documento</th>
                             <th>Cat. Edad</th>
+                            <th>Fecha Ingreso</th>
+                            <th>Fecha Egreso</th>
                             <th>Tipo Pasajero</th>
+                            <th>Monto</th>
                             <th>Opciones</th>
                         </tr>
                     </thead>
@@ -163,7 +169,10 @@
                             <td>{$value->getNombreCompleto()}</td>
                             <td>{$value->getDocumento()}</td>
                             <td>{function="ucfirst(str_replace('_', ' ', $value->getEdadCateg()))"}</td>
+                            <td>{$value->getFechaIn()}</td>
+                            <td>{$value->getFechaOut()}</td>
                             <td>{if="$value->getTipoPasajero()"}{$value->getTipoPasajero()->nombre}{else}{$fsc->getReserva()->getTarifa()->getGrupoCliente()->nombre}{/if}</td>
+                            <td>{$fsc->show_precio($value->getTotal())}</td>
                             <td>
                                 {if="!$fsc->getReserva()->isCheckedIn()"}
                                 <input type="hidden" name="pasajeros[]" value="{$value}">
@@ -179,12 +188,13 @@
             </div>
             {if="!$fsc->getReserva()->isCheckedIn()"}
             <div class="row form-group">
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label for="nombre_pasajero">Nombre</label>
                     <input type="hidden" id="id_pasajero" name="id_pasajero" />
+                    <input type="hidden" id="codcliente_pasajero" name="codcliente_pasajero" />
                     <input type="text" id="nombre_pasajero" class="form-control input-sm" name="nombre_pasajero" />
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="col-md-6">
                         <label for="documento_pasajero">Documento</label>
                         <input type="text" id="documento_pasajero" class="form-control input-sm" name="documento_pasajero" />
@@ -194,10 +204,20 @@
                         <label for="documento_pasajero_tipo_dni">DNI</label>
                         <br>
                         <input type="radio" id="documento_pasajero_tipo_afiliado" name="documento_pasajero_tipo" value="AFILIADO" />
-                        <label for="documento_pasajero_tipo_afiliado">Numero afiliado</label>
+                        <label for="documento_pasajero_tipo_afiliado">N° Afiliado</label>
                     </div>
                 </div>
                 <div class="col-md-3">
+                    <div class="col-md-6">
+                        <label for="pasajero_fecha_in">Fecha Ingreso</label>
+                        <input type="text" id="pasajero_fecha_in" name="pasajero_fecha_in" class="form-control input-sm" />
+                    </div>
+                    <div class="col-md-6">
+                        <label for="pasajero_fecha_out">Fecha Egreso</label>
+                        <input type="text" id="pasajero_fecha_out" name="pasajero_fecha_out" class="form-control input-sm" />
+                    </div>
+                </div>
+                <div class="col-md-2">
                     <label for="codgrupo_pasajero">Tipo de Pasajero</label>
                     <select name="codgrupo_pasajero" id="codgrupo_pasajero" class="form-control">
                         <option value="">Seleccione...</option>
@@ -215,7 +235,6 @@
                     <br>
                     <input type="radio" value="ADULTO" id="edad_pasajero_adulto" name="edad_pasajero" checked="checked">
                     <label for="edad_pasajero_adulto">Adulto</label>
-
                 </div>
             </div>
             <div class="col-md-offset-11 col-md-1">
@@ -243,7 +262,11 @@
                             </div>
                             <div class="col-md-2">
                                 <input type="submit" value="Grabar Reserva" id="guardar" class="form-control btn-primary bottom-buffer">
+                                {if="$fsc->getReserva()->getEstado() == estado_reserva::SINSENA || $fsc->getReserva()->getEstado() == estado_reserva::INCOMPLETA"}
+                                <button type="submit" class="form-control btn-primary" formaction="{$fsc->confirm_url($fsc->getReserva())}">Generar Confirmacion de Alojamiento</button>
+                                {else}
                                 <button type="submit" class="form-control btn-primary" formaction="{$fsc->voucher_url($fsc->getReserva())}">Generar Voucher</button>
+                                {/if}
                             </div>
                         </div>
                         <div class="row form-group">
