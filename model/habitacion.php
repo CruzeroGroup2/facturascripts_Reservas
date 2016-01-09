@@ -406,8 +406,8 @@ AND habitacion_por_reserva.idhabitacion = " . $this->getId();
       FROM habitacion_por_reserva
         LEFT JOIN reserva ON (reserva.id = habitacion_por_reserva.idreserva)
       WHERE (
-        (fecha_in BETWEEN " . $this->var2str($arrival . ' 12:00:00') . " AND " . $this->var2str($departure . ' 10:00:00') . ") OR
-        (fecha_out BETWEEN " . $this->var2str($arrival . ' 12:00:00') . " AND " . $this->var2str($departure . ' 10:00:00') . ")
+        (" . $this->var2str($arrival . ' 12:00:00') . " BETWEEN fecha_in AND fecha_out) OR
+        (" . $this->var2str($departure . ' 12:00:00') . " BETWEEN fecha_in AND fecha_out)
       )
       AND reserva.idestado NOT IN (6,7) -- Except for canceled reservs
     )
