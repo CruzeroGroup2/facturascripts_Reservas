@@ -225,7 +225,6 @@ class reserva_home extends reserva_controller {
     }
 
     private function addAction() {
-        var_dump($_POST);
         $this->page->extra_url = '&action=add';
 
         if(isset($_GET['fecha_in'])) {

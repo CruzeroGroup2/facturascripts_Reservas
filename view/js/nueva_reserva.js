@@ -197,6 +197,7 @@ var agregar_pasajero = function(event) {
             '<td>' + fecha_in + '</td>'+
             '<td>' + fecha_out + '</td>'+
             '<td>' + $('#codgrupo_pasajero option[value='+codgrupo+']').text() + '</td>'+
+            '<td>N/A</td>' +
             '<td>' +
                 '<input type="hidden" name="pasajeros[]" value="'+
                     nombre+':'+

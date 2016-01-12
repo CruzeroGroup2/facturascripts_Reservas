@@ -23,16 +23,20 @@ class reserva_reportes extends reserva_controller {
     }
 
     protected function process() {
-        $action = (string) isset($_GET['action']) ? $_GET['action'] : 'list';
-        switch($action) {
+        $this->action = (string) isset($_GET['action']) ? $_GET['action'] : 'list';
+        $export = isset($_GET['export']) ? boolval($_GET['export']) : false;
+        switch($this->action) {
             case 'reservasSinSenia':
-                $this->reservasSinSinia();
+                $this->reservasSinSenia($export);
+                break;
+            case 'reservasConSenia':
+                $this->reservasConSenia($export);
                 break;
             case 'ocupacion':
-                $this->ocupacion();
+                $this->ocupacion($export);
                 break;
             case 'habitaciones':
-                $this->habitaciones();
+                $this->habitaciones($export);
                 break;
 
         }
@@ -40,6 +44,12 @@ class reserva_reportes extends reserva_controller {
 
     public function sinsenia_url() {
         $this->page->extra_url = '&action=reservasSinSenia';
+
+        return $this->url();
+    }
+
+    public function consenia_url() {
+        $this->page->extra_url = '&action=reservasConSenia';
 
         return $this->url();
     }
@@ -56,21 +66,117 @@ class reserva_reportes extends reserva_controller {
         return $this->url();
     }
 
-    private function reservasSinSinia() {
+    public function export_url() {
+        return $this->url() . '&action='. urlencode($this->action) . '&export=true';
+    }
+
+    private function reservasSinSenia($export = false) {
         $reserva = new reserva();
         $estado = estado_reserva::get(estado_reserva::SINSENA);
         $this->reservas = $reserva->findByEstado($estado->getId());
-        $this->template = 'reserva_reportes_sinsenia';
+        if($export) {
+            $this->template = false;
+            // output headers so that the file is downloaded rather than displayed
+            header('Content-Type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment; filename=reservas_sin_senia.'.time().'.csv');
+
+            // create a file pointer connected to the output stream
+            $output = fopen('php://output', 'w');
+            fputs($output, "sep=,\n");
+            // output the column headings
+            fputcsv($output, array(
+                'Numero',
+                'Fecha Ingreso',
+                'Fecha Salida',
+                'Nombre',
+                'Tarifa',
+                'Habitaciones',
+                'Cant. Ad',
+                'Cant. Men',
+                'Total'
+            ));
+
+            foreach($this->reservas as $row) {
+                /** @var $row reserva */
+                fputcsv($output, array(
+                    $row->getId(),
+                    $row->getFechaIn(true),
+                    $row->getFechaOut(true),
+                    $row->getCliente()->nombre,
+                    $row->getTarifa()->getMonto(),
+                    implode(",", $row->getNumerosHabitaciones()),
+                    $row->getCantidadAdultos(),
+                    $row->getCantidadMenores(),
+                    $row->getTotal()
+                ));
+            }
+            $hoy = new DateTime();
+            fputcsv($output, array("Reporte generado el ". $hoy->format('Y-m-d h:i:s') . ' por el usuario: ' . $this->user->nick));
+        } else {
+            $this->template = 'reserva_reportes_sinsenia';
+        }
     }
 
-    private function ocupacion() {
+    private function reservasConSenia($export = false) {
+        $reserva = new reserva();
+        $estado = estado_reserva::get(estado_reserva::SENADO);
+        $this->reservas = $reserva->findByEstado($estado->getId());
+        if($export) {
+            $this->template = false;
+            // output headers so that the file is downloaded rather than displayed
+            header('Content-Type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment; filename=reservas_sin_senia.'.time().'.csv');
+
+            // create a file pointer connected to the output stream
+            $output = fopen('php://output', 'w');
+            fputs($output, "sep=,\n");
+            // output the column headings
+            fputcsv($output, array(
+                'Numero',
+                'Fecha Ingreso',
+                'Fecha Salida',
+                'Nombre',
+                'Tarifa',
+                'Habitaciones',
+                'Cant. Ad',
+                'Cant. Men',
+                'Total',
+                'Seña',
+                'Saldo'
+            ));
+
+            foreach($this->reservas as $row) {
+                /** @var $row reserva */
+                fputcsv($output, array(
+                    $row->getId(),
+                    $row->getFechaIn(true),
+                    $row->getFechaOut(true),
+                    $row->getCliente()->nombre,
+                    $row->getTarifa()->getMonto(),
+                    implode(",", $row->getNumerosHabitaciones()),
+                    $row->getCantidadAdultos(),
+                    $row->getCantidadMenores(),
+                    $row->getTotal(),
+                    $row->getMontoSeniado(),
+                    $row->getSaldo()
+                ));
+            }
+            $hoy = new DateTime();
+            fputcsv($output, array("Reporte generado el ". $hoy->format('Y-m-d h:i:s') . ' por el usuario: ' . $this->user->nick));            $this->template = false;
+        } else {
+            $this->template = 'reserva_reportes_sinsenia';
+        }
+        $this->template = 'reserva_reportes_consenia';
+    }
+
+    private function ocupacion($export = false) {
         $this->fecha = date('d-m-Y');
 
 
         $this->template = 'reserva_reportes_ocupacion';
     }
 
-    private function habitaciones() {
+    private function habitaciones($export = false) {
         $this->fecha = date('d-m-Y');
         $this->template = 'reserva_reportes_habitaciones';
     }

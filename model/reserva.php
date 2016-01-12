@@ -936,11 +936,29 @@ class reserva extends fs_model {
     }
 
     public function getPagos() {
+        $this->pagos = array();
         if(!$this->pagos && $this->idfactura) {
             $pago = new recibo_cliente();
             $this->pagos = $pago->all_from_factura($this->idfactura);
         }
         return $this->pagos;
+    }
+
+    public function getMontoSeniado() {
+        $pagos = $this->getPagos();
+        $totalSeniado = 0.0;
+        foreach($pagos as $pago) {
+            $totalSeniado += $pago->importe;
+        }
+
+        return $totalSeniado;
+    }
+
+    public function getSaldo() {
+        $total = $this->getTotal();
+        $senia = $this->getMontoSeniado();
+
+        return floatval($total-$senia);
     }
 
     /**
@@ -1246,7 +1264,7 @@ class reserva extends fs_model {
         $sql = "SELECT
 $this->table_name.*
 FROM " . $this->table_name . "
-    JOIN habitacion_por_reserva ON (reserva.id = habitacion_por_reserva.idreserva)
+    -- JOIN habitacion_por_reserva ON (reserva.id = habitacion_por_reserva.idreserva)
 WHERE ";
         if(isset($filter['codcliente'])) {
             $sql .= "\n" . ' codcliente = ' . $this->var2str($filter['codcliente']);
@@ -1353,6 +1371,12 @@ WHERE
             $this->new_error_msg("Fecha de reserva no válida.");
         }
 
+        $fechaIn = new DateTime($this->getFechaIn(true));
+        $fechaHoy = new DateTime();
+        if($fechaIn < $fechaHoy) {
+            $this->new_error_msg("La fecha de la reserva es menor a la fecha de hoy");
+        }
+
         if(!$this->edit && $this->getCreateDate() != date(self::DATE_FORMAT)) {
             $this->new_error_msg("La fecha de creación es inválida");
         }
@@ -1440,14 +1464,12 @@ WHERE
             $this->clean_cache();
             if($this->exists()) {
                 $this->update();
-                $this->saveHabitaciones();
-                $this->savePasajeros();
             } else {
                 $this->insert();
                 $this->setId(intval($this->db->lastval()));
-                $this->saveHabitaciones();
-                $this->savePasajeros();
             };
+            $this->saveHabitaciones();
+            $this->savePasajeros();
         }
 
         if(!$this->get_errors()) {
@@ -1644,6 +1666,8 @@ WHERE
             }
         }
     }
+
+    public function toArray() {}
 
     private function getCheckInPasajeros() {
         $pasajeros = new pasajero_por_reserva();

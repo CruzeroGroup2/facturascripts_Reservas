@@ -28,6 +28,9 @@
         <input type="hidden" name="idtarifa" id="idtarifa" value="{$fsc->getReserva()->getTarifa()->getId()}" />
         <input type="hidden" name="idsHabitaciones" id="idsHabitaciones" value="{function="implode(',', $fsc->getReserva()->getHabitaciones(true))"}" />
         <div class="row form-group">
+            <p>Número de Reserva: {$fsc->getReserva()->getId()}</p>
+        </div>
+        <div class="row form-group">
             <div class="col-md-2">
                 <label><span>Fecha de Ingreso</span>
                     <input type="text" name="fecha_in" id="fecha_in" class="form-control input-sm" value="{$fsc->getReserva()->getFechaIn()}" />
