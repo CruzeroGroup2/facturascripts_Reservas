@@ -35,6 +35,9 @@ class reserva_reportes extends reserva_controller {
             case 'ocupacion':
                 $this->ocupacion($export);
                 break;
+            case 'raciones':
+                $this->raciones($export);
+                break;
             case 'habitaciones':
                 $this->habitaciones($export);
                 break;
@@ -50,6 +53,12 @@ class reserva_reportes extends reserva_controller {
 
     public function consenia_url() {
         $this->page->extra_url = '&action=reservasConSenia';
+
+        return $this->url();
+    }
+
+    public function raciones_url() {
+        $this->page->extra_url = '&action=raciones';
 
         return $this->url();
     }
@@ -86,6 +95,7 @@ class reserva_reportes extends reserva_controller {
             // output the column headings
             fputcsv($output, array(
                 'Numero',
+                'Fecha Creacion',
                 'Fecha Ingreso',
                 'Fecha Salida',
                 'Nombre',
@@ -100,6 +110,7 @@ class reserva_reportes extends reserva_controller {
                 /** @var $row reserva */
                 fputcsv($output, array(
                     $row->getId(),
+                    $row->getCreateDate(true),
                     $row->getFechaIn(true),
                     $row->getFechaOut(true),
                     $row->getCliente()->nombre,
@@ -125,7 +136,7 @@ class reserva_reportes extends reserva_controller {
             $this->template = false;
             // output headers so that the file is downloaded rather than displayed
             header('Content-Type: text/csv; charset=utf-8');
-            header('Content-Disposition: attachment; filename=reservas_sin_senia.'.time().'.csv');
+            header('Content-Disposition: attachment; filename=reservas_con_senia.'.time().'.csv');
 
             // create a file pointer connected to the output stream
             $output = fopen('php://output', 'w');
@@ -169,6 +180,13 @@ class reserva_reportes extends reserva_controller {
         $this->template = 'reserva_reportes_consenia';
     }
 
+    private function raciones($export = false) {
+        $this->fecha = date('d-m-Y H:i:s');
+
+
+        $this->template = 'reserva_reportes_raciones';
+    }
+
     private function ocupacion($export = false) {
         $this->fecha = date('d-m-Y');
 
@@ -177,12 +195,12 @@ class reserva_reportes extends reserva_controller {
     }
 
     private function habitaciones($export = false) {
-        $this->fecha = date('d-m-Y');
+        $this->fecha = date('d-m-Y ');
         $this->template = 'reserva_reportes_habitaciones';
     }
 
-    public function getFecha() {
-        return $this->fecha;
+    public function getRaciones(grupo_clientes $grupo_clientes, $clase, $categoria) {
+        return 0;
     }
 
     public function getCantPasajerosCheckIn() {
@@ -204,6 +222,12 @@ class reserva_reportes extends reserva_controller {
 
         return number_format(($cantPasajerosCheckIn * 100) / $cantPlazDisponibles, FS_NF0, FS_NF1, FS_NF2);
 
+    }
+
+    public function getTipoPasajeros() {
+        $grucli = new grupo_clientes();
+
+        return $grucli->all();
     }
 
 }

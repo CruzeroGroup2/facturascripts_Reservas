@@ -17,6 +17,7 @@
             <thead>
                 <tr>
                     <th>Numero</th>
+                    <th>Fecha Creacion</th>
                     <th>Fecha Ingreso</th>
                     <th>Fecha Salida</th>
                     <th>Nombre</th>
@@ -32,6 +33,7 @@
                 {loop="$fsc->reservas"}
                 <tr>
                     <td><a href="{$value->url()}">{$value->getId()}</a></td>
+                    <td>{$value->getCreateDate(true)}</td>
                     <td>{$value->getFechaIn(true)}</td>
                     <td>{$value->getFechaOut(true)}</td>
                     <td>{$value->getCliente()->nombre}</td>

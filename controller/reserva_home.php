@@ -62,7 +62,6 @@ class reserva_home extends reserva_controller {
     }
 
     protected function process() {
-
         $action = (string) isset($_GET['action']) ? $_GET['action'] : 'list';
         $this->reserva = new reserva();
         $this->pabellon = new pabellon();
@@ -202,25 +201,12 @@ class reserva_home extends reserva_controller {
         $fecha_hasta = new DateTime('now + 15 days');
         $this->fecha_desde = (isset($_POST['fecha_desde'])) ? $_POST['fecha_desde'] : date('d-m-Y');
         $this->fecha_hasta = (isset($_POST['fecha_hasta'])) ? $_POST['fecha_hasta'] : $fecha_hasta->format('d-m-Y');
-        $this->rango_fechas = new DatePeriod(
-            new DateTime($this->fecha_desde),
-            DateInterval::createFromDateString('+1 day'),
-            //Ugly hack to include the frist day
-            new DateTime($this->fecha_hasta . ' 23:59:59')
-        );
-
-        $this->cantidad_dias = 1;
-        foreach($this->rango_fechas as $dt) {
-            $this->cantidad_dias ++;
-        }
-
         if($this->pabellon) {
             $this->pabellones = array($this->pabellon);
         } else {
             $this->pabellon = new pabellon();
             $this->pabellones = $this->pabellon->fetchAll();
         }
-        //$this->reservas = $this->reserva->fetchAll();
         $this->template = 'reserva_home_index';
     }
 
@@ -268,6 +254,7 @@ class reserva_home extends reserva_controller {
         $this->page->extra_url = '&action=edit';
         $id = (int) isset($_GET['id']) ? $_GET['id'] : 0;
         $step = (int) isset($_GET['step']) ? (int) $_GET['step'] : false;
+        $generar_orden = isset($_GET['orden']) ? boolval($_GET['orden']) : false;
         $this->reserva = reserva::get($id);
         if(!$this->reserva) {
             $this->reserva = new reserva();
@@ -275,6 +262,24 @@ class reserva_home extends reserva_controller {
         } else {
             $this->_setTemplate($step);
         }
+
+        if($generar_orden) {
+            $this->generate_order($this->reserva);
+        }
+    }
+
+    private function generate_order() {
+        require_once 'plugins/reservas/extras/PhpWord/Autoloader.php';
+        PhpOffice\PhpWord\Autoloader::register();
+
+        $order = new \PhpOffice\PhpWord\TemplateProcessor('plugins/reservas/extras/voucher/template_order.docx');
+        //Agregar los valores de la orden de alojamiento
+
+        $this->replace_values($order);
+
+        $order->saveAs('tmp/orden.' . $this->reserva->getId() . '.docx');
+        $this->template = false;
+        header('Location: tmp/orden.' . $this->reserva->getId() . '.docx');
     }
 
     private function confirmAction() {
@@ -285,43 +290,11 @@ class reserva_home extends reserva_controller {
         require_once 'plugins/reservas/extras/PhpWord/Autoloader.php';
         PhpOffice\PhpWord\Autoloader::register();
 
-        $voucher = new \PhpOffice\PhpWord\TemplateProcessor('plugins/reservas/extras/voucher/template_confirm.docx');
+        $confirm = new \PhpOffice\PhpWord\TemplateProcessor('plugins/reservas/extras/voucher/template_confirm.docx');
 
-        /** @var direccion_cliente[] $direcciones */
-        $direcciones = $this->reserva->getCliente()->get_direcciones();
-        if(!isset($direcciones[0]) || !is_a($direcciones[0], 'direccion_cliente')) {
-            $direcciones[0] = new direccion_cliente();
-            $direcciones[0]->direccion = '';
-            $direcciones[0]->ciudad = '';
-            $direcciones[0]->codpostal = '';
-            $direcciones[0]->provincia = '';
-        }
-        $voucher->setValue('codigoReserva', htmlspecialchars($this->reserva->getId()));
-        $voucher->setValue('fechaReserva', htmlspecialchars($this->reserva->getCreateDate(true)));
-        $voucher->setValue('nombreReserva', htmlspecialchars($this->reserva->getCliente()->nombre));
-        $voucher->setValue('documento', htmlspecialchars($this->reserva->getCliente()->cifnif));
-        $voucher->setValue('categoría', htmlspecialchars($this->reserva->getGrupoCliente()->nombre));
-        $voucher->setValue('montoTarifa', htmlspecialchars(number_format($this->reserva->getTarifa()->getMonto(), FS_NF0, FS_NF1, FS_NF2)));
-        $voucher->setValue('email', htmlspecialchars($this->reserva->getCliente()->email));
-        $voucher->setValue('telefono', htmlspecialchars($this->reserva->getCliente()->telefono1));
-        $voucher->setValue('telefono2', htmlspecialchars($this->reserva->getCliente()->telefono2));
+        $this->replace_values($confirm);
 
-        $voucher->setValue('domicilio', htmlspecialchars($direcciones[0]->direccion));
-        $voucher->setValue('localidad', htmlspecialchars($direcciones[0]->ciudad));
-        $voucher->setValue('codigoPostal', htmlspecialchars($direcciones[0]->codpostal));
-        $voucher->setValue('provincia', htmlspecialchars($direcciones[0]->provincia));
-
-        $voucher->setValue('fechaIn', htmlspecialchars($this->reserva->getFechaIn()));
-        $voucher->setValue('fechaOut', htmlspecialchars($this->reserva->getFechaOut()));
-        $voucher->setValue('cantNoches', htmlspecialchars($this->reserva->getCantidadDias()));
-        $voucher->setValue('habitaciones', htmlspecialchars(implode(', ', $this->reserva->getNumerosHabitaciones())));
-        $voucher->setValue('adultos', htmlspecialchars($this->reserva->getCantidadAdultos()));
-        $voucher->setValue('menores', htmlspecialchars($this->reserva->getCantidadMenores()));
-        $voucher->setValue('total', htmlspecialchars(number_format($this->reserva->totales['total'], FS_NF0, FS_NF1, FS_NF2)));
-        $voucher->setValue('totalDeposito', htmlspecialchars(number_format($this->reserva->totales['total'] * 0.30, FS_NF0, FS_NF1, FS_NF2)));
-        $voucher->setValue('fechaExpiracion', htmlspecialchars($this->reserva->getExpireDate()));
-
-        $voucher->saveAs('tmp/confirm.' . $this->reserva->getId() . '.docx');
+        $confirm->saveAs('tmp/confirm.' . $this->reserva->getId() . '.docx');
         $this->template = false;
         header('Location: tmp/confirm.' . $this->reserva->getId() . '.docx');
 
@@ -337,58 +310,7 @@ class reserva_home extends reserva_controller {
 
         $voucher = new \PhpOffice\PhpWord\TemplateProcessor('plugins/reservas/extras/voucher/template_voucher.docx');
 
-        /** @var direccion_cliente[] $direcciones */
-        $direcciones = $this->reserva->getCliente()->get_direcciones();
-        if(!isset($direcciones[0]) || !is_a($direcciones[0], 'direccion_cliente')) {
-            $direcciones[0] = new direccion_cliente();
-            $direcciones[0]->direccion = '';
-            $direcciones[0]->ciudad = '';
-            $direcciones[0]->codpostal = '';
-            $direcciones[0]->provincia = '';
-        }
-        $voucher->setValue('codigoReserva', htmlspecialchars($this->reserva->getId()));
-        $voucher->setValue('nombreReserva', htmlspecialchars($this->reserva->getCliente()->nombre));
-        $voucher->setValue('documento', htmlspecialchars($this->reserva->getCliente()->cifnif));
-        $voucher->setValue('categoría', htmlspecialchars($this->reserva->getGrupoCliente()->nombre));
-        $voucher->setValue('montoTarifa', htmlspecialchars(number_format($this->reserva->getTarifa()->getMonto(), FS_NF0, FS_NF1, FS_NF2)));
-        $voucher->setValue('email', htmlspecialchars($this->reserva->getCliente()->email));
-        $voucher->setValue('telefono', htmlspecialchars($this->reserva->getCliente()->telefono1));
-        $voucher->setValue('telefono2', htmlspecialchars($this->reserva->getCliente()->telefono2));
-
-        $voucher->setValue('domicilio', htmlspecialchars($direcciones[0]->direccion));
-        $voucher->setValue('localidad', htmlspecialchars($direcciones[0]->ciudad));
-        $voucher->setValue('codigoPostal', htmlspecialchars($direcciones[0]->codpostal));
-        $voucher->setValue('provincia', htmlspecialchars($direcciones[0]->provincia));
-
-        $voucher->setValue('fechaIn', htmlspecialchars($this->reserva->getFechaIn()));
-        $voucher->setValue('fechaOut', htmlspecialchars($this->reserva->getFechaOut()));
-        $voucher->setValue('habitaciones', htmlspecialchars(implode(', ', $this->reserva->getNumerosHabitaciones())));
-        $voucher->setValue('adultos', htmlspecialchars($this->reserva->getCantidadAdultos()));
-        $voucher->setValue('menores', htmlspecialchars($this->reserva->getCantidadMenores()));
-        $voucher->setValue('total', htmlspecialchars(number_format($this->reserva->totales['total'], FS_NF0, FS_NF1, FS_NF2)));
-
-        $voucher->cloneRow('nombrePasajero', $this->reserva->getCantPasajeros());
-
-        foreach($this->reserva->getCantPasajeros(true) as $pasId) {
-            $pasajero = $this->reserva->getPasajero($pasId);
-            $voucher->setValue('nombrePasajero#'.($pasId+1), htmlspecialchars($pasajero->getNombreCompleto()));
-            $voucher->setValue('fechaNacPasajero#'.($pasId+1), htmlspecialchars($pasajero->getFechaNacimiento()));
-            $voucher->setValue('dniPasajero#'.($pasId+1), htmlspecialchars($pasajero->getDocumento()));
-        }
-
-        $pagos = $this->reserva->getPagos();
-        if($pagos) {
-            $voucher->cloneRow('numeroRecibo', count($pagos));
-            foreach($pagos as $num => $pago) {
-                $voucher->setValue('numeroRecibo#'.($num+1), htmlspecialchars($pago->idrecibo));
-                $voucher->setValue('fechaRecibo#'.($num+1), htmlspecialchars($pago->fecha));
-                $voucher->setValue('montoRecibo#'.($num+1), htmlspecialchars(number_format($pago->importe, FS_NF0, FS_NF1, FS_NF2)));
-            }
-        } else {
-            $voucher->setValue('numeroRecibo', '');
-            $voucher->setValue('fechaRecibo','');
-            $voucher->setValue('montoRecibo','');
-        }
+        $this->replace_values($voucher);
 
         $voucher->saveAs('tmp/voucher.' . $this->reserva->getId() . '.docx');
         $this->template = false;
@@ -420,8 +342,12 @@ class reserva_home extends reserva_controller {
                         $pasajero_por_reserva = pasajero_por_reserva::get($pasajero['id']);
                     }
                     $pasajero_por_reserva->setValues($pasajero);
-                    if(!$pasajero_por_reserva->getFechaIn()) {
-                        $pasajero_por_reserva->setFechaIn(date('Y-m-d H:i:s'));
+                    if(!$pasajero_por_reserva->getIdTarifa()) {
+                        $pasajero_por_reserva->setIdTarifa($this->reserva->getIdTarifa());
+                    }
+                    $pasajero_por_reserva->setIdReserva($this->reserva->getId());
+                    if(!$pasajero_por_reserva->isCheckIn()) {
+                        $pasajero_por_reserva->setCheckIn(date('Y-m-d H:i:s'));
                     }
                     $pasajeros[] = clone $pasajero_por_reserva;
                 }
@@ -431,7 +357,7 @@ class reserva_home extends reserva_controller {
 
             if(!$this->get_errors() && $this->reserva->save()) {
                 $this->new_message($this->reserva->getSuccesMessage());
-                header('Refresh: 1;url='.$this->reserva->url());
+                header('Refresh: 1;url='.$this->edit_url($this->reserva)).'&order=true';
             } else {
                 $this->new_error_msg("¡Error en Reserva!");
             }
@@ -454,13 +380,17 @@ class reserva_home extends reserva_controller {
         $pasajero_por_reserva = new pasajero_por_reserva();
         if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
             foreach($_POST['pasajero'] as $pasajero) {
-                if(isset($pasajero['checkin']) && $pasajero['checkin']) {
+                if(isset($pasajero['checkout']) && $pasajero['checkout']) {
                     if (isset($pasajero['id']) && $pasajero['id']) {
                         $pasajero_por_reserva = pasajero_por_reserva::get($pasajero['id']);
                     }
                     $pasajero_por_reserva->setValues($pasajero);
-                    if ($pasajero_por_reserva->getFechaIn() && !$pasajero_por_reserva->getFechaOut()) {
-                        $pasajero_por_reserva->setFechaOut(date('Y-m-d H:i:s'));
+                    if(!$pasajero_por_reserva->getIdTarifa()) {
+                        $pasajero_por_reserva->setIdTarifa($this->reserva->getIdTarifa());
+                    }
+                    $pasajero_por_reserva->setIdReserva($this->reserva->getId());
+                    if ($pasajero_por_reserva->isCheckIn() && !$pasajero_por_reserva->isCheckOut()) {
+                        $pasajero_por_reserva->setCheckOut(date('Y-m-d H:i:s'));
                     } else {
                         $this->new_error_msg("El pasajero " . $pasajero_por_reserva->getNombreCompleto() .
                                              " no tiene checkin!");
@@ -631,45 +561,87 @@ class reserva_home extends reserva_controller {
         return $max_pass;
     }
 
+    /**
+     * @var reserva[]
+     */
     private $cacheReservasDisponibilidad = array();
 
-    public function getHabitacionCell(habitacion $habitacion, DateTime $fecha) {
-        $reserva = false;
-        if(!isset($this->cacheReservasDisponibilidad[$habitacion->getId()][$fecha->format('Y-m-d')])) {
-            $this->cacheReservasDisponibilidad[$habitacion->getId()][$fecha->format('Y-m-d')] = array();
-            $reservas = $this->reserva->findByHabitacionYFecha($habitacion->getId(), $fecha->format('Y-m-d'));
-            foreach($reservas as $reserva) {
-                $fechasReserva = new DatePeriod(
-                    new DateTime($reserva->getFechaIn()),
-                    DateInterval::createFromDateString('+1 day'),
-                    //Ugly hack to include the frist day
-                    new DateTime($reserva->getFechaOut() . ' 23:59:59')
-                );
-                foreach($fechasReserva as $fechaTmp) {
-                    foreach($reserva->getHabitaciones() as $rHab) {
-                        $this->cacheReservasDisponibilidad[$rHab->getHabitacion()->getId()][$fechaTmp->format('Y-m-d')][] = $reserva;
+    public function getDisponibilidadHabitacionTable() {
+        $this->rango_fechas = new DatePeriod(
+            new DateTime($this->fecha_desde),
+            DateInterval::createFromDateString('+1 day'),
+            //Ugly hack to include the frist day
+            new DateTime($this->fecha_hasta . ' 23:59:59')
+        );
+
+        $table = '<table id="habitaciones_disponibles" class="table table-condensed table-bordered table-striped">
+        <thead>
+        <col style="width: 100px;" />
+            <tr>
+                <th>Hab.</th>'. "\n";
+        foreach($this->rango_fechas as $fecha) {
+            $table .= '                <th>' . $fecha->format('d') . '</th>' . "\n";
+        }
+        $table .= '            </tr>
+        </thead>
+        <tbody>';
+
+        $this->cantidad_dias = 1;
+        foreach($this->rango_fechas as $dt) {
+            $this->cantidad_dias ++;
+        }
+
+        foreach($this->reserva->fetchByRange($this->fecha_desde, $this->fecha_hasta) as $reserva) {
+            /** @var $reserva reserva */
+            $range = new DatePeriod(
+                new DateTime($reserva->getFechaIn(true)),
+                DateInterval::createFromDateString('+1 day'),
+                new DateTime($reserva->getFechaOut() . '23:59:00')
+            );
+            foreach($range as $dt) {
+                if(!isset($this->cacheReservasDisponibilidad[$dt->format('d-m')])) {
+                    $this->cacheReservasDisponibilidad[$dt->format('d-m')] = array();
+                }
+                foreach($reserva->getHabitaciones() as $habitacion) {
+                    if(!isset($this->cacheReservasDisponibilidad[$dt->format('d-m')][$habitacion->getHabitacion()->getId()])) {
+                        $this->cacheReservasDisponibilidad[$dt->format('d-m')][$habitacion->getHabitacion()->getId()] = array();
                     }
+                    $this->cacheReservasDisponibilidad[$dt->format('d-m')][$habitacion->getHabitacion()->getId()][] = $reserva;
                 }
             }
-        } else {
-            $reservas = $this->cacheReservasDisponibilidad[$habitacion->getId()][$fecha->format('Y-m-d')];
         }
+        unset($reserva);
 
-        $cell = '<td>';
-        if($reservas) {
-            foreach($reservas as $reserva) {
-                $cell .= '<a href="' . $this->edit_url($reserva) . '" class="btn ' . $this->getCssClass($reserva) . '">' . $reserva->getIncialesCliente() .'</a>';
+        /** @var pabellon $pabellon */
+        foreach($this->pabellones as $pabellon) {
+            $table .= '<tr>
+                <th colspan="' . $this->cantidad_dias . '" class="text-center">' . $pabellon->getDescripcion() . '</th>
+            </tr>';
+            foreach ($pabellon->fetchHabitacionesByPabellon() as $habitacion) {
+                $table .= '                <tr>
+                <th>' . $habitacion->getNumero() . '</th>'."\n";
+                foreach($this->rango_fechas as $fecha) {
+                    $table .= '<td>';
+                    if(isset($this->cacheReservasDisponibilidad[$fecha->format('d-m')][$habitacion->getId()])) {
+                        $reservas = $this->cacheReservasDisponibilidad[$fecha->format('d-m')][$habitacion->getId()];
+                        foreach($reservas as $reserva) {
+                            $table .= '<a href="' . $this->edit_url($reserva) . '" class="btn ' . $this->getCssClass($reserva) . '">' . $reserva->getIncialesCliente() .'</a>';
+                        }
+                        if($reserva->getFechaOut() == $fecha->format('d-m-Y') && count($reservas) == 1) {
+                            $table .= '<a href="' . $this->new_url($habitacion, $fecha) . '" style="width: 100%;" class="btn disponible">&nbsp;</a>';
+                        }
+                    } else {
+                        $table .= '<a href="' . $this->new_url($habitacion, $fecha) . '" style="width: 100%;" class="btn disponible">&nbsp;</a>';
+                    }
+
+                    $table .= '</td>'."\n";
+                }
+                $table .= '            </tr>';
             }
-            if($reserva->getFechaOut() == $fecha->format('d-m-Y') && count($reservas) == 1) {
-                $cell .= '<a href="' . $this->new_url($habitacion, $fecha) . '" style="width: 100%;" class="btn disponible">&nbsp;</a>';
-            }
-        } else {
-            $cell .= '<a href="' . $this->new_url($habitacion, $fecha) . '" style="width: 100%;" class="btn disponible">&nbsp;</a>';
         }
-
-        $cell .= '</td>';
-
-        return $cell;
+        $table .= '        </tbody>
+    </table>';
+        return $table;
     }
 
     private function getCssClass(reserva $reserva) {
@@ -711,6 +683,74 @@ class reserva_home extends reserva_controller {
                 $this->new_error_msg('Imposible guardar los datos de la extensión '.$ext['name'].'.');
             }
         }
+    }
+
+    private function replace_values(\PhpOffice\PhpWord\TemplateProcessor &$document) {
+        /** @var direccion_cliente[] $direcciones */
+        $direcciones = $this->reserva->getCliente()->get_direcciones();
+        if(!isset($direcciones[0]) || !is_a($direcciones[0], 'direccion_cliente')) {
+            $direcciones[0] = new direccion_cliente();
+            $direcciones[0]->direccion = '';
+            $direcciones[0]->ciudad = '';
+            $direcciones[0]->codpostal = '';
+            $direcciones[0]->provincia = '';
+        }
+
+        $document->setValue('codigoReserva', htmlspecialchars($this->reserva->getId()));
+        $document->setValue('fechaReserva', htmlspecialchars($this->reserva->getCreateDate(true)));
+        $document->setValue('nombreReserva', htmlspecialchars($this->reserva->getCliente()->nombre));
+        $document->setValue('documento', htmlspecialchars($this->reserva->getCliente()->cifnif));
+        $document->setValue('categoría', htmlspecialchars($this->reserva->getGrupoCliente()->nombre));
+        $document->setValue('montoTarifa', htmlspecialchars(number_format($this->reserva->getTarifa()->getMonto(), FS_NF0, FS_NF1, FS_NF2)));
+        $document->setValue('email', htmlspecialchars($this->reserva->getCliente()->email));
+        $document->setValue('telefono', htmlspecialchars($this->reserva->getCliente()->telefono1));
+        $document->setValue('telefono2', htmlspecialchars($this->reserva->getCliente()->telefono2));
+
+        $document->setValue('domicilio', htmlspecialchars($direcciones[0]->direccion));
+        $document->setValue('localidad', htmlspecialchars($direcciones[0]->ciudad));
+        $document->setValue('codigoPostal', htmlspecialchars($direcciones[0]->codpostal));
+        $document->setValue('provincia', htmlspecialchars($direcciones[0]->provincia));
+
+        $document->setValue('fechaIn', htmlspecialchars($this->reserva->getFechaIn()));
+        $document->setValue('fechaOut', htmlspecialchars($this->reserva->getFechaOut()));
+        $document->setValue('cantNoches', htmlspecialchars($this->reserva->getCantidadDias()));
+        $document->setValue('habitaciones', htmlspecialchars(implode(', ', $this->reserva->getNumerosHabitaciones())));
+        $document->setValue('adultos', htmlspecialchars($this->reserva->getCantidadAdultos()));
+        $document->setValue('menores', htmlspecialchars($this->reserva->getCantidadMenores()));
+        $document->setValue('sinCargo', htmlspecialchars($this->reserva->getCantidadBebes()));
+        $document->setValue('total', htmlspecialchars(number_format($this->reserva->getTotal(), FS_NF0, FS_NF1, FS_NF2)));
+        $document->setValue('totalPagos', htmlspecialchars(number_format($this->reserva->getMontoSeniado(), FS_NF0, FS_NF1, FS_NF2)));
+        $document->setValue('totalDeposito', htmlspecialchars(number_format($this->reserva->getTotal() * 0.30, FS_NF0, FS_NF1, FS_NF2)));
+
+        $document->setValue('fechaExpiracion', htmlspecialchars($this->reserva->getExpireDate()));
+
+        $document->cloneRow('nombrePasajero', $this->reserva->getCantPasajeros());
+
+        foreach($this->reserva->getCantPasajeros(true) as $pasId) {
+            $pasajero = $this->reserva->getPasajero($pasId);
+            $document->setValue('nombrePasajero#'.($pasId+1), htmlspecialchars($pasajero->getNombreCompleto()));
+            $document->setValue('fechaInPasajero#'.($pasId+1), htmlspecialchars($pasajero->getFechaIn()));
+            $document->setValue('fechaOutPasajero#'.($pasId+1), htmlspecialchars($pasajero->getFechaOut()));
+            $document->setValue('fechaNacPasajero#'.($pasId+1), htmlspecialchars($pasajero->getFechaNacimiento()));
+            $document->setValue('dniPasajero#'.($pasId+1), htmlspecialchars($pasajero->getDocumento()));
+            $document->setValue('totalPasajero#'.($pasId+1), htmlspecialchars(number_format($pasajero->getTotal(), FS_NF0, FS_NF1, FS_NF2)));
+        }
+
+        $pagos = $this->reserva->getPagos();
+        if($pagos) {
+            $document->cloneRow('numeroRecibo', count($pagos));
+            foreach($pagos as $num => $pago) {
+                $document->setValue('numeroRecibo#'.($num+1), htmlspecialchars($pago->idrecibo));
+                $document->setValue('fechaRecibo#'.($num+1), htmlspecialchars($pago->fecha));
+                $document->setValue('montoRecibo#'.($num+1), htmlspecialchars(number_format($pago->importe, FS_NF0, FS_NF1, FS_NF2)));
+            }
+        } else {
+            $document->setValue('numeroRecibo', '');
+            $document->setValue('fechaRecibo','');
+            $document->setValue('montoRecibo','');
+        }
+
+        //Que hago con lo de la factura!
     }
 
 }

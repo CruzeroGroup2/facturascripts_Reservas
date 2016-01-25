@@ -1,0 +1,55 @@
+{include="header"}
+<link href="plugins/reservas/view/css/custom.css" rel="stylesheet" />
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h1>Raciones al Día {$fsc->getFecha()}</h1>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="table-bordered table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th rowspan="2">Convenios</th>
+                        <th colspan="2">Alojados</th>
+                        <th colspan="2">Desayunos</th>
+                        <th colspan="2">Almuerzos</th>
+                        <th colspan="2">Cenas</th>
+                    </tr>
+                    <tr>
+                        <th><acronym title="Posibles">P</acronym></th>
+                        <th><acronym title="Confirmados">C</acronym></th>
+                        <th><acronym title="Posibles">P</acronym></th>
+                        <th><acronym title="Confirmados">C</acronym></th>
+                        <th><acronym title="Posibles">P</acronym></th>
+                        <th><acronym title="Confirmados">C</acronym></th>
+                        <th><acronym title="Posibles">P</acronym></th>
+                        <th><acronym title="Confirmados">C</acronym></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {loop="$fsc->getTipoPasajeros()"}
+                    <tr>
+                        <td>{$value->nombre}</td>
+                        <td>{$fsc->getRaciones($value,'alojados','posibles')}</td>
+                        <td>{$fsc->getRaciones($value,'alojados','confirmados')}</td>
+                        <td>{$fsc->getRaciones($value,'desayunos','posibles')}</td>
+                        <td>{$fsc->getRaciones($value,'desayunos','confirmados')}</td>
+                        <td>{$fsc->getRaciones($value,'almuerzos','posibles')}</td>
+                        <td>{$fsc->getRaciones($value,'almuerzos','confirmados')}</td>
+                        <td>{$fsc->getRaciones($value,'cenas','posibles')}</td>
+                        <td>{$fsc->getRaciones($value,'cenas','confirmados')}</td>
+                    </tr>
+                    {/loop}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <p class="small">Generado el {$fsc->getFecha(true)} for el usuario: {$fsc->user->nick}</p>
+</div>
+
+{include="footer"}

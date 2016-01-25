@@ -73,9 +73,6 @@
             </div>
         </div>
         <div class="row form-group">
-            <p>{$fsc->getReserva()->getExpireDate(true)}</p>
-        </div>
-        <div class="row form-group">
             <div class="col-md-3">
                 Cantidad de Noches: {$fsc->getReserva()->getCantidadDias()}
             </div>
@@ -266,7 +263,7 @@
                             <div class="col-md-2">
                                 <input type="submit" value="Grabar Reserva" id="guardar" class="form-control btn-primary bottom-buffer">
                                 {if="$fsc->getReserva()->getEstado() == estado_reserva::SINSENA || $fsc->getReserva()->getEstado() == estado_reserva::INCOMPLETA"}
-                                <button type="submit" class="form-control btn-primary" formaction="{$fsc->confirm_url($fsc->getReserva())}">Generar Confirmacion de Alojamiento</button>
+                                <button type="submit" class="form-control btn-primary" formaction="{$fsc->confirm_url($fsc->getReserva())}">Generar Conf. Aloj.</button>
                                 {else}
                                 <button type="submit" class="form-control btn-primary" formaction="{$fsc->voucher_url($fsc->getReserva())}">Generar Voucher</button>
                                 {/if}

@@ -153,6 +153,8 @@ function clear_pasajero_fields() {
     $('#id_pasajero').val('');
     $('#nombre_pasajero').val('');
     $('#documento_pasajero').val('');
+    $('#pasajero_fecha_out').datepicker('setValue', parseDate($('#fecha_in').val()));
+    $('#pasajero_fecha_out').datepicker('setValue', parseDate($('#fecha_out').val()));
     $('input[name="documento_pasajero_tipo"]:checked').removeAttr('checked');
     $('#codgrupo_pasajero option:selected').removeAttr('selected');
     $('input[name="edad_pasajero"]:checked').removeAttr('checked');
@@ -172,8 +174,8 @@ var agregar_pasajero = function(event) {
         documento = $('#documento_pasajero').val(),
         codgrupo = $('#codgrupo_pasajero').val(),
         edad = $('input[name="edad_pasajero"]:checked').val().toLowerCase(),
-        fecha_in = $('#pasajero_fecha_in').val(),
-        fecha_out = $('#pasajero_fecha_out').val(),
+        fecha_in = $('#pasajero_fecha_in').val() + ' 12:00',
+        fecha_out = $('#pasajero_fecha_out').val() + ' 10:00',
         cantPasajeros = get_pasajeros_count(),
         pasajeros = $('tr.'+edad+' input[name="pasajeros[]"]');
 
@@ -199,17 +201,18 @@ var agregar_pasajero = function(event) {
             '<td>' + $('#codgrupo_pasajero option[value='+codgrupo+']').text() + '</td>'+
             '<td>N/A</td>' +
             '<td>' +
-                '<input type="hidden" name="pasajeros[]" value="'+
-                    nombre+':'+
-                    tipoDocumento+':'+
-                    documento+':'+
-                    edad+':'+
-                    fecha_in+':'+
-                    fecha_out+':'+
-                    codgrupo+':'+
-                    idreserva+':'+
-                    idpasajero+':'+
-                    codclientepax+':">'+
+                '<input type="hidden" name="pasajeros[]" value="' + [
+                nombre,
+                tipoDocumento,
+                documento,
+                edad,
+                fecha_in,
+                fecha_out,
+                codgrupo,
+                idreserva,
+                idpasajero,
+                codclientepax
+            ].join("#") + '" />'+
                 '<button class="text-right" onclick="return edit_huesped(this)"><span class="glyphicon glyphicon-pencil"></span></button>' +
                 '<button class="text-right" onclick="return remove_huesped(this)"><span class="glyphicon glyphicon-trash"></span></button>' +
             '</td>' +
@@ -224,8 +227,8 @@ var agregar_pasajero = function(event) {
  */
 function edit_huesped(element) {
     var parent = $(element.parentNode),
-        huespedInfo = parent.find('input[type="hidden"]').val().split(':');
-    remove_huesped(element, true);
+        huespedInfo = parent.find('input[type="hidden"]').val().split('#');
+    remove_huesped(element, true, true);
     $('#nombre_pasajero').val(huespedInfo[0]);
     $('input[value="'+huespedInfo[1]+'"]').attr('checked','checked');
     $('#documento_pasajero').val(huespedInfo[2]);
@@ -245,14 +248,15 @@ function edit_huesped(element) {
  * @param force
  * @returns {boolean}
  */
-function remove_huesped(element, force) {
+function remove_huesped(element, force, edit) {
     var parent = $(element.parentNode),
         form = parent.closest('form'),
-        huespedInfo = parent.find('input[type="hidden"]').val().split(':'),
+        huespedInfo = parent.find('input[type="hidden"]').val().split('#'),
         force = typeof force !== 'undefined' ? force : confirm("Desea eliminar al pasajero "+huespedInfo[0]);
+        edit = typeof edit !== 'undefined' ? edit : false;
     if(force) {
-        if(huespedInfo[8] !== 'undefined' && huespedInfo[8] != '') {
-            form.append('<input type="hidden" name="remover_pasajeros[]" value="'+huespedInfo.join(":")+'" />');
+        if(huespedInfo[8] !== 'undefined' && huespedInfo[8] != '' && !edit) {
+            form.append('<input type="hidden" name="remover_pasajeros[]" value="'+huespedInfo.join("#")+'" />');
         }
         parent.parent().remove();
     }

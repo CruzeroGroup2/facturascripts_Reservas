@@ -51,7 +51,7 @@
                         </select>
                     </td>
                     <td>
-                        <select class="form-control input-sm" name="pasajero[{$value}][idhabitacion]" readonly="readonly" >
+                        <select class="form-control input-sm" name="pasajero[{$value}][idhabitacion]" readonly="readonly">
                             <option value="">Seleccione una habitacion</option>
                             {loop="$fsc->getReserva()->getHabitaciones()"}
                             <option value="{$value->getHabitacion()->getId()}" {if="$value->getHabitacion()->getId()==$pasajero->getIdHabitacion()"}selected="selected"{/if}>{$value->getHabitacion()->getNumero()}: {$value->getHabitacion()->getPlazaMaxima()}</option>
@@ -60,8 +60,8 @@
                     </td>
                     <td>
                         <input type="checkbox" id="pasajero_checkout_{$value}" name="pasajero[{$value}][checkout]" value="true"
-                               {if="$pasajero->getFechaIn()"}checked="checked"{/if}
-                               {if="$pasajero->getFechaOut()"}readonly="readonly"{/if}
+                               {if="$pasajero->isCheckIn()"}checked="checked"{/if}
+                               {if="$pasajero->isCheckOut()"}readonly="readonly"{/if}
                         />
                     </td>
                     {/loop}

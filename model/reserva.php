@@ -648,8 +648,8 @@ class reserva extends fs_model {
      * @return string
      */
     public function getCantidadDias() {
-        $date1 = new DateTime($this->getFechaIn());
-        $date2 = new DateTime($this->getFechaOut());
+        $date1 = new DateTime(str_replace(array('12:00','12:00:00'), '', $this->getFechaIn()) . '00:00:00');
+        $date2 = new DateTime(str_replace(array('10:00','10:00:00'), '', $this->getFechaOut()) . '23:59:59');
 
         return $date2->diff($date1)->format("%a");
     }
@@ -697,6 +697,26 @@ class reserva extends fs_model {
         }
 
         return $this->cantidad_menores;
+    }
+
+    /**
+     * @return int
+     */
+    public function getCantidadBebes() {
+        if(!$this->pasajeros) {
+            $this->getPasajeros();
+        }
+
+        if(is_array($this->pasajeros)) {
+            $result = 0;
+            foreach($this->pasajeros as $huesped) {
+                if($huesped->esBebe()) {
+                    $result ++;
+                }
+            }
+        }
+
+        return $result;
     }
 
     /**
@@ -797,8 +817,8 @@ class reserva extends fs_model {
                     $tmpPasajero = new pasajero_por_reserva();
                     $tmpPasajero->asAdult();
                     $tmpPasajero->setCodGrupo($this->getCodGrupoCliente());
-                    $tmpPasajero->setFechaIn($this->getFechaIn());
-                    $tmpPasajero->setFechaOut($this->getFechaOut());
+                    $tmpPasajero->setFechaIn($this->getFechaIn(true));
+                    $tmpPasajero->setFechaOut($this->getFechaOut(true));
                     $tmpPasajero->setTarifa($this->getTarifa());
                     $adultos[] = clone $tmpPasajero;
                     unset($tmpPasajero);
@@ -1066,7 +1086,7 @@ class reserva extends fs_model {
         $ret = null;
         if($this->create_date) {
             $fecha = new DateTime($this->create_date);
-            $fecha->modify("+ 7 days");
+            $fecha->modify("+ 10 days");
             $format = self::DATE_FORMAT;
             if($full_date) {
                 $format = self::DATE_FORMAT_FULL;
@@ -1260,6 +1280,28 @@ class reserva extends fs_model {
         return $reservalist;
     }
 
+    public function fetchByRange($fecha_desde, $fecha_hasta) {
+        $reservalist = array();
+        $reservas = $this->db->select("SELECT
+  reserva.*
+FROM " . $this->table_name . "
+    JOIN estado_reserva ON (reserva.idestado = estado_reserva.id)
+WHERE
+    estado_reserva.descripcion NOT IN ('" . estado_reserva::CANCELADA . "', '" . estado_reserva::FINALIZADA . "') AND
+    (
+        (fecha_in BETWEEN " . $this->var2str($fecha_desde . ' 12:00:00') . " AND " .
+                                      $this->var2str($fecha_hasta . ' 10:00:00') . ") OR
+        (fecha_out BETWEEN " . $this->var2str($fecha_desde . ' 12:00:00') . " AND " .
+                                      $this->var2str($fecha_hasta . ' 10:00:00') . ")
+    )
+ORDER BY fecha_in ASC;");
+        foreach($reservas as $reserva) {
+            $reservalist[] = new reserva($reserva);
+        }
+
+        return $reservalist;
+    }
+
     public function find($filter = array()) {
         $sql = "SELECT
 $this->table_name.*
@@ -1301,7 +1343,7 @@ FROM " . $this->table_name . "
     JOIN estado_reserva ON (reserva.idestado = estado_reserva.id)
 WHERE
     idhabitacion = $idhabitacion AND
-    (fecha_in <= '$fecha 12:00' AND fecha_out >= '$fecha 10:00') AND
+    (fecha_in = '$fecha 12:00' OR fecha_out = '$fecha 10:00') AND
     estado_reserva.descripcion NOT IN ('" . estado_reserva::CANCELADA . "', '" . estado_reserva::FINALIZADA . "')
 ";
         if($limit) {

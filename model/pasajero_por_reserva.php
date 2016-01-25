@@ -99,7 +99,8 @@ class pasajero_por_reserva extends fs_model {
      */
     protected $tarifa = null;
 
-    const DATE_FORMAT = 'Y-m-d';
+    const DATE_FORMAT = 'd-m-Y';
+    const DATE_FORMAT_IN_OUT = 'd-m-Y H:i';
 
     const EDAD_MAX_MENOR = 7;
     const EDAD_MIN_MENOR = 3;
@@ -264,7 +265,8 @@ class pasajero_por_reserva extends fs_model {
      * @return string
      */
     public function getFechaNacimiento() {
-        return $this->fecha_nacimiento;
+        $fecha = new DateTime($this->fecha_nacimiento);
+        return $fecha->format(self::DATE_FORMAT);
     }
 
     /**
@@ -431,7 +433,8 @@ class pasajero_por_reserva extends fs_model {
      * @return string
      */
     public function getFechaIn() {
-        return $this->fecha_in;
+        $fecha = new DateTime($this->fecha_in);
+        return $fecha->format(self::DATE_FORMAT_IN_OUT);
     }
 
     /**
@@ -445,7 +448,7 @@ class pasajero_por_reserva extends fs_model {
         } elseif(is_date($value)) {
             $this->fecha_in = $value;
         } elseif($this->idreserva) {
-            $this->fecha_in = $this->getReserva()->getFechaIn();
+            $this->fecha_in = $this->getReserva()->getFechaIn(true);
         }
 
         return $this;
@@ -455,17 +458,20 @@ class pasajero_por_reserva extends fs_model {
      * @return int
      */
     public function getCantidadDias() {
-        $date1 = new DateTime($this->getFechaIn());
-        $date2 = new DateTime($this->getFechaOut());
+        $date1 = new DateTime(str_replace(array('12:00','12:00:00'), '', $this->getFechaIn()));
+        $date2 = new DateTime(str_replace(array('10:00','10:00:00'), '', $this->getFechaOut()));
 
-        return (int) $date2->diff($date1)->format("%a");
+        $daysDiff = $date2->diff($date1)->format("%a");
+
+        return (int) $daysDiff;
     }
 
     /**
      * @return string
      */
     public function getFechaOut() {
-        return $this->fecha_out;
+        $fecha = new DateTime($this->fecha_out);
+        return $fecha->format(self::DATE_FORMAT_IN_OUT);
     }
 
     /**
@@ -479,7 +485,7 @@ class pasajero_por_reserva extends fs_model {
         } elseif(is_date($value)) {
             $this->fecha_out = $value;
         } elseif($this->idreserva) {
-            $this->fecha_out = $this->getReserva()->getFechaOut();
+            $this->fecha_out = $this->getReserva()->getFechaOut(true);
         }
 
         return $this;
@@ -558,8 +564,13 @@ class pasajero_por_reserva extends fs_model {
      * @return tarifa_reserva
      */
     public function getTarifa() {
-        if($this->tarifa) {
+        if(!$this->tarifa) {
             $this->tarifa = $this->get_tarifa($this->idtarifa);
+        }
+
+        if($this->tarifa->getCodGrupoCliente() != $this->codgrupo) {
+            $res = $this->getReserva();
+            $this->tarifa = (new tarifa_reserva())->fetchByCategoriaYTipoPasajero($res->getCategoriaHabitacion(), $this->getCodGrupo());
         }
         return $this->tarifa;
     }
@@ -906,7 +917,7 @@ class pasajero_por_reserva extends fs_model {
 //        $idreserva . ':' .
 //        $id . ':' .
 //        $codcliente;
-        $datos_pasajero = explode(':', $string);
+        $datos_pasajero = explode('#', $string);
 
         if(isset($datos_pasajero[3]) && in_array($datos_pasajero[3], array('menor_3', 'menor_7', 'adulto'))) {
             switch(strtolower($datos_pasajero[3])) {
@@ -957,17 +968,18 @@ class pasajero_por_reserva extends fs_model {
     }
 
     public function __toString() {
-        return
-            $this->nombre_completo . ':' .
-            $this->tipo_documento . ':' .
-            $this->documento . ':' .
-            $this->getEdadCateg() . ':' .
-            $this->fecha_in . ':' .
-            $this->fecha_out . ':' .
-            $this->codgrupo . ':' .
-            $this->idreserva . ':' .
-            $this->id . ':' .
-            $this->codcliente;
+        return join("#", array(
+            $this->nombre_completo,
+            $this->tipo_documento,
+            $this->documento,
+            $this->getFechaNacimiento(),
+            $this->getFechaIn(),
+            $this->getFechaOut(),
+            $this->codgrupo,
+            $this->idreserva,
+            $this->id,
+            $this->codcliente
+        ));
     }
 
 }

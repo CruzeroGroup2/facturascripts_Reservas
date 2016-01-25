@@ -40,7 +40,7 @@
                         <label>Numero afiliado</label>
                     </td>
                     <td>
-                        <input type="text" class="form-control input-sm datepicker" name="pasajero[{$value}][fecha_nacimiento]" value="{$pasajero->getFechaNacimiento()}" required data-msg="No ha ingresado fecha de nacimiento" />
+                        <input type="text" class="form-control input-sm" format="dd-mm-YYYY" name="pasajero[{$value}][fecha_nacimiento]" value="{$pasajero->getFechaNacimiento()}" required data-msg="No ha ingresado fecha de nacimiento" />
                     </td>
                     <td>
                         <select class="form-control input-sm" name="pasajero[{$value}][codgrupo]" required data-msg="Seleccione el tipo de pasagero" >

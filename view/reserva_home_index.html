@@ -50,33 +50,7 @@
             </form>
         </div>
     </div>
-    <table id="habitaciones_disponibles" class="table table-condensed table-bordered table-striped">
-        <thead>
-        <col style="width: 100px;" />
-            <tr>
-                <th>Hab.</th>
-                {loop="$fsc->rango_fechas"}
-                <th>{$value->format('d')}</th>
-                {/loop}
-            </tr>
-        </thead>
-        <tbody>
-
-        {loop="$fsc->pabellones"}
-            <tr>
-                <th colspan="{$fsc->cantidad_dias}" class="text-center">{$value->getDescripcion()}</th>
-            </tr>
-            {loop="$value->fetchHabitacionesByPabellon()"}
-            <tr>
-                <td>{$value->getNumero()}</td>
-                {loop="$fsc->rango_fechas"}
-                    {$fsc->getHabitacionCell($value2, $value3)}
-                {/loop}
-            </tr>
-            {/loop}
-        {/loop}
-        </tbody>
-    </table>
+    {$fsc->getDisponibilidadHabitacionTable()}
 </div>
 
 <script type="text/javascript">
