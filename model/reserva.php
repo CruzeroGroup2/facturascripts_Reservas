@@ -178,6 +178,11 @@ class reserva extends fs_model {
     const CACHE_KEY_ALL = 'reserva_reserva_all';
     const CACHE_KEY_SINGLE = 'reserva_reserva_{id}';
 
+    const ALOJADOS = 'alojados';
+    const DESAYUNOS = 'desayunos';
+    const ALMUERZOS = 'almuerzos';
+    const CENAS = 'cenas';
+
     public function __construct($data = array()) {
         parent::__construct('reserva', 'plugins/reservas/');
 
@@ -1079,6 +1084,13 @@ class reserva extends fs_model {
         return $this;
     }
 
+    public function getUsuario() {
+        $obj = new agente();
+        $agente = $obj->get($this->codagente);
+
+        return $agente->nombre . " " . $agente->apellidos;
+    }
+
     /**
      * @return string
      */
@@ -1414,7 +1426,7 @@ WHERE
         }
 
         $fechaIn = new DateTime($this->getFechaIn(true));
-        $fechaHoy = new DateTime();
+        $fechaHoy = (new DateTime())->setTime(0,0,0);
         if($fechaIn < $fechaHoy) {
             $this->new_error_msg("La fecha de la reserva es menor a la fecha de hoy");
         }
@@ -1708,8 +1720,6 @@ WHERE
             }
         }
     }
-
-    public function toArray() {}
 
     private function getCheckInPasajeros() {
         $pasajeros = new pasajero_por_reserva();

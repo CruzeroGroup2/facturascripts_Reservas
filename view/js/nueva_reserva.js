@@ -174,8 +174,8 @@ var agregar_pasajero = function(event) {
         documento = $('#documento_pasajero').val(),
         codgrupo = $('#codgrupo_pasajero').val(),
         edad = $('input[name="edad_pasajero"]:checked').val().toLowerCase(),
-        fecha_in = $('#pasajero_fecha_in').val() + ' 12:00',
-        fecha_out = $('#pasajero_fecha_out').val() + ' 10:00',
+        fecha_in = $('#pasajero_fecha_in').val() + ' 12:00:00',
+        fecha_out = $('#pasajero_fecha_out').val() + ' 10:00:00',
         cantPasajeros = get_pasajeros_count(),
         pasajeros = $('tr.'+edad+' input[name="pasajeros[]"]');
 

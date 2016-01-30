@@ -75,6 +75,18 @@ class reserva_reportes extends reserva_controller {
         return $this->url();
     }
 
+    public function ingresos_url() {
+        $this->page->extra_url = '&action=ingresos';
+
+        return $this->url();
+    }
+
+    public function proyeccion_url() {
+        $this->page->extra_url = '&action=ingresos_proy';
+
+        return $this->url();
+    }
+
     public function export_url() {
         return $this->url() . '&action='. urlencode($this->action) . '&export=true';
     }
@@ -199,8 +211,24 @@ class reserva_reportes extends reserva_controller {
         $this->template = 'reserva_reportes_habitaciones';
     }
 
-    public function getRaciones(grupo_clientes $grupo_clientes, $clase, $categoria) {
-        return 0;
+    public function getRaciones(grupo_clientes $grupo_clientes, $clase, $confirmados = true ) {
+        $obj = new pasajero_por_reserva();
+        $fecha = date('Y-m-d');
+        switch($clase) {
+            case reserva::ALOJADOS:
+                $fecha .= ' 23:59:59';
+                break;
+            case reserva::DESAYUNOS:
+                $fecha .= ' 10:00:00';
+                break;
+            case reserva::ALMUERZOS:
+                $fecha .= ' 12:00:00';
+                break;
+            case reserva::CENAS:
+                $fecha .= ' 18:00:00';
+                break;
+        }
+        return $obj->fetchCantPassByFechaAndCateg($fecha, $grupo_clientes->codgrupo, $confirmados);
     }
 
     public function getCantPasajerosCheckIn() {

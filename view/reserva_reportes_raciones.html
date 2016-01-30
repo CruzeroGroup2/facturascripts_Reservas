@@ -34,16 +34,27 @@
                     {loop="$fsc->getTipoPasajeros()"}
                     <tr>
                         <td>{$value->nombre}</td>
-                        <td>{$fsc->getRaciones($value,'alojados','posibles')}</td>
-                        <td>{$fsc->getRaciones($value,'alojados','confirmados')}</td>
-                        <td>{$fsc->getRaciones($value,'desayunos','posibles')}</td>
-                        <td>{$fsc->getRaciones($value,'desayunos','confirmados')}</td>
-                        <td>{$fsc->getRaciones($value,'almuerzos','posibles')}</td>
-                        <td>{$fsc->getRaciones($value,'almuerzos','confirmados')}</td>
-                        <td>{$fsc->getRaciones($value,'cenas','posibles')}</td>
-                        <td>{$fsc->getRaciones($value,'cenas','confirmados')}</td>
+                        <td>{$fsc->getRaciones($value,reserva::ALOJADOS,false)}</td>
+                        <td>{$fsc->getRaciones($value,reserva::ALOJADOS)}</td>
+                        <td>{$fsc->getRaciones($value,reserva::DESAYUNOS,false)}</td>
+                        <td>{$fsc->getRaciones($value,reserva::DESAYUNOS)}</td>
+                        <td>{$fsc->getRaciones($value,reserva::ALMUERZOS,false)}</td>
+                        <td>{$fsc->getRaciones($value,reserva::ALMUERZOS)}</td>
+                        <td>{$fsc->getRaciones($value,reserva::CENAS,false)}</td>
+                        <td>{$fsc->getRaciones($value,reserva::CENAS)}</td>
                     </tr>
                     {/loop}
+                    <tr>
+                        <td>Total</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
                     </tbody>
                 </table>
             </div>

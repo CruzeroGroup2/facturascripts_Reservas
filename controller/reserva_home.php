@@ -357,7 +357,7 @@ class reserva_home extends reserva_controller {
 
             if(!$this->get_errors() && $this->reserva->save()) {
                 $this->new_message($this->reserva->getSuccesMessage());
-                header('Refresh: 1;url='.$this->edit_url($this->reserva)).'&order=true';
+                header('Refresh: 1;url='.$this->edit_url($this->reserva).'&orden=true');
             } else {
                 $this->new_error_msg("¡Error en Reserva!");
             }
@@ -724,30 +724,39 @@ class reserva_home extends reserva_controller {
 
         $document->setValue('fechaExpiracion', htmlspecialchars($this->reserva->getExpireDate()));
 
-        $document->cloneRow('nombrePasajero', $this->reserva->getCantPasajeros());
+        try {
+            $document->cloneRow('nombrePasajero', $this->reserva->getCantPasajeros());
+            foreach($this->reserva->getCantPasajeros(true) as $pasId) {
+                $pasajero = $this->reserva->getPasajero($pasId);
+                $document->setValue('nombrePasajero#'.($pasId+1), htmlspecialchars($pasajero->getNombreCompleto()));
+                $document->setValue('fechaInPasajero#'.($pasId+1), htmlspecialchars($pasajero->getFechaIn()));
+                $document->setValue('fechaOutPasajero#'.($pasId+1), htmlspecialchars($pasajero->getFechaOut()));
+                $document->setValue('fechaNacPasajero#'.($pasId+1), htmlspecialchars($pasajero->getFechaNacimiento()));
+                $document->setValue('dniPasajero#'.($pasId+1), htmlspecialchars($pasajero->getDocumento()));
+                $document->setValue('totalPasajero#'.($pasId+1), htmlspecialchars(number_format($pasajero->getTotal(), FS_NF0, FS_NF1, FS_NF2)));
+            }
 
-        foreach($this->reserva->getCantPasajeros(true) as $pasId) {
-            $pasajero = $this->reserva->getPasajero($pasId);
-            $document->setValue('nombrePasajero#'.($pasId+1), htmlspecialchars($pasajero->getNombreCompleto()));
-            $document->setValue('fechaInPasajero#'.($pasId+1), htmlspecialchars($pasajero->getFechaIn()));
-            $document->setValue('fechaOutPasajero#'.($pasId+1), htmlspecialchars($pasajero->getFechaOut()));
-            $document->setValue('fechaNacPasajero#'.($pasId+1), htmlspecialchars($pasajero->getFechaNacimiento()));
-            $document->setValue('dniPasajero#'.($pasId+1), htmlspecialchars($pasajero->getDocumento()));
-            $document->setValue('totalPasajero#'.($pasId+1), htmlspecialchars(number_format($pasajero->getTotal(), FS_NF0, FS_NF1, FS_NF2)));
+        } catch (PhpOffice\PhpWord\Exception\Exception $e) {
+            //Do nothing
         }
 
-        $pagos = $this->reserva->getPagos();
-        if($pagos) {
-            $document->cloneRow('numeroRecibo', count($pagos));
-            foreach($pagos as $num => $pago) {
-                $document->setValue('numeroRecibo#'.($num+1), htmlspecialchars($pago->idrecibo));
-                $document->setValue('fechaRecibo#'.($num+1), htmlspecialchars($pago->fecha));
-                $document->setValue('montoRecibo#'.($num+1), htmlspecialchars(number_format($pago->importe, FS_NF0, FS_NF1, FS_NF2)));
+
+        try {
+            $pagos = $this->reserva->getPagos();
+            if($pagos) {
+                $document->cloneRow('numeroRecibo', count($pagos));
+                foreach($pagos as $num => $pago) {
+                    $document->setValue('numeroRecibo#'.($num+1), htmlspecialchars($pago->idrecibo));
+                    $document->setValue('fechaRecibo#'.($num+1), htmlspecialchars($pago->fecha));
+                    $document->setValue('montoRecibo#'.($num+1), htmlspecialchars(number_format($pago->importe, FS_NF0, FS_NF1, FS_NF2)));
+                }
+            } else {
+                $document->setValue('numeroRecibo', '');
+                $document->setValue('fechaRecibo','');
+                $document->setValue('montoRecibo','');
             }
-        } else {
-            $document->setValue('numeroRecibo', '');
-            $document->setValue('fechaRecibo','');
-            $document->setValue('montoRecibo','');
+        } catch (PhpOffice\PhpWord\Exception\Exception $e) {
+            //Do nothing
         }
 
         //Que hago con lo de la factura!

@@ -719,6 +719,30 @@ class pasajero_por_reserva extends fs_model {
         return $cant[0]['cant_pasajeros'];
     }
 
+    public function fetchCantPassByFechaAndCateg($fecha = null, $categoria = '%', $confirmed = false) {
+        $sql = 'SELECT
+  COUNT(*) as cant_pasajeros
+FROM pasajero_por_reserva
+  JOIN reserva ON (pasajero_por_reserva.idreserva = reserva.id)
+  JOIN estado_reserva ON (reserva.idestado = estado_reserva.id)
+WHERE
+  codgrupo = "'.$categoria.'"
+  AND check_out IS NULL
+  AND (
+    ("' . $fecha . '" BETWEEN pasajero_por_reserva.fecha_in AND pasajero_por_reserva.fecha_out) OR
+    ("' . $fecha . '" BETWEEN reserva.fecha_in AND reserva.fecha_out)
+  )';
+        if($confirmed) {
+            $sql .= "\n" . '  AND check_in IS NOT null';
+        }
+
+        
+
+        $cant = $this->db->select($sql);
+        return $cant[0]['cant_pasajeros'];
+    }
+
+
     /**
      * @return bool|array
      */
