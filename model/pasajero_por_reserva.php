@@ -100,7 +100,7 @@ class pasajero_por_reserva extends fs_model {
     protected $tarifa = null;
 
     const DATE_FORMAT = 'd-m-Y';
-    const DATE_FORMAT_IN_OUT = 'd-m-Y H:i';
+    const DATE_FORMAT_IN_OUT = 'd-m-Y H:i:s';
 
     const EDAD_MAX_MENOR = 7;
     const EDAD_MIN_MENOR = 3;
@@ -360,7 +360,7 @@ class pasajero_por_reserva extends fs_model {
      * @return reserva
      */
     public function getReserva() {
-        if(!$this->reserva) {
+        if((!$this->reserva && $this->idreserva) || !is_a($this->reserva, 'reserva')) {
             $this->reserva = reserva::get($this->idreserva);
         }
         return $this->reserva;
@@ -458,8 +458,8 @@ class pasajero_por_reserva extends fs_model {
      * @return int
      */
     public function getCantidadDias() {
-        $date1 = new DateTime(str_replace(array('12:00','12:00:00'), '', $this->getFechaIn()));
-        $date2 = new DateTime(str_replace(array('10:00','10:00:00'), '', $this->getFechaOut()));
+        $date1 = new DateTime(str_replace(array('12:00:00','12:00'), '', $this->getFechaIn()));
+        $date2 = new DateTime(str_replace(array('10:00:00','10:00'), '', $this->getFechaOut()));
 
         $daysDiff = $date2->diff($date1)->format("%a");
 
@@ -714,7 +714,7 @@ class pasajero_por_reserva extends fs_model {
     public function fetchCantCheckInByFecha($fecha) {
         $fecha = new DateTime($fecha);
         $cant = $this->db->select('SELECT COUNT(id) as cant_pasajeros FROM '. $this->table_name .' WHERE
-    fecha_in >= '. $this->var2str($fecha->format('Y-m-d')) .' AND fecha_out IS NULL');
+    check_in >= '. $this->var2str($fecha->format('d-m-Y')) .' AND check_out IS NULL');
 
         return $cant[0]['cant_pasajeros'];
     }

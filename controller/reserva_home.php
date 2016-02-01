@@ -70,6 +70,7 @@ class reserva_home extends reserva_controller {
         $this->grupos_cliente = new grupo_clientes();
         $this->tarifa = new tarifa_reserva();
         $this->estado = new estado_reserva();
+        $this->generar_orden = false;
         $this->share_extensions();
         switch($action) {
             default:
@@ -264,6 +265,7 @@ class reserva_home extends reserva_controller {
         }
 
         if($generar_orden) {
+            $this->generar_orden = true;
             $this->generate_order($this->reserva);
         }
     }
@@ -278,8 +280,8 @@ class reserva_home extends reserva_controller {
         $this->replace_values($order);
 
         $order->saveAs('tmp/orden.' . $this->reserva->getId() . '.docx');
-        $this->template = false;
-        header('Location: tmp/orden.' . $this->reserva->getId() . '.docx');
+        #$this->template = false;
+        #header('Location: tmp/orden.' . $this->reserva->getId() . '.docx');
     }
 
     private function confirmAction() {
@@ -618,7 +620,7 @@ class reserva_home extends reserva_controller {
                 <th colspan="' . $this->cantidad_dias . '" class="text-center">' . $pabellon->getDescripcion() . '</th>
             </tr>';
             foreach ($pabellon->fetchHabitacionesByPabellon() as $habitacion) {
-                $table .= '                <tr>
+                $table .= '                <tr class="'.$habitacion->getEstado().'">
                 <th>' . $habitacion->getNumero() . '</th>'."\n";
                 foreach($this->rango_fechas as $fecha) {
                     $table .= '<td>';
@@ -627,11 +629,15 @@ class reserva_home extends reserva_controller {
                         foreach($reservas as $reserva) {
                             $table .= '<a href="' . $this->edit_url($reserva) . '" class="btn ' . $this->getCssClass($reserva) . '">' . $reserva->getIncialesCliente() .'</a>';
                         }
-                        if($reserva->getFechaOut() == $fecha->format('d-m-Y') && count($reservas) == 1) {
+                        if($reserva->getFechaOut() == $fecha->format('d-m-Y') &&
+                           count($reservas) == 1 &&
+                           $habitacion->getEstado() == estado_habitacion::DISPONIBLE) {
                             $table .= '<a href="' . $this->new_url($habitacion, $fecha) . '" style="width: 100%;" class="btn disponible">&nbsp;</a>';
                         }
                     } else {
-                        $table .= '<a href="' . $this->new_url($habitacion, $fecha) . '" style="width: 100%;" class="btn disponible">&nbsp;</a>';
+                        if($habitacion->getEstado() == estado_habitacion::DISPONIBLE) {
+                            $table .= '<a href="' . $this->new_url($habitacion, $fecha) . '" style="width: 100%;" class="btn disponible">&nbsp;</a>';
+                        }
                     }
 
                     $table .= '</td>'."\n";

@@ -298,7 +298,7 @@ AND habitacion_por_reserva.idhabitacion = " . $this->getId();
         $pabellon = new pabellon();
         $categoria_habitacion = new categoria_habitacion();
         $estado = new estado_habitacion();
-        $habporres = new habitacion_por_reserva();
+        //$habporres = new habitacion_por_reserva();
         return '';
     }
 
@@ -377,6 +377,29 @@ AND habitacion_por_reserva.idhabitacion = " . $this->getId();
         $habitacionlist = array();
         if (!$habitacionlist) {
             $habitaciones = $this->db->select("SELECT * FROM " . $this->table_name . " WHERE idpabellon = $idpabellon ORDER BY numero ASC;");
+            if ($habitaciones) {
+                foreach ($habitaciones as $habitacion) {
+                    $habitacionlist[] = new habitacion($habitacion);
+                }
+            }
+        }
+
+        return $habitacionlist;
+    }
+
+    public function fetchByPabellonAndResDate($idpabellon = 0, $fecha = '') {
+        $sql = "SELECT
+	habitacion.*
+FROM habitacion
+	JOIN habitacion_por_reserva ON (habitacion_por_reserva.idhabitacion = habitacion.id)
+	JOIN reserva ON (habitacion_por_reserva.idreserva = reserva.id)
+WHERE
+   idpabellon = $idpabellon
+   AND " . $this->var2str($fecha) ." BETWEEN fecha_in AND fecha_out
+ORDER BY numero ASC";
+        $habitacionlist = array();
+        if (!$habitacionlist) {
+            $habitaciones = $this->db->select($sql);
             if ($habitaciones) {
                 foreach ($habitaciones as $habitacion) {
                     $habitacionlist[] = new habitacion($habitacion);
@@ -519,7 +542,7 @@ ORDER BY plaza_maxima ASC;';
                            'plaza_maxima = ' . $this->intval($this->getPlazaMaxima()) . ',' .
                            'idcategoria = ' . $this->intval($this->getIdCategoria()) . ',' .
                            'idestado = ' . $this->intval($this->getIdEstado()) .
-                       'WHERE id = ' . $this->getId() . ';';
+                       ' WHERE id = ' . $this->getId() . ';';
             } else {
                 $sql = 'INSERT '. $this->table_name .
                        ' SET ' .

@@ -238,7 +238,7 @@ class reserva extends fs_model {
             $this->update_date = $data['update_date'];
         }
 
-        $this->cancel_date = (isset($data['cancel_date'])) ? $data['cancel_date'] : null;
+        $this->cancel_date = (isset($data['cancel_date']) && is_date($data['cancel_date'])) ? $data['cancel_date'] : null;
 
         //CodAgente
         $this->codagente = (isset($data['codagente'])) ? (int) $data['codagente'] : null;
@@ -746,7 +746,7 @@ class reserva extends fs_model {
         }
 
         $cantidad = $this->cantidad_adultos + $this->cantidad_menores;
-        if(!$cantidad) {
+        if(!$cantidad || $cantidad < count($this->pasajeros)) {
             $cantidad = count($this->pasajeros);
         }
 
@@ -821,6 +821,7 @@ class reserva extends fs_model {
                 if(!isset($adultos[$i])) {
                     $tmpPasajero = new pasajero_por_reserva();
                     $tmpPasajero->asAdult();
+                    $tmpPasajero->setIdReserva($this->getId());
                     $tmpPasajero->setCodGrupo($this->getCodGrupoCliente());
                     $tmpPasajero->setFechaIn($this->getFechaIn(true));
                     $tmpPasajero->setFechaOut($this->getFechaOut(true));
@@ -840,6 +841,7 @@ class reserva extends fs_model {
                 if (!isset($menores_7[$this->cantidad_adultos + $i])) {
                     $tmpPasajero = new pasajero_por_reserva();
                     $tmpPasajero->asMenor();
+                    $tmpPasajero->setIdReserva($this->getId());
                     $tmpPasajero->setCodGrupo($this->getCodGrupoCliente());
                     $tmpPasajero->setFechaIn($this->getFechaIn());
                     $tmpPasajero->setFechaOut($this->getFechaOut());
@@ -1319,9 +1321,24 @@ ORDER BY fecha_in ASC;");
 $this->table_name.*
 FROM " . $this->table_name . "
     -- JOIN habitacion_por_reserva ON (reserva.id = habitacion_por_reserva.idreserva)
-WHERE ";
+WHERE
+ 1=1 ";
         if(isset($filter['codcliente'])) {
-            $sql .= "\n" . ' codcliente = ' . $this->var2str($filter['codcliente']);
+            $sql .= "AND \n" . ' codcliente = ' . $this->var2str($filter['codcliente']);
+        }
+
+        if(isset($filter['idestado'])) {
+            $idestado = $filter['idestado'];
+            if(is_array($idestado)) {
+                $cond = 'IN (' . implode(',', $idestado) . ')';
+            } else {
+                $cond = '= ' . $idestado;
+            }
+            $sql .= "AND \n" . ' idestado ' . $cond;
+        }
+
+        if(isset($filter['fecha_in'])) {
+            $sql .= "AND \n" . ' fecha_in LIKE ' . preg_replace("/'$/"," %'", $this->var2str($filter['fecha_in']));
         }
 
         $sql .= "\n" . ' GROUP BY reserva.id';
@@ -1633,14 +1650,16 @@ WHERE
             $cantPasajeros = (int) ($cantAdultos + $cantMenores);
             $pasajeros = $this->getPasajeros();
             $total = 0.0;
-            if($pasajeros) {
-                foreach($pasajeros as $i => $pasajero) {
-                    $total += $pasajero->getTotal();
+            if($this->getHabitaciones()) {
+                if($pasajeros) {
+                    foreach($pasajeros as $i => $pasajero) {
+                        $total += $pasajero->getTotal();
+                    }
                 }
-            }
 
-            if($cantPasajeros == 1) {
-                $total += $total*0.6;
+                if($cantPasajeros == 1) {
+                    $total += $total*0.6;
+                }
             }
 
             $descuento = (is_numeric($this->descuento) && $this->descuento > 0) ? ($total * ($this->descuento/100)) : 0;

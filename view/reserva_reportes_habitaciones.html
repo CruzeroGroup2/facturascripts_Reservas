@@ -5,8 +5,20 @@
     <div class="row">
         <div class="col-md-12">
             <h1>Habitaciones del Día {$fsc->getFecha()}</h1>
+            {loop="$fsc->getPabellon()->fetchAll()"}
+            <div class="panel panel-info">
+                <div class="panel-heading">{$value->getDescripcion()}</div>
+                <div class="panel-body">
+                    {loop="$fsc->getHabitacionesOcupadasPorPabellon($value->getId())"}
+                        <span class="habitacion">{$value2->getNumero()}</span>
+                    {/loop}
+                </div>
+            </div>
+            {/loop}
         </div>
+
     </div>
+    <p class="small">Generado el {$fsc->getFecha(true)} for el usuario: {$fsc->user->nick}</p>
 </div>
 
 {include="footer"}

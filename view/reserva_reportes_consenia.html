@@ -48,12 +48,13 @@
                 {/loop}
                 {else}
                 <tr>
-                    <td colspan="9">No hay reservas sin señar</td>
+                    <td colspan="9">No hay reservas</td>
                 </tr>
             {/if}
             </tbody>
         </table>
     </div>
+    <p class="small">Generado el {$fsc->getFecha(true)} for el usuario: {$fsc->user->nick}</p>
 </div>
 
 {include="footer"}

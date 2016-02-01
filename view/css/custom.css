@@ -26,6 +26,11 @@
     vertical-align: middle;
 }
 
+#habitaciones_disponibles .no_disponible td,
+#habitaciones_disponibles .no_disponible th {
+    background-color: red;
+}
+
 #habitaciones_disponibles td a {
     width: 100%;
     padding: 3px;
@@ -42,8 +47,13 @@
 .bottom-buffer {
     margin-bottom: 15px;
 }
+
 .top-buffer {
     margin-top: 15px;
+}
+
+.top-buffer-1 {
+    margin-top: 20px;
 }
 
 .habitacion {

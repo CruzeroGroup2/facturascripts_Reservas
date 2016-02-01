@@ -50,7 +50,7 @@
             <div class="col-md-4">
                 <div style="margin-top: 40px"></div>
                 <div class="row bottom-buffer">
-                    <button type="submit" class="form-control btn btn-primary" formaction="{$fsc->edit_url($fsc->getReserva(),true)}">Editar Reserva</button>
+                    <button type="submit" class="form-control btn btn-primary" formaction="{$fsc->edit_url($fsc->getReserva(),true)}" {if="$fsc->getReserva()->getMontoSeniado() || $fsc->getReserva()->isCheckedIn()"}disabled="disabled"{/if}>Editar Reserva</button>
                 </div>
                 <div class="row bottom-buffer">
                     <button type="submit" {if="$fsc->getReserva()->allPassangersCheckedIn()"}disabled="disabled"{/if}
@@ -301,5 +301,12 @@
         </div>
     </form>
 </div>
+
+{if="$fsc->generar_orden"}
+<script type="text/javascript">
+    window.location='tmp/orden.{$fsc->getReserva()->getId()}.docx'
+</script>
+{/if}
+
 
 {include="footer"}

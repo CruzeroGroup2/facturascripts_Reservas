@@ -18,6 +18,11 @@ class reserva_reportes extends reserva_controller {
      */
     protected $fecha;
 
+    /**
+     * @var pabellon
+     */
+    protected $pabellon = null;
+
     public function __construct() {
         parent::__construct(__CLASS__, "Informes", "Reserva");
     }
@@ -25,6 +30,8 @@ class reserva_reportes extends reserva_controller {
     protected function process() {
         $this->action = (string) isset($_GET['action']) ? $_GET['action'] : 'list';
         $export = isset($_GET['export']) ? boolval($_GET['export']) : false;
+        $this->reserva = new reserva();
+        $this->pabellon = new pabellon();
         switch($this->action) {
             case 'reservasSinSenia':
                 $this->reservasSinSenia($export);
@@ -41,7 +48,9 @@ class reserva_reportes extends reserva_controller {
             case 'habitaciones':
                 $this->habitaciones($export);
                 break;
-
+            case 'ingresos':
+                $this->ingresos($export);
+                break;
         }
     }
 
@@ -88,7 +97,14 @@ class reserva_reportes extends reserva_controller {
     }
 
     public function export_url() {
-        return $this->url() . '&action='. urlencode($this->action) . '&export=true';
+        $url = $this->url() .
+               '&action='. urlencode($this->action) .
+               '&export=true';
+
+        if(isset($_REQUEST['fecha'])) {
+            $url .= '&fecha=' . urlencode($_REQUEST['fecha']);
+        }
+        return $url;
     }
 
     private function reservasSinSenia($export = false) {
@@ -200,15 +216,55 @@ class reserva_reportes extends reserva_controller {
     }
 
     private function ocupacion($export = false) {
-        $this->fecha = date('d-m-Y');
-
-
         $this->template = 'reserva_reportes_ocupacion';
     }
 
     private function habitaciones($export = false) {
-        $this->fecha = date('d-m-Y ');
         $this->template = 'reserva_reportes_habitaciones';
+    }
+
+    private function ingresos($export = false) {
+        $date = isset($_REQUEST['fecha']) ? date_create_from_format('d/m/Y', $_REQUEST['fecha']) : new DateTime('tomorrow');
+        $this->fecha_res = $date->format('d/m/Y');
+        /** @var $this->reserva reserva */
+        $this->reservas = $this->reserva->find(array(
+            'fecha_in' => $date->format('d-m-Y'),
+            'idestado' => array(2,3,4)
+        ));
+        if($export) {
+            $this->template = false;
+            // output headers so that the file is downloaded rather than displayed
+            header('Content-Type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment; filename=reservas_ingreso_maniana.' . time() . '.csv');
+
+            // create a file pointer connected to the output stream
+            $output = fopen('php://output', 'w');
+            fputs($output, "sep=,\n");
+            fputcsv($output,array('Listado de Ingresos para el día: '.$date->format('d/m/Y')));
+            // output the column headings
+            fputcsv($output, array(
+                'Numero', 'Fecha Ingreso', 'Fecha Salida', 'Nombre', 'Tarifa', 'Habitaciones', 'Cant. Ad', 'Cant. Men',
+                'Total', 'Seña', 'Saldo'
+            ));
+
+            foreach ($this->reservas as $row) {
+                /** @var $row reserva */
+                fputcsv($output, array(
+                    $row->getId(), $row->getFechaIn(true), $row->getFechaOut(true), $row->getCliente()->nombre,
+                    $row->getTarifa()->getMonto(), implode(",", $row->getNumerosHabitaciones()),
+                    $row->getCantidadAdultos(), $row->getCantidadMenores(), $row->getTotal(), $row->getMontoSeniado(),
+                    $row->getSaldo()
+                ));
+            }
+            $hoy = new DateTime();
+            fputcsv($output, array(
+                "Reporte generado el " . $hoy->format('Y-m-d h:i:s') . ' por el usuario: ' . $this->user->nick
+            ));
+            $this->template = false;
+        } else {
+            $this->template = 'reserva_reportes_ingresos';
+        }
+
     }
 
     public function getRaciones(grupo_clientes $grupo_clientes, $clase, $confirmados = true ) {
@@ -256,6 +312,16 @@ class reserva_reportes extends reserva_controller {
         $grucli = new grupo_clientes();
 
         return $grucli->all();
+    }
+
+    public function getPabellon() {
+        return $this->pabellon;
+    }
+
+    public function getHabitacionesOcupadasPorPabellon($pabellonId = 0) {
+        $habitacion = new habitacion();
+
+        return $habitacion->fetchByPabellonAndResDate($pabellonId, date('d-m-Y'));
     }
 
 }

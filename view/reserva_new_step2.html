@@ -36,12 +36,12 @@
         <div class="row form-group">
             <div class="col-md-2">
                 <label><span>Fecha de Ingreso</span>
-                    <input type="text" name="fecha_in" id="fecha_in" class="form-control input-sm" value="{$fsc->getReserva()->getFechaIn()}" />
+                    <input type="text" name="fecha_in" id="fecha_in" class="form-control input-sm" readonly="readonly" value="{$fsc->getReserva()->getFechaIn()}" />
                 </label>
             </div>
             <div class="col-md-2">
                 <label><span>Fecha de Egreso</span>
-                    <input type="text" name="fecha_out" id="fecha_out" class="form-control input-sm" value="{$fsc->getReserva()->getFechaOut()}" />
+                    <input type="text" name="fecha_out" id="fecha_out" class="form-control input-sm" readonly="readonly" value="{$fsc->getReserva()->getFechaOut()}" />
                 </label>
             </div>
         </div>

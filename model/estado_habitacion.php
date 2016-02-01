@@ -25,6 +25,9 @@ class estado_habitacion extends fs_model {
     const CACHE_KEY_ALL = 'reserva_estado_habitacion_all';
     const CACHE_KEY_SINGLE = 'reserva_estado_habitacion_{id}';
 
+    const DISPONIBLE = 'disponible';
+    const NO_DISPONIBLE = 'no_disponible';
+
     function __construct($data = array()) {
         parent::__construct('estado_habitacion', 'plugins/reservas/');
 
@@ -246,5 +249,8 @@ SQL;
         return $estadolist;
     }
 
+    public function __toString() {
+        return str_replace(" ","_", strtolower($this->getDescripcion()));
+    }
 
 }

@@ -3,9 +3,20 @@
 
 <div class="container">
     <div class="row">
-        <div class="col-md-12">
-            <h1>Listado de Reservas Sin Señar</h1>
-        </div>
+        <form action="{$fsc->ingresos_url()}" method="post">
+            <div class="col-md-12">
+                <div class="col-md-6">
+                    <h1>Listado de Ingresos para el día:</h1>
+                </div>
+                <div class="col-md-2 top-buffer-1">
+                    <div class="input-group">
+                        <input type="text" name="fecha" class="datepicker" data-date-format="dd/mm/yyyy" data-date="{$fsc->fecha_res}" value="{$fsc->fecha_res}" onchange="form.subimit()" />
+                        <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </form>
     </div>
     <div class="row">
         <div class="col-md-12">
@@ -17,7 +28,6 @@
             <thead>
                 <tr>
                     <th>Numero</th>
-                    <th>Fecha Creacion</th>
                     <th>Fecha Ingreso</th>
                     <th>Fecha Salida</th>
                     <th>Nombre</th>
@@ -26,6 +36,8 @@
                     <th>Cant. Ad</th>
                     <th>Cant. Men</th>
                     <th>Total</th>
+                    <th>Seña</th>
+                    <th>Saldo</th>
                 </tr>
             </thead>
             <tbody>
@@ -33,7 +45,6 @@
                 {loop="$fsc->reservas"}
                 <tr>
                     <td><a href="{$value->url()}">{$value->getId()}</a></td>
-                    <td>{$value->getCreateDate(true)}</td>
                     <td>{$value->getFechaIn(true)}</td>
                     <td>{$value->getFechaOut(true)}</td>
                     <td>{$value->getCliente()->nombre}</td>
@@ -42,11 +53,13 @@
                     <td>{$value->getCantidadAdultos()}</td>
                     <td>{$value->getCantidadMenores()}</td>
                     <td>{function="$fsc->show_precio($value->getTotal())"}</td>
+                    <td>{function="$fsc->show_precio($value->getMontoSeniado())"}</td>
+                    <td>{function="$fsc->show_precio($value->getSaldo())"}</td>
                 </tr>
                 {/loop}
                 {else}
                 <tr>
-                    <td colspan="9">No hay reservas sin señar</td>
+                    <td colspan="9">No hay reservas</td>
                 </tr>
             {/if}
             </tbody>
@@ -54,5 +67,14 @@
     </div>
     <p class="small">Generado el {$fsc->getFecha(true)} for el usuario: {$fsc->user->nick}</p>
 </div>
+
+<script type="text/javascript">
+    var inputDate = $('.datepicker');
+    inputDate.datepicker().on('changeDate', function() {
+        inputDate.datepicker('hide');
+        var formElement = inputDate.closest('form');
+        $(formElement).submit();
+    })
+</script>
 
 {include="footer"}
