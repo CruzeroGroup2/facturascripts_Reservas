@@ -169,6 +169,16 @@ class reserva_home extends reserva_controller {
         return str_replace('page=reserva_home','page=reserva_pagos', $this->url());
     }
 
+    public function factura_url(reserva $reserva) {
+        if($reserva->getIdFactura()) {
+            return $reserva->getFacturaCliente()->url();
+        } else {
+            $this->page->extra_url = '&action=factura&id=' . (int) $reserva->getId();
+
+            return str_replace('page=reserva_home','page=reserva_pagos', $this->url());
+        }
+    }
+
     public function checkin_url(reserva $reserva) {
         $this->page->extra_url = '&action=checkin&id=' . (int) $reserva->getId();
 

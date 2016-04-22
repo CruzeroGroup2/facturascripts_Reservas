@@ -597,10 +597,8 @@ class pasajero_por_reserva extends fs_model {
             $tarifa = (new tarifa_reserva())->fetchByCategoriaYTipoPasajero($res->getCategoriaHabitacion(), $this->getCodGrupo());
         }
 
-        if($this->esAdulto()) {
+        if($this->esAdulto() || $this->esMenor()) {
             $monto = $tarifa->getMonto();
-        } elseif($this->esMenor()) {
-            $monto = $tarifa->getMonto() * 0.6;
         } else {
             $monto = 0.0;
         }

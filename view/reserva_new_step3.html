@@ -281,7 +281,8 @@
                                 <br><span id="montoDescuento">{$fsc->show_precio($fsc->getReserva()->getMontoDescuento())}</span>
                             </div>
                             <div class="col-md-2">
-                                <button type="submit" id="pago" class="form-control btn-success" formaction="{$fsc->pago_url($fsc->getReserva())}">Generar Pago</button>
+                                <button type="submit" id="pago" class="form-control btn-success bottom-buffer" formaction="{$fsc->pago_url($fsc->getReserva())}">Generar Pago</button>
+                                <button type="submit" id="facturar" class="form-control btn-info" formaction="{$fsc->factura_url($fsc->getReserva())}">Imprimir Factura</button>
                             </div>
                         </div>
                         <div class="row form-group">

@@ -272,7 +272,14 @@ class reserva extends fs_model {
         $this->idestado = (isset($data['idestado'])) ? (int) $data['idestado'] : null;
 
         //Factura de la reserva
-        $this->idfactura = (isset($data['idfactura'])) ? $data['idfactura'] : null;
+        if(isset($data['idfactura'])) {
+            $factura = $this->get_factura($data['idfactura']);
+            if($factura) {
+                $this->idfactura = $data['idfactura'];
+            } else {
+                $this->idfactura = null;
+            }
+        }
 
         //
         $this->comentario = (isset($data['comentario'])) ? $data['comentario'] : null;
