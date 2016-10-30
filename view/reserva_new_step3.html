@@ -50,7 +50,8 @@
             <div class="col-md-4">
                 <div style="margin-top: 40px"></div>
                 <div class="row bottom-buffer">
-                    <button type="submit" class="form-control btn btn-primary" formaction="{$fsc->edit_url($fsc->getReserva(),true)}" {if="$fsc->getReserva()->getMontoSeniado() || $fsc->getReserva()->isCheckedIn()"}disabled="disabled"{/if}>Editar Reserva</button>
+                    <button type="submit" {if="in_array($fsc->getReserva()->getEstado(), array(estado_reserva::FINALIZADA,estado_reserva::CANCELADA))"}disabled="disabled"{/if}
+                            class="form-control btn btn-primary" formaction="{$fsc->edit_url($fsc->getReserva(),true)}" {if="$fsc->getReserva()->getMontoSeniado() || $fsc->getReserva()->isCheckedIn()"}disabled="disabled"{/if}>Editar Reserva</button>
                 </div>
                 <div class="row bottom-buffer">
                     <button type="submit" {if="$fsc->getReserva()->allPassangersCheckedIn()"}disabled="disabled"{/if}
@@ -265,7 +266,7 @@
                             </div>
                             <div class="col-md-2">
                                 <input type="submit" value="Grabar Reserva" id="guardar" class="form-control btn-primary bottom-buffer">
-                                {if="$fsc->getReserva()->getEstado() == estado_reserva::SINSENA || $fsc->getReserva()->getEstado() == estado_reserva::INCOMPLETA"}
+                                {if="in_array($fsc->getReserva()->getEstado(), array(estado_reserva::SINSENA, estado_reserva::INCOMPLETA))"}
                                 <button type="submit" class="form-control btn-primary" formaction="{$fsc->confirm_url($fsc->getReserva())}">Generar Conf. Aloj.</button>
                                 {else}
                                 <button type="submit" class="form-control btn-primary" formaction="{$fsc->voucher_url($fsc->getReserva())}">Generar Voucher</button>
@@ -296,9 +297,25 @@
                                 <button type="submit" name="cancelar" id="cancelar" class="form-control btn-danger" formaction="{$fsc->cancel_url($fsc->getReserva())}">Cancelar</button>
                             </div>
                         </div>
+                        <div class="row form-group">
+                            <div class="col-md-2">
+                                <label for="monto_pago">Monto Pago:</label>
+                            </div>
+                            <div class="col-md-2">
+                                <span id="monto_pago">{$fsc->show_precio($fsc->getReserva()->getMontoSeniado())}</span>
+                            </div>
+                        </div>
+                        <div class="row form-group">
+                            <div class="col-md-2">
+                                <label for="saldo">Saldo:</label>
+                            </div>
+                            <div class="col-md-2">
+                                <span id="saldo">{$fsc->show_precio($fsc->getReserva()->getSaldo())}</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                </div>
+            </div>
         </div>
     </form>
 </div>

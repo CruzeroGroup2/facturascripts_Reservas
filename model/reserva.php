@@ -1438,35 +1438,35 @@ WHERE
      * @return bool
      */
     public function test() {
-        $status = false;
+        $status = true;
         $this->id = (int) $this->id;
 
         if($this->getCodGrupoCliente() == 0) {
+            $status = false;
             $this->new_error_msg("Grupo de Cliente no válido.");
         }
 
         if($this->getCantidadDias() < 1) {
+            $status = false;
             $this->new_error_msg("Fecha de reserva no válida.");
         }
 
         $fechaIn = new DateTime($this->getFechaIn(true));
         $fechaHoy = (new DateTime())->setTime(0,0,0);
         if($fechaIn < $fechaHoy) {
+            $status = false;
             $this->new_error_msg("La fecha de la reserva es menor a la fecha de hoy");
         }
 
         if(!$this->edit && $this->getCreateDate() != date(self::DATE_FORMAT)) {
+            $status = false;
             $this->new_error_msg("La fecha de creación es inválida");
         }
 
         if(!$this->getCodAgente()) {
+            $status = false;
             $this->new_error_msg("El código de agente es requerido");
         }
-
-        if(!$this->get_errors()) {
-            $status = true;
-        }
-
 
         return $status;
     }
@@ -1541,17 +1541,13 @@ WHERE
         if($this->test()) {
             $this->clean_cache();
             if($this->exists()) {
-                $this->update();
+                $ret = $this->update();
             } else {
-                $this->insert();
+                $ret = $this->insert();
                 $this->setId(intval($this->db->lastval()));
             };
-            $this->saveHabitaciones();
-            $this->savePasajeros();
-        }
-
-        if(!$this->get_errors()) {
-            $ret = true;
+            $ret = $ret && $this->saveHabitaciones();
+            $ret = $ret && $this->savePasajeros();
         }
 
         return $ret;
@@ -1702,49 +1698,61 @@ WHERE
     }
 
     private function saveHabitaciones() {
+        $ret = true;
         if($this->habitaciones) {
             /** @var habitacion_por_reserva $habitacion */
             foreach($this->habitaciones as $habitacion) {
                 $habitacion->setEdit(true);
                 if(!$habitacion->save()) {
+                    $ret = $ret && false;
                     $this->new_error_msg("Error al agregar la habitacion ". $habitacion->getHabitacion()->getNumero());
                 }
             }
         }
-        $this->removeHabitaciones();
+        $ret = $ret && $this->removeHabitaciones();
+        return $ret;
     }
 
     private function removeHabitaciones() {
+        $ret = true;
         if($this->remover_habitaciones) {
             foreach($this->remover_habitaciones as $habitacion) {
                 $objHab = $this->__parseHabitacion($habitacion);
                 if(!$objHab->delete()) {
+                    $ret = $ret && false;
                     $this->new_error_msg("Error al remover la habitacion ". $objHab->getHabitacion()->getNumero());
                 }
             }
         }
+        return $ret;
     }
 
     private function savePasajeros() {
+        $ret = true;
         if($this->pasajeros) {
             foreach($this->pasajeros as $pasajero) {
                 if($pasajero->getNombreCompleto() && !$pasajero->save()) {
+                    $ret = $ret && false;
                     $this->new_error_msg("Error al guardar el pasajero ". $pasajero->getNombreCompleto());
                 }
             }
         }
-        $this->removePasajeros();
+        $ret = $ret && $this->removePasajeros();
+        return $ret;
     }
 
     private function removePasajeros() {
+        $ret = true;
         if($this->remover_pasajeros) {
             foreach($this->remover_pasajeros as $pasajero) {
                 $objPasa = $this->__parsePasajero($pasajero);
                 if(!$objPasa->delete()) {
+                    $ret = $ret && false;
                     $this->new_error_msg("Error al remove el pasajero ". $objPasa->getNombreCompleto());
                 }
             }
         }
+        return $ret;
     }
 
     private function getCheckInPasajeros() {

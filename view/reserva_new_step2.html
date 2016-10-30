@@ -183,6 +183,22 @@
                         <button type="submit" name="cancelar" id="cancelar" class="form-control btn-danger" formaction="{$fsc->cancel_url($fsc->getReserva())}">Cancelar</button>
                     </div>
                 </div>
+                <div class="row form-group">
+                    <div class="col-md-2">
+                        <span>Monto Pago:</span>
+                    </div>
+                    <div class="col-md-2">
+                        <span>{$fsc->show_precio($fsc->getReserva()->getMontoSeniado())}</span>
+                    </div>
+                </div>
+                <div class="row form-group">
+                    <div class="col-md-2">
+                        <span>Saldo:</span>
+                    </div>
+                    <div class="col-md-2">
+                        <span>{$fsc->show_precio($fsc->getReserva()->getSaldo())}</span>
+                    </div>
+                </div>
             </div>
         </div>
     </form>

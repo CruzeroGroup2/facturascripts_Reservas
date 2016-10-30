@@ -7,6 +7,7 @@
         <input type="hidden" name="idreserva" id="idreserva" value="{$fsc->getReserva()->getId()}">
         <input type="hidden" name="codcliente" id="codcliente" value="{$fsc->getReserva()->getCodCliente()}" />
         <input type="hidden" name="idtarifa" id="idtarifa" value="{$fsc->getReserva()->getTarifa()->getId()}" />
+        <input type="hidden" id="numlineas" name="numlineas" value="1"/>
         <div class="bottom-buffer"></div>
         <div class="row">
             <div class="col-sm-8">
@@ -69,37 +70,20 @@
                                     <td><input type="text" readonly="readonly" name="desc_0" id="desc_0" class="form-control" value="Reserva {$fsc->getReserva()->getId()}" /></td>
                                     <td><input type="number" readonly="readonly" name="cantidad_0" id="cantidad_0" class="form-control text-right" value="1" /></td>
                                     <td></td>
-                                    <td><input type="text" readonly="readonly" name="pvp_0" id="pvp_0" class="form-control" value="{$fsc->show_precio($fsc->getReserva()->getTotal())}"></td>
+                                    <td><input type="text" readonly="readonly" name="pvp_0" id="pvp_0" class="form-control" value="{$fsc->getReserva()->getTotal()}"></td>
                                     <td><input type="text" readonly="readonly" name="dto_0" id="dto_0" class="form-control" value="{$fsc->getReserva()->getDescuento()}"></td>
                                 </tr>
+                                <tr class="bg-info">
+                                    <th class="text-right" colspan="4">
+                                      <span>Total:</span>
+                                    </th>
+                                    <td colspan="2">
+                                      <input type="text" readonly="readonly" name="atotal" id="atotal"
+                                             class="form-control text-right" style="font-weight: bold;"
+                                             value="{$fsc->getReserva()->getTotal()}" onchange="recalcular()" />
+                                    </td>
+                                </tr>
                             </tbody>
-                            <!-- tbody>
-                            <tr class="bg-info">
-                                <td><input id="i_new_line" class="form-control" type="text" placeholder="Buscar para añadir..." autocomplete="off"/></td>
-                                <td>
-                                    <a href="#" class="btn btn-sm btn-default" title="Añadir sin buscar" onclick="return add_linea_libre()">
-                                        <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
-                                    </a>
-                                </td>
-                                <td colspan="4" class="text-right">Totales:</td>
-                                <td>
-                                    <div id="aneto" class="form-control text-right" style="font-weight: bold;">{$fsc->show_numero(0)}</div>
-                                </td>
-                                <td>
-                                    <div id="aiva" class="form-control text-right" style="font-weight: bold;">{$fsc->show_numero(0)}</div>
-                                </td>
-                                <td class="recargo">
-                                    <div id="are" class="form-control text-right" style="font-weight: bold;">{$fsc->show_numero(0)}</div>
-                                </td>
-                                <td class="irpf">
-                                    <div id="airpf" class="form-control text-right" style="font-weight: bold;">{$fsc->show_numero(0)}</div>
-                                </td>
-                                <td>
-                                    <input type="text" name="atotal" id="atotal" class="form-control text-right" style="font-weight: bold;"
-                                           value="0" onchange="recalcular()" autocomplete="off"/>
-                                </td>
-                            </tr>
-                            </tbody -->
                         </table>
                     </div>
                 </div>

@@ -272,7 +272,7 @@ class reserva_pagos extends reserva_controller {
 
         if($this->factura->save()) {
             $art0 = new articulo();
-            $n = floatval($_POST['numlineas']);
+            $n = isset($_POST['numlineas']) ? floatval($_POST['numlineas']) : 0;
             for($i = 0; $i < $n; $i++) {
                 if(isset($_POST['referencia_'.$i])) {
                     $linea = new linea_factura_cliente();
@@ -291,12 +291,14 @@ class reserva_pagos extends reserva_controller {
                         }
                     }
 
-                    $linea->irpf = floatval($_POST['irpf_'.$i]);
+                    //$linea->irpf = floatval($_POST['irpf_'.$i]);
                     $linea->pvpunitario = floatval($_POST['pvp_'.$i]);
                     $linea->cantidad = floatval($_POST['cantidad_'.$i]);
                     $linea->dtopor = floatval($_POST['dto_'.$i]);
                     $linea->pvpsindto = ($linea->pvpunitario * $linea->cantidad);
-                    $linea->pvptotal = floatval($_POST['neto_'.$i]);
+                    $linea->pvptotal = $linea->pvpunitario; // Solamente porque estoy seguro de que cuando se genera la
+                                                            // factura tiene solamente una linea
+
 
                     $articulo = $art0->get($_POST['referencia_'.$i]);
                     if($articulo) {
@@ -347,7 +349,9 @@ class reserva_pagos extends reserva_controller {
                     } else {
                         $this->new_error_msg("Error al actualizar la reserva!");
                     }
-                    header('Location: '.$this->factura->url());
+                    if(!$this->get_errors()) {
+                        header('Location: '.$this->factura->url());
+                    }
                 }
             } else {
                 $this->factura->delete();
