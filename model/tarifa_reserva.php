@@ -359,29 +359,28 @@ class tarifa_reserva extends fs_model {
      * @return bool
      */
     public function test() {
-        $status = false;
+        $status = true;
         $this->id = (int)$this->id;
 
         if ($this->codgrupo == 0) {
+        	$status = false;
             $this->new_error_msg("Grupo de Cliente no válido.");
         }
 
         if ($this->idcategoria == 0) {
+        	$status = false;
             $this->new_error_msg("Categoría habitacion no válida.");
         }
 
         if(!is_float($this->monto) || $this->monto < 0) {
+        	$status = false;
             $this->new_error_msg("Monto de tarifa no válido!");
         }
 
         if(!$this->edit && $this->fetchByCategoriaYTipoPasajero($this->getIdCategoriaHabitacion(), $this->getCodGrupoCliente(), false)) {
+        	$status = false;
             $this->new_error_msg("Ya existe una tarifa para la categoría y el grupo seleccionado");
         }
-
-        if(!$this->get_errors()) {
-            $status = true;
-        }
-
 
         return $status;
     }

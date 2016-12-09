@@ -756,7 +756,7 @@ WHERE
      * @return bool
      */
     public function test() {
-        $status = false;
+        $status = true;
         $this->id = (int)$this->id;
         $this->nombre_completo = $this->no_html($this->nombre_completo);
         $this->tipo_documento = $this->no_html($this->tipo_documento);
@@ -766,29 +766,30 @@ WHERE
         $this->codcliente = $this->no_html($this->codcliente);
 
         if(strlen($this->nombre_completo) < 1 || strlen($this->nombre_completo) > 250) {
+	        $status = false;
             $this->new_error_msg( "Nombre de pasajero no válido." );
         }
 
         if($this->tipo_documento != 'DNI' && $this->tipo_documento != 'AFILIADO') {
+	        $status = false;
             $this->new_error_msg("Tipo de documento no valido");
         }
 
         if(strlen($this->documento) < 1 || strlen($this->documento) > 10) {
+	        $status = false;
             $this->new_error_msg("Documento no válido");
         }
 
         if(!$this->getTipoPasajero() || !$this->getTipoPasajero()->exists()) {
+	        $status = false;
             $this->new_error_msg("Tipo de Pasajero Inválido");
         }
 
         /*$now = strtotime('today');
         if (strtotime($this->fecha_nacimiento) >= $now) {
+	        $status = false;
             $this->new_error_msg("Fecha de nacimiento no válida");
         }*/
-
-        if (!$this->get_errors()) {
-            $status = true;
-        }
 
         return $status;
     }
@@ -929,16 +930,6 @@ WHERE
      * @return pasajero_por_reserva
      */
     public static function parse($string, reserva $reserva) {
-//        $nombre_completo . ':' .
-//        $tipo_documento . ':' .
-//        $documento . ':' .
-//        $fecha_nacimiento . ':' .
-//        $fecha_in . ':' .
-//        $fecha_out . ':' .
-//        $codgrupo . ':' .
-//        $idreserva . ':' .
-//        $id . ':' .
-//        $codcliente;
         $datos_pasajero = explode('#', $string);
 
         if(isset($datos_pasajero[3]) && in_array($datos_pasajero[3], array('menor_3', 'menor_7', 'adulto'))) {
@@ -990,7 +981,7 @@ WHERE
     }
 
     public function __toString() {
-        return join("#", array(
+        return implode("#", array(
             $this->nombre_completo,
             $this->tipo_documento,
             $this->documento,

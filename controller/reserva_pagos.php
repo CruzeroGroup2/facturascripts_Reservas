@@ -166,7 +166,6 @@ class reserva_pagos extends reserva_controller {
             //Agente
             $this->agente = $this->user->get_agente();
             $this->template = 'reserva_pago_form';
-            //$this->__createFactura();
             if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generar_factura'])) {
                 $this->__createFactura();
             }
@@ -229,6 +228,7 @@ class reserva_pagos extends reserva_controller {
     }
 
     private function __createFactura($cambiar_estado = true) {
+    	$this->default_items->setRequirenum2(false);
         $continuar = true;
         $date = new DateTime($_POST['fecha']);
         $fecha = $date->format('Y-m-d');
@@ -272,7 +272,7 @@ class reserva_pagos extends reserva_controller {
 
         if($this->factura->save()) {
             $art0 = new articulo();
-            $n = isset($_POST['numlineas']) ? floatval($_POST['numlineas']) : 0;
+            $n = isset($_POST['numlineas']) ? (int) $_POST['numlineas'] : 0;
             for($i = 0; $i < $n; $i++) {
                 if(isset($_POST['referencia_'.$i])) {
                     $linea = new linea_factura_cliente();
@@ -283,21 +283,22 @@ class reserva_pagos extends reserva_controller {
                         $imp0 = $this->impuesto->get_by_iva($_POST['iva_'.$i]);
                         if($imp0) {
                             $linea->codimpuesto = $imp0->codimpuesto;
-                            $linea->iva = floatval($_POST['iva_'.$i]);
-                            $linea->recargo = floatval($_POST['recargo_'.$i]);
+                            $linea->iva = (float) $_POST['iva_'.$i];
+                            $linea->recargo = (float) $_POST['recargo_'.$i];
                         } else {
-                            $linea->iva = floatval($_POST['iva_'.$i]);
-                            $linea->recargo = floatval($_POST['recargo_'.$i]);
+                            $linea->iva = (float) $_POST['iva_'.$i];
+                            $linea->recargo = (float) $_POST['recargo_'.$i];
                         }
                     }
 
                     //$linea->irpf = floatval($_POST['irpf_'.$i]);
-                    $linea->pvpunitario = floatval($_POST['pvp_'.$i]);
-                    $linea->cantidad = floatval($_POST['cantidad_'.$i]);
-                    $linea->dtopor = floatval($_POST['dto_'.$i]);
+                    $linea->pvpunitario = (float) $_POST['pvp_'.$i];
+                    $linea->cantidad = (int) $_POST['cantidad_'.$i];
+                    $linea->dtopor = (float) $_POST['dto_'.$i];
                     $linea->pvpsindto = ($linea->pvpunitario * $linea->cantidad);
-                    $linea->pvptotal = $linea->pvpunitario; // Solamente porque estoy seguro de que cuando se genera la
-                                                            // factura tiene solamente una linea
+                    // Solamente porque estoy seguro de que cuando se genera la
+                    // factura tiene solamente una linea
+                    $linea->pvptotal = $linea->pvpunitario;
 
 
                     $articulo = $art0->get($_POST['referencia_'.$i]);
@@ -331,7 +332,7 @@ class reserva_pagos extends reserva_controller {
                 $this->factura->totalrecargo = round($this->factura->totalrecargo, FS_NF0);
                 $this->factura->total = $this->factura->neto + $this->factura->totaliva - $this->factura->totalirpf + $this->factura->totalrecargo;
 
-                if( abs(floatval($_POST['atotal']) - $this->factura->total) >= .02 ) {
+                if( abs((float) $_POST['atotal'] - $this->factura->total) >= .02 ) {
                     $this->new_error_msg("El total difiere entre la vista y el controlador (".$_POST['atotal'].
                                          " frente a ".$this->factura->total."). Debes informar del error.");
                     $this->factura->delete();

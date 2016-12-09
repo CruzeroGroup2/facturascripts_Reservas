@@ -503,29 +503,28 @@ ORDER BY plaza_maxima ASC;';
     }
 
     public function test() {
-        $status = false;
+        $status = true;
         $this->id = (int)$this->id;
 
         if (!is_numeric($this->numero)) {
+        	$status = false;
             $this->new_error_msg("Numero de habitacion no válido.");
         }
 
         if (!is_numeric($this->plaza_maxima)) {
+        	$status = false;
             $this->new_error_msg("Plazas Maximas no válido.");
         }
 
         if (!is_numeric($this->idpabellon) && $this->getPabellon()->exists()) {
+        	$status = false;
             $this->new_error_msg("Pabellon habitacion no válida.");
         }
 
         if (!is_numeric($this->idcategoria) && $this->getCategoria()->exists()) {
+        	$status = false;
             $this->new_error_msg("Categoría habitacion no válida.");
         }
-
-        if(!$this->get_errors()) {
-            $status = true;
-        }
-
 
         return $status;
     }

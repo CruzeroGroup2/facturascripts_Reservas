@@ -228,21 +228,19 @@ class habitacion_por_reserva extends fs_model {
      */
     public function test() {
         $reserva = reserva::get($this->idreserva);
-        $status = false;
+        $status = true;
         $this->id = (int)$this->id;
         $this->idhabitacion = intval($this->no_html($this->idhabitacion));
         $this->idreserva = intval($this->no_html($this->idreserva));
 
         if (!is_a($this->getHabitacion(), 'habitacion') && !$this->getHabitacion()->exists()) {
+        	$status = false;
             $this->new_error_msg("Habitacion no válida.");
         }
 
         if (!$this->exists() && !$this->getHabitacion()->isAvailable($reserva->getFechaIn(), $reserva->getFechaOut())) {
+        	$status = false;
             $this->new_error_msg("Ya existe una reserva para la habitacion ". $this->getHabitacion()->getNumero());
-        }
-
-        if(!$this->get_errors()) {
-            $status = true;
         }
 
         return $status;
