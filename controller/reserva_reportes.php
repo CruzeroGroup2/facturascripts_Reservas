@@ -287,6 +287,27 @@ class reserva_reportes extends reserva_controller {
         return $obj->fetchCantPassByFechaAndCateg($fecha, $grupo_clientes->codgrupo, $confirmados);
     }
 
+    public function getTotalRaciones($clase, $confirmados = true) {
+        $obj = new pasajero_por_reserva();
+        $fecha = date('Y-m-d');
+        switch($clase) {
+            case reserva::ALOJADOS:
+                $fecha .= ' 23:59:59';
+                break;
+            case reserva::DESAYUNOS:
+                $fecha .= ' 10:00:00';
+                break;
+            case reserva::ALMUERZOS:
+                $fecha .= ' 12:00:00';
+                break;
+            case reserva::CENAS:
+                $fecha .= ' 18:00:00';
+                break;
+        }
+        //De todas las categorías, por eso el % = *
+        return $obj->fetchCantPassByFecha($fecha, $confirmados);
+    }
+
     public function getCantPasajerosCheckIn() {
         $obj = new pasajero_por_reserva();
 
