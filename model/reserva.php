@@ -305,7 +305,7 @@ class reserva extends fs_model {
     }
 
     /**
-     * @param array $data
+     * @param array|int $data
      *
      * @return reserva
      */
@@ -502,8 +502,7 @@ class reserva extends fs_model {
      */
     public function getCategoriaHabitacion() {
         if(!$this->idcategoriahabitacion) {
-            $this->getHabitaciones();
-            if ($this->habitaciones) {
+            if ($this->getHabitaciones()) {
                 //Obtengo una de las habitaciones
                 $hab = $this->habitaciones[0];
                 $this->idcategoriahabitacion = $hab->getHabitacion()->getIdCategoria();
@@ -551,7 +550,9 @@ class reserva extends fs_model {
     public function setTarifa(tarifa_reserva $tarifa) {
         $this->tarifa = $tarifa;
         $this->idtarifa = $tarifa->getId();
-        $this->calcularTotales(true);
+        if ($this->getHabitaciones()) {
+            $this->calcularTotales(true);
+        }
 
         return $this;
     }
@@ -1121,7 +1122,7 @@ class reserva extends fs_model {
     public function getCancelDays() {
         $cancelDate = new DateTime($this->getCancelDate());
         $reservaDate = new DateTime($this->getFechaIn());
-        $diasCancel = intval($reservaDate->diff($cancelDate, false)->format('%R%a'));
+        $diasCancel = (int) $reservaDate->diff($cancelDate, false)->format('%R%a');
 
         return $diasCancel;
     }
@@ -1452,7 +1453,7 @@ WHERE
         }
 
         $fechaIn = new DateTime($this->getFechaIn(true));
-        $fechaHoy = (new DateTime())->setTime(0,0,0);
+        $fechaHoy = (new DateTime())->modify("- 2 days")->setTime(0,0,0);
         if($fechaIn < $fechaHoy) {
             $status = false;
             $this->new_error_msg("La fecha de la reserva es menor a la fecha de hoy");
@@ -1544,7 +1545,7 @@ WHERE
                 $ret = $this->update();
             } else {
                 $ret = $this->insert();
-                $this->setId(intval($this->db->lastval()));
+                $this->setId((int) $this->db->lastval());
             };
             $ret = $ret && $this->saveHabitaciones();
             $ret = $ret && $this->savePasajeros();
@@ -1673,6 +1674,55 @@ WHERE
                 'descuento' => $this->descuento,
                 'final' => ($total - $descuento)
             );
+
+            /**
+             * A recalcular la factura!
+             */
+            $factura = $this->getFacturaCliente();
+            if($factura) {
+                $neto = $totaliva = $totalirpf = $totalrecargo = 0.0;
+                $found = false;
+                //Por cada línea que tengo:
+                foreach ($factura->get_lineas() as $linea) {
+                    //Si es la referencia
+                    if($linea->referencia === 'Reserva') {
+                        $found = true;
+                        //Actualizo los valores de línea
+                        $linea->pvpsindto = $linea->pvpunitario = $linea->pvptotal = $this->getTotal();
+                        $linea->dtopor = $this->getDescuento();
+                        //Si es posible guardarlos los sumo a la factura
+                        if(!$linea->save()) {
+                            $this->new_error_msg("Error al actualizar la factura, la factura ahora tiene un monto inválido");
+                            //Seteo en 0 para poder usarlo como validacion
+                            $neto = $totaliva = $totalirpf = $totalrecargo = 0.0;
+                        } else {
+                            $neto += $linea->pvptotal;
+                            $totaliva += ($linea->pvptotal * $linea->iva / 100);
+                            $totalirpf += ($linea->pvptotal * $linea->irpf / 100);
+                            $totalrecargo += ($linea->pvptotal * $linea->recargo / 100);
+                        }
+                        break;
+                    } else {
+                        //Sumo los valores de las otras posibles lineas al total
+                        $neto += $linea->pvptotal;
+                        $totaliva += ($linea->pvptotal * $linea->iva / 100);
+                        $totalirpf += ($linea->pvptotal * $linea->irpf / 100);
+                        $totalrecargo += ($linea->pvptotal * $linea->recargo / 100);
+                    }
+                }
+                //Si lo encontré y aparte $neto es > 0
+                if($found && $neto) {
+                    $factura->neto = round($neto, FS_NF0);
+                    $factura->totaliva = round($totaliva, FS_NF0);
+                    $factura->totalirpf = round($totalirpf, FS_NF0);
+                    $factura->totalrecargo = round($totalrecargo, FS_NF0);
+                    $factura->total = $neto + $totaliva - $totalirpf + $totalrecargo;
+                    //$factura->
+                    if(!$factura->save()) {
+                        $this->new_error_msg("Error al actualizar la factura, la factura ahora tiene un monto inválido");
+                    }
+                }
+            }
         }
     }
 

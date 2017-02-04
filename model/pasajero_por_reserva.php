@@ -568,7 +568,7 @@ class pasajero_por_reserva extends fs_model {
             $this->tarifa = $this->get_tarifa($this->idtarifa);
         }
 
-        if($this->tarifa->getCodGrupoCliente() != $this->codgrupo) {
+        if($this->tarifa->getCodGrupoCliente() != $this->codgrupo && !$this->isCheckIn()) {
             $res = $this->getReserva();
             $this->tarifa = (new tarifa_reserva())->fetchByCategoriaYTipoPasajero($res->getCategoriaHabitacion(), $this->getCodGrupo());
         }
@@ -583,6 +583,7 @@ class pasajero_por_reserva extends fs_model {
     public function setTarifa($tarifa) {
         $this->tarifa = $tarifa;
         $this->idtarifa = $tarifa->getId();
+        $this->codgrupo = $tarifa->getCodGrupoCliente();
 
         return $this;
     }
