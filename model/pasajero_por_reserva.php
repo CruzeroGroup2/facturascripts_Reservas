@@ -111,7 +111,7 @@ class pasajero_por_reserva extends fs_model {
     /**
      * @param array $data
      */
-    function __construct($data = array()) {
+    public function __construct($data = array()) {
         parent::__construct('pasajero_por_reserva','plugins/reservas/');
 
         $this->setValues($data);
@@ -997,7 +997,7 @@ WHERE
                                              'codcliente' => $datos_pasajero[9]
                                          ));
 
-        $pasj->setTarifa($reserva->getTarifa());
+        //$pasj->setTarifa($reserva->getTarifa());
 
         return $pasj;
 

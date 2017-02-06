@@ -273,12 +273,12 @@ class reserva extends fs_model {
 
         //Factura de la reserva
         if(isset($data['idfactura'])) {
-            $factura = $this->get_factura($data['idfactura']);
-            if($factura) {
+            //$factura = $this->get_factura($data['idfactura']);
+            //if($factura) {
                 $this->idfactura = $data['idfactura'];
-            } else {
-                $this->idfactura = null;
-            }
+            //} else {
+            //    $this->idfactura = null;
+            //}
         }
 
         //
@@ -794,6 +794,7 @@ class reserva extends fs_model {
      * @return reserva
      */
     public function setPasajeros($data = array()) {
+        $tarifa = new tarifa_reserva();
         //No estaría siendo hábil para solucionar este problema :-|
 
         //Crear 3 arrays $adultos y $menores y $baibies
@@ -810,6 +811,18 @@ class reserva extends fs_model {
                     $tmpPass = $this->__parsePasajero($pasajero);
                 }
                 /** @var pasajero_por_reserva $tmpPass*/
+                if ($tmpPass->getCodGrupo() != $this->getCodGrupoCliente()) {
+                    if (!$tmpPass->getIdTarifa()) {
+                        $tmpPass->setTarifa($tarifa->fetchByCategoriaYTipoPasajero(
+                            $this->getCategoriaHabitacion(),
+                            $tmpPass->getCodGrupo()
+                        ));
+                    } else {
+                        $tmpPass->setTarifa($tarifa->fetch($tmpPass->getIdTarifa()));
+                    }
+                } else {
+                    $tmpPass->setTarifa($this->getTarifa());
+                }
                 switch($tmpPass->getEdadCateg()) {
                     case 'adulto':
                         $adultos[] = $tmpPass;
