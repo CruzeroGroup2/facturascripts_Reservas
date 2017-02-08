@@ -987,7 +987,7 @@ class reserva extends fs_model {
         $this->pagos = array();
         if(!$this->pagos && $this->idfactura) {
             $pago = new recibo_cliente();
-            $this->pagos = $pago->all_from_factura($this->idfactura);
+            $this->pagos = $pago->all_from_factura($this->idfactura, 0, FS_ITEM_LIMIT, 'not_negative');
         }
         return $this->pagos;
     }
