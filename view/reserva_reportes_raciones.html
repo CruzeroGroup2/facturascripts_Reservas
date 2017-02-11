@@ -46,14 +46,14 @@
                     {/loop}
                     <tr>
                         <td>Total</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
+                        <td>{$fsc->getTotalRaciones(reserva::ALOJADOS,false)}</td>
+                        <td>{$fsc->getTotalRaciones(reserva::ALOJADOS)}</td>
+                        <td>{$fsc->getTotalRaciones(reserva::DESAYUNOS,false)}</td>
+                        <td>{$fsc->getTotalRaciones(reserva::DESAYUNOS)}</td>
+                        <td>{$fsc->getTotalRaciones(reserva::ALMUERZOS,false)}</td>
+                        <td>{$fsc->getTotalRaciones(reserva::ALMUERZOS)}</td>
+                        <td>{$fsc->getTotalRaciones(reserva::CENAS,false)}</td>
+                        <td>{$fsc->getTotalRaciones(reserva::CENAS)}</td>
                     </tr>
                     </tbody>
                 </table>

@@ -29,7 +29,7 @@
         <div class="row form-group">
             <div class="col-md-5">
                 <h3># Reserva: {$fsc->getReserva()->getId()}</h3>
-                <p><b>Fecha de Creacion</b>: {$fsc->getReserva()->getCreateDate(true)}; <b>{$fsc->getReserva()->getUsuario()}</b></p>
+                <p><b>Fecha de Última Actualización</b>: {$fsc->getReserva()->getUpdateDate(true)}; <b>{$fsc->getReserva()->getUsuario()}</b></p>
             </div>
         </div>
         <div class="row form-group">
@@ -51,7 +51,7 @@
                 <div style="margin-top: 40px"></div>
                 <div class="row bottom-buffer">
                     <button type="submit" {if="in_array($fsc->getReserva()->getEstado(), array(estado_reserva::FINALIZADA,estado_reserva::CANCELADA))"}disabled="disabled"{/if}
-                            class="form-control btn btn-primary" formaction="{$fsc->edit_url($fsc->getReserva(),true)}" {if="$fsc->getReserva()->getMontoSeniado() || $fsc->getReserva()->isCheckedIn()"}disabled="disabled"{/if}>Editar Reserva</button>
+                            class="form-control btn btn-primary" formaction="{$fsc->edit_url($fsc->getReserva(),'habitacion')}">Editar Reserva</button>
                 </div>
                 <div class="row bottom-buffer">
                     <button type="submit" {if="$fsc->getReserva()->allPassangersCheckedIn()"}disabled="disabled"{/if}

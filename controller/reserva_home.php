@@ -135,11 +135,23 @@ class reserva_home extends reserva_controller {
         return $this->url();
     }
 
-    public function edit_url(reserva $reserva, $prev_step = false) {
+    public function edit_url(reserva $reserva, $step = null) {
         $this->page->extra_url = '&action=edit&id=' . (int) $reserva->getId();
 
-        if($prev_step && $reserva->getStep() != 1) {
-            $this->page->extra_url .= '&step='.($reserva->getStep()-1);
+        switch ($step) {
+            case 'habitacion':
+                $step = 2;
+                break;
+            case 'pasajeros':
+                $step = 1;
+                break;
+            default:
+                $step = 3;
+                break;
+        }
+
+        if($step) {
+            $this->page->extra_url .= '&step='. $step;
         }
 
         return $this->url();

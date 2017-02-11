@@ -21,12 +21,17 @@
                         <div class="row form-group">
                             <div class="col-md-4">
                                 <label><span>Fecha de Ingreso</span>
-                                    <input type="text" name="fecha_in" id="fecha_in" class="form-control input-sm"  value="{$fsc->getReserva()->getFechaIn()}" required data-msg="No ha ingresado fecha de ingreso" />
+                                    <input type="text" name="fecha_in" id="fecha_in" class="form-control input-sm"
+                                           value="{$fsc->getReserva()->getFechaIn()}" required
+                                           data-msg="No ha ingresado fecha de ingreso" />
                                 </label>
                             </div>
                             <div class="col-md-offset-1 col-md-4">
                                 <label><span>Fecha de Egreso</span>
-                                    <input type="text" name="fecha_out" id="fecha_out" class="form-control input-sm"  value="{$fsc->getReserva()->getFechaOut()}" required data-msg="No ha ingresado fecha de egreso" />
+                                    <input type="text" name="fecha_out" id="fecha_out" class="form-control input-sm"
+                                           value="{$fsc->getReserva()->getFechaOut()}" required
+                                           data-msg="No ha ingresado fecha de egreso"
+                                           {if="$fsc->getReserva()->isCheckedIn()"}readonly="readonly"{/if} />
                                 </label>
                             </div>
                         </div>
@@ -35,6 +40,7 @@
                                 <label><span>Cantidad de Huespedes</span>
                                     <input type="text" name="cantidad_adultos" id="cantidad_adultos" class="form-control input-sm"
                                            value="{$fsc->getReserva()->getCantidadAdultos()}" required min="1"
+                                           {if="$fsc->getReserva()->isCheckedIn()"}readonly="readonly"{/if}
                                            {if="$fsc->getMaxPass()"} max="{$fsc->getMaxPass()}"{/if} data-msg-min="Debe ingresar al menos 1 huesped adulto"
                                            data-msg-max="La Habitacion seleccionada no puede albergar la cantidad de pasajeros ingresada"/>
                                 </label>
@@ -42,7 +48,8 @@
                             <div class="col-md-offset-1 col-md-4">
                                 <label><span>Cantidad de Menores</span>
                                     <input type="text" name="cantidad_menores" id="cantidad_menores" class="form-control input-sm"
-                                           value="{$fsc->getReserva()->getCantidadMenores()}" />
+                                           value="{$fsc->getReserva()->getCantidadMenores()}"
+                                           {if="$fsc->getReserva()->isCheckedIn()"}readonly="readonly"{/if} />
                                 </label>
                             </div>
                         </div>
