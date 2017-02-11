@@ -69,6 +69,30 @@ function daydiff(first, second) {
 }
 
 /**
+ * Return a string representing one of MENOR_7, ADULTO, MENOR_3
+ * @param fecha {string}
+ * @return {string}
+ */
+function date_to_option(fecha) {
+    if($.inArray(fecha, ['menor_3', 'menor_7', 'adulto']) !== -1) {
+        return fecha.toUpperCase();
+    }
+    var date = parseDate(fecha),
+        now = new Date(),
+        menor_3 = new Date(),
+        menor_7 = new Date();
+    menor_3.setFullYear(now.getFullYear()-3);
+    menor_7.setFullYear(now.getFullYear()-7);
+    if(date >= menor_3) {
+        return 'MENOR_3';
+    } else if(date >= menor_7) {
+        return 'MENOR_7';
+    } else {
+        return 'ADULTO';
+    }
+}
+
+/**
  *
  * @param options "{idtarifa: int}" | "{idcategoria: int, codgrupo: str}"
  * @param done_func
@@ -228,11 +252,13 @@ var agregar_pasajero = function(event) {
 function edit_huesped(element) {
     var parent = $(element.parentNode),
         huespedInfo = parent.find('input[type="hidden"]').val().split('#');
+    clear_pasajero_fields();
     remove_huesped(element, true, true);
     $('#nombre_pasajero').val(huespedInfo[0]);
     $('input[value="'+huespedInfo[1]+'"]').attr('checked','checked');
     $('#documento_pasajero').val(huespedInfo[2]);
-    $('input[value="'+huespedInfo[3]+'"]').attr('checked','checked');
+    var selector = 'input[value="'+date_to_option(huespedInfo[3])+'"]';
+    $(selector).attr('checked','checked');
     $('#pasajero_fecha_in').datepicker('setValue', huespedInfo[4]);
     $('#pasajero_fecha_out').datepicker('setValue', huespedInfo[5]);
     $('#codgrupo_pasajero').find('option[value="'+huespedInfo[6]+'"]').attr("selected",true);

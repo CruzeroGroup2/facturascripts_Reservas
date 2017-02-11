@@ -28,7 +28,7 @@ class estado_habitacion extends fs_model {
     const DISPONIBLE = 'disponible';
     const NO_DISPONIBLE = 'no_disponible';
 
-    function __construct($data = array()) {
+    public function __construct($data = array()) {
         parent::__construct('estado_habitacion', 'plugins/reservas/');
 
         $this->setValues($data);

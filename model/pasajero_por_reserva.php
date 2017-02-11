@@ -111,7 +111,7 @@ class pasajero_por_reserva extends fs_model {
     /**
      * @param array $data
      */
-    function __construct($data = array()) {
+    public function __construct($data = array()) {
         parent::__construct('pasajero_por_reserva','plugins/reservas/');
 
         $this->setValues($data);
@@ -568,7 +568,7 @@ class pasajero_por_reserva extends fs_model {
             $this->tarifa = $this->get_tarifa($this->idtarifa);
         }
 
-        if($this->tarifa->getCodGrupoCliente() != $this->codgrupo) {
+        if($this->tarifa->getCodGrupoCliente() != $this->codgrupo && !$this->isCheckIn()) {
             $res = $this->getReserva();
             $this->tarifa = (new tarifa_reserva())->fetchByCategoriaYTipoPasajero($res->getCategoriaHabitacion(), $this->getCodGrupo());
         }
@@ -583,6 +583,7 @@ class pasajero_por_reserva extends fs_model {
     public function setTarifa($tarifa) {
         $this->tarifa = $tarifa;
         $this->idtarifa = $tarifa->getId();
+        $this->codgrupo = $tarifa->getCodGrupoCliente();
 
         return $this;
     }
@@ -735,6 +736,29 @@ WHERE
         }
 
         
+
+        $cant = $this->db->select($sql);
+        return $cant[0]['cant_pasajeros'];
+    }
+
+
+    public function fetchCantPassByFecha($fecha = null, $confirmed = false) {
+        $sql = 'SELECT
+  COUNT(*) as cant_pasajeros
+FROM pasajero_por_reserva
+  JOIN reserva ON (pasajero_por_reserva.idreserva = reserva.id)
+  JOIN estado_reserva ON (reserva.idestado = estado_reserva.id)
+WHERE
+  check_out IS NULL
+  AND (
+    ("' . $fecha . '" BETWEEN pasajero_por_reserva.fecha_in AND pasajero_por_reserva.fecha_out) OR
+    ("' . $fecha . '" BETWEEN reserva.fecha_in AND reserva.fecha_out)
+  )';
+        if($confirmed) {
+            $sql .= "\n" . '  AND check_in IS NOT null';
+        }
+
+
 
         $cant = $this->db->select($sql);
         return $cant[0]['cant_pasajeros'];
@@ -973,7 +997,7 @@ WHERE
                                              'codcliente' => $datos_pasajero[9]
                                          ));
 
-        $pasj->setTarifa($reserva->getTarifa());
+        //$pasj->setTarifa($reserva->getTarifa());
 
         return $pasj;
 
